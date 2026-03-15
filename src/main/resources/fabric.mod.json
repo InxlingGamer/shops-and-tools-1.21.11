@@ -1,0 +1,37 @@
+{
+	"schemaVersion": 1,
+	"id": "shopsandtools",
+	"version": "${version}",
+	"name": "Shops and Tools",
+	"description": "Mod that adds basic shops as well as armor and tools to the InkyMC Minecraft Server",
+	"authors": [
+		"InklingGamer"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "MIT",
+	"icon": "assets/shopsandtools/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.inklinggamer.shopsandtools.ShopsAndTools"
+		],
+		"fabric-datagen": [
+			"net.inklinggamer.shopsandtools.ShopsAndToolsDataGenerator"
+		],
+		"client": [
+			"net.inklinggamer.shopsandtools.ShopsAndToolsClient"
+		]
+	},
+	"mixins": [
+		"shopsandtools.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

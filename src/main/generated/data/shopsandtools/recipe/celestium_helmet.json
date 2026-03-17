@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "shopsandtools:celestium",
+  "base": "minecraft:netherite_helmet",
+  "result": {
+    "id": "shopsandtools:celestium_helmet"
+  },
+  "template": "shopsandtools:celestium_upgrade_template"
+}

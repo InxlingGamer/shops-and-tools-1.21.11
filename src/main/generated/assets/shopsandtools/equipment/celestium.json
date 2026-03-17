@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "shopsandtools:celestium"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "shopsandtools:celestium"
+      }
+    ]
+  }
+}

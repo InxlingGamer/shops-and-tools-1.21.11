@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_celestium_upgrade_template": {
+      "conditions": {
+        "items": [
+          {
+            "items": "shopsandtools:celestium_upgrade_template"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "shopsandtools:celestium_leggings"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_celestium_upgrade_template"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "shopsandtools:celestium_leggings"
+    ]
+  }
+}

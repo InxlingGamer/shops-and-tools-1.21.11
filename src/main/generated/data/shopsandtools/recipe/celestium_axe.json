@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "shopsandtools:celestium",
+  "base": "minecraft:netherite_axe",
+  "result": {
+    "id": "shopsandtools:celestium_axe"
+  },
+  "template": "shopsandtools:celestium_upgrade_template"
+}

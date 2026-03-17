@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "shopsandtools:celestium",
+  "base": "minecraft:netherite_sword",
+  "result": {
+    "id": "shopsandtools:celestium_sword"
+  },
+  "template": "shopsandtools:celestium_upgrade_template"
+}

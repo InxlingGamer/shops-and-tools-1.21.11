@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:amethyst_shard",
+    "B": "minecraft:blaze_powder",
+    "D": "minecraft:dragon_breath",
+    "E": "shopsandtools:warden_heart",
+    "H": "minecraft:heavy_core",
+    "N": "minecraft:nether_star"
+  },
+  "pattern": [
+    "#N#",
+    "DBE",
+    "#H#"
+  ],
+  "result": {
+    "count": 1,
+    "id": "shopsandtools:celestium"
+  }
+}

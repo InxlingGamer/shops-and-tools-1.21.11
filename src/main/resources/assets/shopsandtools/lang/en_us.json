@@ -12,7 +12,10 @@
   "item.shopsandtools.celestium_spear": "§dCelestium Spear",
   "item.shopsandtools.celestium_horse_armor": "§dCelestium Horse Armor",
   "item.shopsandtools.warden_heart": "§bHeart of the Warden",
-  "item.shopsandtools.celestium_upgrade_template": "§dCelestium §eUpgrade Template",
-
-  "block.shopsandtools.celestium_block": "§dBlock of Celestium"
+  "item.shopsandtools.celestium_upgrade_template": "§dCelestium §eUpgrade",
+  "block.shopsandtools.celestium_block": "§dBlock of Celestium",
+  "key.shopsandtools.celestium_xray": "Toggle Celestium Vision",
+  "message.shopsandtools.celestium_xray_enabled": "§dCelestium Vision §aenabled",
+  "message.shopsandtools.celestium_xray_disabled": "§dCelestium Vision §cdisabled",
+  "message.shopsandtools.celestium_xray_requires_helmet": "§7Wear a §dCelestium Helmet §7to use §dCelestium Vision"
 }

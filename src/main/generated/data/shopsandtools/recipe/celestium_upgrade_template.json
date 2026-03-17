@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:netherite_ingot",
+    "l": "minecraft:heavy_core",
+    "o": "minecraft:nether_star",
+    "p": "minecraft:netherite_upgrade_smithing_template"
+  },
+  "pattern": [
+    "#o#",
+    "#p#",
+    "#l#"
+  ],
+  "result": {
+    "count": 1,
+    "id": "shopsandtools:celestium_upgrade_template"
+  }
+}

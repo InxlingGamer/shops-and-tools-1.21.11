@@ -56,6 +56,27 @@ public class ModRecipeGenerator extends RecipeGenerator {
                 .criterion(hasItem(ModBlocks.CELESTIUM_BLOCK), conditionsFromItem(ModBlocks.CELESTIUM_BLOCK))
                 .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_from_block")));
 
+        ShapedRecipeJsonBuilder.create(itemLookup, RecipeCategory.MISC, ModItems.CELESTIUM_UPGRADE_TEMPLATE, 2)
+                .pattern("#d#")
+                .pattern("#e#")
+                .pattern("###")
+                .input('#', Items.NETHERITE_INGOT)
+                .input('d', ModItems.CELESTIUM_UPGRADE_TEMPLATE)
+                .input('e', Items.AMETHYST_BLOCK)
+                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_upgrade_template_duplication")));
+
+        ShapedRecipeJsonBuilder.create(itemLookup, RecipeCategory.MISC, ModItems.CELESTIUM_UPGRADE_TEMPLATE, 1)
+                .pattern("#o#")
+                .pattern("#p#")
+                .pattern("#l#")
+                .input('#', Items.NETHERITE_INGOT)
+                .input('o', Items.NETHER_STAR)
+                .input('p', Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE)
+                .input('l', Items.HEAVY_CORE)
+                .criterion(hasItem(Items.NETHER_STAR), conditionsFromItem(Items.NETHER_STAR))
+                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_upgrade_template")));
+
         SmithingTransformRecipeJsonBuilder.create(
                         Ingredient.ofItems(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
                         Ingredient.ofItems(Items.NETHERITE_HELMET),

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": "minecraft:netherite_ingot",
+    "d": "shopsandtools:celestium_upgrade_template",
+    "e": "minecraft:amethyst_block"
+  },
+  "pattern": [
+    "#d#",
+    "#e#",
+    "###"
+  ],
+  "result": {
+    "count": 2,
+    "id": "shopsandtools:celestium_upgrade_template"
+  }
+}

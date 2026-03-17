@@ -38,7 +38,7 @@ public class ModRecipeGenerator extends RecipeGenerator {
                 .input('D', Items.DRAGON_BREATH)
                 .input('B', Items.BLAZE_POWDER)
                 .input('E', ModItems.WARDEN_HEART)
-                .input('H', Items.HEAVY_CORE)
+                .input('H', Items.TOTEM_OF_UNDYING)
                 .criterion(hasItem(Items.NETHER_STAR), conditionsFromItem(Items.NETHER_STAR))
 
                 .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium")));

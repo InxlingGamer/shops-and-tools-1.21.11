@@ -35,10 +35,11 @@ public class CelestiumHelmetItem extends Item {
             return;
         }
 
+
         // =====================================
         // 1. APPLY BUFFS (Saturation & Breathing)
         // =====================================
-        player.addStatusEffect(new StatusEffectInstance(StatusEffects.WATER_BREATHING, 20, 0, false, false, true));
+        player.addStatusEffect(new StatusEffectInstance(StatusEffects.WATER_BREATHING, 20, 0, false, false, false));
 
         // =====================================
         // 2. PREVENT DEBUFFS (Blindness, Darkness, Nausea)

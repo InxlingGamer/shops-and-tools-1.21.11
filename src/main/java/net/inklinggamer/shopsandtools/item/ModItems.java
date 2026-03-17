@@ -25,6 +25,16 @@ public class ModItems {
     // ==========================================
     public static final Item CELESTIUM = registerItem("celestium", new Item(new Item.Settings().fireproof().component(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true).registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium")))));
 
+    public static final Item SKULK_VENOM = registerItem("skulk_venom", new SkulkVenomItem(new Item.Settings().maxCount(1).component(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true).registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"skulk_venom")))) {
+        @Override
+        public void appendTooltip(ItemStack stack, Item.TooltipContext context, TooltipDisplayComponent displayComponent, Consumer<Text> textConsumer, TooltipType type) {
+            // 1. The Subtitle
+            textConsumer.accept(Text.literal("A needy little symbiote from the Deep Dark.").formatted(Formatting.GRAY));
+            textConsumer.accept(Text.empty());
+            textConsumer.accept(Text.literal("Grants godly power, but bills you by the second.").formatted(Formatting.DARK_AQUA));
+        }
+    });
+
     public static final Item WARDEN_HEART = registerItem("warden_heart", new Item(new Item.Settings().component(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true).registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"warden_heart")))));
 
     public static final Item CELESTIUM_UPGRADE_TEMPLATE = registerItem("celestium_upgrade_template", new Item(new Item.Settings().fireproof().rarity(Rarity.UNCOMMON).registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_upgrade_template")))) {
@@ -105,6 +115,10 @@ public class ModItems {
             fabricItemGroupEntries.add(CELESTIUM_AXE);
             fabricItemGroupEntries.add(CELESTIUM_SHOVEL);
             fabricItemGroupEntries.add(CELESTIUM_HOE);
+        });
+
+        ItemGroupEvents.modifyEntriesEvent(ItemGroups.FUNCTIONAL).register(fabricItemGroupEntries -> {
+            fabricItemGroupEntries.add(SKULK_VENOM);
         });
     }
 }

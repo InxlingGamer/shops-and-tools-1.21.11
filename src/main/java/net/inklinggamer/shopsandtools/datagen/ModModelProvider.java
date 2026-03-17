@@ -22,6 +22,7 @@ public class ModModelProvider extends FabricModelProvider {
     @Override
     public void generateItemModels(ItemModelGenerator itemModelGenerator) {
         itemModelGenerator.register(ModItems.CELESTIUM, Models.GENERATED);
+        itemModelGenerator.register(ModItems.SKULK_VENOM, Models.GENERATED);
         itemModelGenerator.register(ModItems.CELESTIUM_HELMET, Models.GENERATED);
         itemModelGenerator.register(ModItems.CELESTIUM_CHESTPLATE, Models.GENERATED);
         itemModelGenerator.register(ModItems.CELESTIUM_LEGGINGS, Models.GENERATED);

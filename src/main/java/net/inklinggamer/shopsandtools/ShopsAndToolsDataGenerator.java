@@ -15,5 +15,6 @@ public class ShopsAndToolsDataGenerator implements DataGeneratorEntrypoint {
 		pack.addProvider(ModRecipeProvider::new);
 		pack.addProvider(ModItemTagProvider::new);
 		pack.addProvider(ModEquipmentAssetProvider::new);
+		pack.addProvider(ModEntityLootProvider::new);
 	}
 }

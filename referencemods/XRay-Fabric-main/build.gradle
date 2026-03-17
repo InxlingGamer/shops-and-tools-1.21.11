@@ -1,0 +1,118 @@
+plugins {
+    id 'fabric-loom' version '1.10-SNAPSHOT'
+    id 'maven-publish'
+    id 'pro.mikey.plugins.insaniam' version "0.1-SNAPSHOT"
+    id "me.modmuss50.mod-publish-plugin" version "0.5.1"
+}
+
+def ENV = System.getenv()
+version = "${project.mod_version}"
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+loom {
+    splitEnvironmentSourceSets()
+
+    accessWidenerPath = file("src/main/resources/advanced-xray-fabric.accesswidener")
+
+    mods {
+        "xray" {
+            sourceSet sourceSets.client
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "fabricloader", project.loader_version
+    inputs.property "mc_version", project.minecraft_version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version,
+                "fabricloader": project.loader_version,
+                "mc_version": project.minecraft_version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    withSourcesJar()
+
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archivesBaseName}" }
+    }
+}
+
+// configure the maven publication
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            groupId project.group
+            artifactId project.archivesBaseName
+            version project.version
+            from components.java
+        }
+    }
+    repositories {
+        maven {
+            url "https://maven.saps.dev/releases"
+            credentials {
+                username "mikeymods"
+                password "${ENV.SAPS_TOKEN}"
+            }
+        }
+    }
+}
+
+def changelogData = insaniamUtils.createChangelog {
+    file = file('CHANGELOG.md')
+    versionPattern = ~/## \[[^]]+]/
+    fallbackValue = "No changelog provided"
+    version = project.mod_version
+}
+
+publishMods {
+    def curseToken = providers.environmentVariable("CURSE_TOKEN")
+
+    dryRun = curseToken.getOrNull() == null
+    changelog = changelogData
+    version = project.mod_version
+    type = STABLE
+    file = remapJar.archiveFile
+
+    curseforge {
+        displayName = "Advanced XRay Fabric ${mod_version}"
+        accessToken = curseToken
+        projectId = project.curse_id
+        minecraftVersions.add("${minecraft_version}")
+        modLoaders.add("fabric")
+        javaVersions.add(JavaVersion.VERSION_21)
+    }
+
+    github {
+        repository = "AdvancedXRay/XRay-Fabric"
+        accessToken = providers.environmentVariable("GITHUB_TOKEN")
+        commitish = providers.environmentVariable("GITHUB_SHA").orElse("main")
+        tagName = providers.environmentVariable("GITHUB_REF_NAME").orElse("v${mod_version}")
+    }
+}

@@ -1,0 +1,18 @@
+{
+  "item.shopsandtools.celestium": "§dCelestium",
+  "item.shopsandtools.celestium_helmet": "§dCelestium Helmet",
+  "item.shopsandtools.celestium_chestplate": "§dCelestium Chestplate",
+  "item.shopsandtools.celestium_leggings": "§dCelestium Leggings",
+  "item.shopsandtools.celestium_boots": "§dCelestium Boots",
+  "item.shopsandtools.celestium_sword": "§dCelestium Sword",
+  "item.shopsandtools.celestium_pickaxe": "§dCelestium Pickaxe",
+  "item.shopsandtools.celestium_axe": "§dCelestium Axe",
+  "item.shopsandtools.celestium_shovel": "§dCelestium Shovel",
+  "item.shopsandtools.celestium_hoe": "§dCelestium Hoe",
+  "item.shopsandtools.celestium_spear": "§dCelestium Spear",
+  "item.shopsandtools.celestium_horse_armor": "§dCelestium Horse Armor",
+  "item.shopsandtools.warden_heart": "§bHeart of the Warden",
+  "item.shopsandtools.celestium_upgrade_template": "§dCelestium §eUpgrade Template",
+
+  "block.shopsandtools.celestium_block": "§dBlock of Celestium"
+}

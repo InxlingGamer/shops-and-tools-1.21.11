@@ -6,5 +6,6 @@ public class ShopsAndToolsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
 
+
     }
 }

@@ -3,7 +3,10 @@
 	"package": "net.inklinggamer.shopsandtools.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin"
+		"AnvilScreenHandlerMixin"
+	],
+	"client": [
+		"client.AnvilScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

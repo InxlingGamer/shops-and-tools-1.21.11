@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.EnchantableComponent;
+import net.minecraft.component.type.EquippableComponent;
 import net.minecraft.component.type.TooltipDisplayComponent;
 import net.minecraft.item.*;
 import net.minecraft.item.equipment.EquipmentType;
@@ -17,6 +18,9 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Rarity;
+import net.minecraft.util.Unit;
+
+import java.util.Optional;
 
 public class ModItems {
 
@@ -62,7 +66,9 @@ public class ModItems {
     // ==========================================
     public static final Item CELESTIUM_HELMET = registerItem("celestium_helmet", new CelestiumHelmetItem(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_helmet"))).armor(ModArmorMaterials.CELESTIUM, EquipmentType.HELMET).component(DataComponentTypes.ENCHANTABLE, new EnchantableComponent(30))));
 
-    public static final Item CELESTIUM_CHESTPLATE = registerItem("celestium_chestplate", new Item(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_chestplate"))).armor(ModArmorMaterials.CELESTIUM, EquipmentType.CHESTPLATE)));
+    public static final Item CELESTIUM_CHESTPLATE = registerItem("celestium_chestplate", new CelestiumChestItem(createCelestiumChestplateSettings("celestium_chestplate")));
+
+    public static final Item CELESTIUM_ELYTRA_CHESTPLATE = registerItem("celestium_elytra_chestplate", new CelestiumChestItem(createCelestiumElytraChestplateSettings()));
 
     public static final Item CELESTIUM_LEGGINGS = registerItem("celestium_leggings", new Item(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_leggings"))).armor(ModArmorMaterials.CELESTIUM, EquipmentType.LEGGINGS)));
 
@@ -87,6 +93,36 @@ public class ModItems {
     public static final Item CELESTIUM_HOE = registerItem("celestium_hoe", new HoeItem(ModToolMaterials.CELESTIUM, -4.0F, 0.0F, new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_hoe")))));
 
 
+    private static Item.Settings createCelestiumChestplateSettings(String itemName) {
+        return new Item.Settings()
+                .fireproof()
+                .registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID, itemName)))
+                .armor(ModArmorMaterials.CELESTIUM, EquipmentType.CHESTPLATE)
+                .component(DataComponentTypes.TOOLTIP_DISPLAY, TooltipDisplayComponent.DEFAULT.with(DataComponentTypes.ATTRIBUTE_MODIFIERS, false));
+    }
+
+    private static Item.Settings createCelestiumElytraChestplateSettings() {
+        Item.Settings settings = createCelestiumChestplateSettings("celestium_elytra_chestplate")
+                .maxDamage(1632)
+                .component(DataComponentTypes.GLIDER, Unit.INSTANCE);
+
+        EquippableComponent chestplateEquippable = CELESTIUM_CHESTPLATE.getComponents().get(DataComponentTypes.EQUIPPABLE);
+        settings.component(DataComponentTypes.EQUIPPABLE, new EquippableComponent(
+                chestplateEquippable.slot(),
+                chestplateEquippable.equipSound(),
+                Optional.of(ModArmorMaterials.CELESTIUM_ELYTRA_ASSET),
+                chestplateEquippable.cameraOverlay(),
+                chestplateEquippable.allowedEntities(),
+                chestplateEquippable.dispensable(),
+                chestplateEquippable.swappable(),
+                chestplateEquippable.damageOnHurt(),
+                chestplateEquippable.equipOnInteract(),
+                chestplateEquippable.canBeSheared(),
+                chestplateEquippable.shearingSound()
+        ));
+
+        return settings;
+    }
     private static Item registerItem(String name, Item item) {
         return Registry.register(Registries.ITEM, Identifier.of(ShopsAndTools.MOD_ID, name), item);
     }
@@ -103,6 +139,7 @@ public class ModItems {
         ItemGroupEvents.modifyEntriesEvent(ItemGroups.COMBAT).register(fabricItemGroupEntries -> {
             fabricItemGroupEntries.add(CELESTIUM_HELMET);
             fabricItemGroupEntries.add(CELESTIUM_CHESTPLATE);
+            fabricItemGroupEntries.add(CELESTIUM_ELYTRA_CHESTPLATE);
             fabricItemGroupEntries.add(CELESTIUM_LEGGINGS);
             fabricItemGroupEntries.add(CELESTIUM_BOOTS);
             fabricItemGroupEntries.add(CELESTIUM_SWORD);

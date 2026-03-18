@@ -20,6 +20,11 @@ public interface ModArmorMaterials {
             Identifier.of(ShopsAndTools.MOD_ID, "celestium")
     );
 
+    RegistryKey<EquipmentAsset> CELESTIUM_ELYTRA_ASSET = RegistryKey.of(
+            EquipmentAssetKeys.REGISTRY_KEY,
+            Identifier.of(ShopsAndTools.MOD_ID, "celestium_elytra")
+    );
+
     ArmorMaterial CELESTIUM = new ArmorMaterial(
             75,
             createDefenseMap(7, 10, 13, 7, 30),

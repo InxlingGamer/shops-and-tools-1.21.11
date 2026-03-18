@@ -25,6 +25,7 @@ public class ModModelProvider extends FabricModelProvider {
         itemModelGenerator.register(ModItems.SKULK_VENOM, Models.GENERATED);
         itemModelGenerator.register(ModItems.CELESTIUM_HELMET, Models.GENERATED);
         itemModelGenerator.register(ModItems.CELESTIUM_CHESTPLATE, Models.GENERATED);
+        itemModelGenerator.register(ModItems.CELESTIUM_ELYTRA_CHESTPLATE, Models.GENERATED);
         itemModelGenerator.register(ModItems.CELESTIUM_LEGGINGS, Models.GENERATED);
         itemModelGenerator.register(ModItems.CELESTIUM_BOOTS, Models.GENERATED);
         itemModelGenerator.register(ModItems.CELESTIUM_SWORD, Models.GENERATED);

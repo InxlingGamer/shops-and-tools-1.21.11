@@ -26,16 +26,16 @@ public class ModItemTagProvider extends FabricTagProvider.ItemTagProvider {
 
         // Armor tags
         valueLookupBuilder(ItemTags.TRIMMABLE_ARMOR)
-                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS);
+                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS);
 
         valueLookupBuilder(ItemTags.ARMOR_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS);
+                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS);
 
         valueLookupBuilder(ItemTags.EQUIPPABLE_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS, ModItems.CELESTIUM_HORSE_ARMOR);
+                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS, ModItems.CELESTIUM_HORSE_ARMOR);
 
         valueLookupBuilder(ItemTags.HEAD_ARMOR_ENCHANTABLE).add(ModItems.CELESTIUM_HELMET);
-        valueLookupBuilder(ItemTags.CHEST_ARMOR_ENCHANTABLE).add(ModItems.CELESTIUM_CHESTPLATE);
+        valueLookupBuilder(ItemTags.CHEST_ARMOR_ENCHANTABLE).add(ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE);
         valueLookupBuilder(ItemTags.LEG_ARMOR_ENCHANTABLE).add(ModItems.CELESTIUM_LEGGINGS);
         valueLookupBuilder(ItemTags.FOOT_ARMOR_ENCHANTABLE).add(ModItems.CELESTIUM_BOOTS);
 
@@ -67,11 +67,11 @@ public class ModItemTagProvider extends FabricTagProvider.ItemTagProvider {
 
         // General durability / mending / vanishing style tags
         valueLookupBuilder(ItemTags.DURABILITY_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS)
+                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS)
                 .add(ModItems.CELESTIUM_SWORD, ModItems.CELESTIUM_PICKAXE, ModItems.CELESTIUM_AXE, ModItems.CELESTIUM_SHOVEL, ModItems.CELESTIUM_HOE, ModItems.CELESTIUM_SPEAR, ModItems.CELESTIUM_HORSE_ARMOR);
 
         valueLookupBuilder(ItemTags.VANISHING_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS)
+                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS)
                 .add(ModItems.CELESTIUM_SWORD, ModItems.CELESTIUM_PICKAXE, ModItems.CELESTIUM_AXE, ModItems.CELESTIUM_SHOVEL, ModItems.CELESTIUM_HOE, ModItems.CELESTIUM_SPEAR, ModItems.CELESTIUM_HORSE_ARMOR);
 
         // Repair tag

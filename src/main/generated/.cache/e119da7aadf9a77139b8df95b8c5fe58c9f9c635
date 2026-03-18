@@ -1,9 +1,9 @@
 // 1.21.11	-999999999-01-01T00:00:00	Shops and Tools/Tags for minecraft:item
 d9f4fbe68ef9b17a3f5497c25bdd71083b486772 data/minecraft/tags/item/axes.json
-54348a709c348790c7976e2ed43532a5a642ea66 data/minecraft/tags/item/enchantable/armor.json
-b6970986a3bc177e1567f3fafec8bcea7f71922f data/minecraft/tags/item/enchantable/chest_armor.json
-88a845cba747bad208b4abd1168f33d666d73592 data/minecraft/tags/item/enchantable/durability.json
-dee0dfbb7814fb27757dcdcae7f14586c57c492b data/minecraft/tags/item/enchantable/equippable.json
+d4b2b179ad388b12f96d6af88c2f1384f5286deb data/minecraft/tags/item/enchantable/armor.json
+011670c8583b9f29df84a51f2f6b0d7e5d2e1e93 data/minecraft/tags/item/enchantable/chest_armor.json
+1d524b3610485788921c5b61ce503e0a2f69cb96 data/minecraft/tags/item/enchantable/durability.json
+9a3787b8cfbc2e2812500e9009bab5f39cce8205 data/minecraft/tags/item/enchantable/equippable.json
 fbd9a8a16fbafc604761be66da480c4038ac87ac data/minecraft/tags/item/enchantable/foot_armor.json
 c13e064c3d0a6ab29071deb2ca4829f6d2cdfa1c data/minecraft/tags/item/enchantable/head_armor.json
 640aa3c025256e1fd12c1a9320bbd74290992f01 data/minecraft/tags/item/enchantable/leg_armor.json
@@ -14,12 +14,12 @@ e803195e8b58cc2ecda935d0555170b2a7872111 data/minecraft/tags/item/enchantable/lu
 6dce61a147740995bf32035afd09f769cd6d5fc8 data/minecraft/tags/item/enchantable/sharp_weapon.json
 5619bd011814754001052f092525a6d56482f4ff data/minecraft/tags/item/enchantable/sweeping.json
 e803195e8b58cc2ecda935d0555170b2a7872111 data/minecraft/tags/item/enchantable/trident.json
-88a845cba747bad208b4abd1168f33d666d73592 data/minecraft/tags/item/enchantable/vanishing.json
+1d524b3610485788921c5b61ce503e0a2f69cb96 data/minecraft/tags/item/enchantable/vanishing.json
 0818b9579a4116b50dc6b75657065580e2d74764 data/minecraft/tags/item/enchantable/weapon.json
 f46fc75eeee5c9d6598e4a5fda741483b528e850 data/minecraft/tags/item/hoes.json
 f4004b1198856afa84a3b0b285070d72605c1d9e data/minecraft/tags/item/pickaxes.json
 ade8374dba84c5aaef356a05f658acce49d7aef9 data/minecraft/tags/item/shovels.json
 e803195e8b58cc2ecda935d0555170b2a7872111 data/minecraft/tags/item/spears.json
 5619bd011814754001052f092525a6d56482f4ff data/minecraft/tags/item/swords.json
-54348a709c348790c7976e2ed43532a5a642ea66 data/minecraft/tags/item/trimmable_armor.json
+d4b2b179ad388b12f96d6af88c2f1384f5286deb data/minecraft/tags/item/trimmable_armor.json
 393bb1c73833ba333a01c4e4f0ebd93b26e2171d data/shopsandtools/tags/item/celestium_repair.json

@@ -29,8 +29,8 @@ public class SkulkVenomItem extends Item {
             boolean hasXp = player.totalExperience > 0 || player.experienceLevel > 0;
 
             if (hasXp) {
-                // 1. Drain 1 XP point per second
-                player.addExperience(-1);
+                // 1. Drain 2 XP point per second
+                player.addExperience(-2);
 
                 // 2. Apply positive buffs!
                 // We use a duration of 40 ticks (2 seconds) so the effect doesn't flicker on the screen.

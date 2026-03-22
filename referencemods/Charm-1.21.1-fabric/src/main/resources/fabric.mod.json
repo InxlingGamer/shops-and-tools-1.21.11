@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "charm",
+  "version": "${mod_version}",
+
+  "name": "Charm",
+  "description": "Small tweaks and additions to Minecraft without changing core gameplay.",
+  "authors": [
+    "svenhjol",
+    "Coranthes",
+    "WarlordWossman",
+    "F43nd1r"
+  ],
+  "icon": "icon.png",
+
+  "license": "MIT",
+  "environment": "*",
+  "mixins": [
+    "charm.mixins.json",
+    "charm.charmony.common.mixins.json",
+    "charm.charmony.client.mixins.json"
+  ],
+
+  "entrypoints": {
+    "main": [
+      "svenhjol.charm.fabric.CommonInitializer"
+    ],
+    "client": [
+      "svenhjol.charm.fabric.ClientInitializer"
+    ],
+    "modmenu": [
+      "svenhjol.charm.integration.modmenu.ModMenuPlugin"
+    ],
+    "rei_common": [
+      "svenhjol.charm.integration.rei.ServerPlugin"
+    ],
+    "rei_client": [
+      "svenhjol.charm.integration.rei.ClientPlugin"
+    ]
+  },
+
+  "accessWidener": "charm.accesswidener",
+
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "minecraft": "*",
+    "java": ">=21"
+  },
+
+  "contact": {
+    "homepage": "https://charmony.work",
+    "sources": "https://github.com/svenhjol/Charm"
+  },
+  
+  "custom": {
+    "modmenu": {
+      "links": {
+        "modmenu.discord": "${discord_link}"
+      },
+      "update_checker": true
+    }
+  }
+}

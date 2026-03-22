@@ -3,10 +3,14 @@
 	"package": "net.inklinggamer.shopsandtools.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"AnvilScreenHandlerMixin"
+		"AnvilScreenHandlerMixin",
+		"EntityInvoker",
+		"LivingEntityMixin",
+		"ServerPlayNetworkHandlerMixin"
 	],
 	"client": [
 		"client.AnvilScreenMixin",
+		"client.HandledScreenAccessor",
 		"client.RenderLayerInvoker",
 		"client.RenderPipelinesAccessor"
 	],

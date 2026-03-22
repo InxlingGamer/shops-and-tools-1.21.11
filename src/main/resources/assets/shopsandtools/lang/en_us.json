@@ -19,5 +19,11 @@
   "key.shopsandtools.celestium_xray": "Toggle Celestium Vision",
   "message.shopsandtools.celestium_xray_enabled": "§dCelestium Vision §aenabled",
   "message.shopsandtools.celestium_xray_disabled": "§dCelestium Vision §cdisabled",
-  "message.shopsandtools.celestium_xray_requires_helmet": "§7Wear a §dCelestium Helmet §7to use §dCelestium Vision"
+  "message.shopsandtools.celestium_xray_requires_helmet": "§7Wear a §dCelestium Helmet §7to use §dCelestium Vision",
+  "message.shopsandtools.celestium_thrust_cooldown": "Celestium Thrust is on cooldown for %s seconds",
+  "container.shopsandtools.celestium_portable_crafting": "Crafting",
+  "button.shopsandtools.celestium_portable_crafting": "3x3",
+  "tooltip.shopsandtools.celestium_portable_crafting": "Open portable 3x3 crafting",
+  "button.shopsandtools.celestium_return_to_inventory": "Back",
+  "tooltip.shopsandtools.celestium_return_to_inventory": "Return to inventory"
 }

@@ -25,7 +25,7 @@ public final class CelestiumLeggingsClient {
     private static final int RETURN_BUTTON_HEIGHT = 20;
     private static final int RETURN_BUTTON_OFFSET_X = 108;
     private static final int RETURN_BUTTON_OFFSET_Y = 58;
-    private static final String PORTABLE_CRAFTING_TITLE_KEY = "container.shopsandtools.celestium_portable_crafting";
+    private static boolean expectingPortableCraftingScreen;
 
     private CelestiumLeggingsClient() {
     }
@@ -35,12 +35,17 @@ public final class CelestiumLeggingsClient {
     }
 
     private static void onAfterInit(MinecraftClient client, Screen screen, int scaledWidth, int scaledHeight) {
+        if (!(screen instanceof CraftingScreen)) {
+            expectingPortableCraftingScreen = false;
+        }
+
         if (screen instanceof InventoryScreen inventoryScreen) {
             addInventoryCraftingButton(client, screen, inventoryScreen);
             return;
         }
 
-        if (screen instanceof CraftingScreen craftingScreen && isCelestiumPortableCraftingScreen(craftingScreen)) {
+        if (screen instanceof CraftingScreen craftingScreen && expectingPortableCraftingScreen) {
+            expectingPortableCraftingScreen = false;
             addReturnButton(client, screen, craftingScreen);
         }
     }
@@ -48,7 +53,7 @@ public final class CelestiumLeggingsClient {
     private static void addInventoryCraftingButton(MinecraftClient client, Screen screen, InventoryScreen inventoryScreen) {
         ButtonWidget button = ButtonWidget.builder(
                         Text.translatable("button.shopsandtools.celestium_portable_crafting"),
-                        ignored -> OpenCelestiumCraftingPayload.send()
+                        ignored -> openPortableCrafting()
                 )
                 .dimensions(0, 0, INVENTORY_BUTTON_WIDTH, INVENTORY_BUTTON_HEIGHT)
                 .build();
@@ -95,8 +100,9 @@ public final class CelestiumLeggingsClient {
         button.setY(accessor.shopsandtools$getY() + RETURN_BUTTON_OFFSET_Y);
     }
 
-    private static boolean isCelestiumPortableCraftingScreen(CraftingScreen craftingScreen) {
-        return craftingScreen.getTitle().getString().equals(Text.translatable(PORTABLE_CRAFTING_TITLE_KEY).getString());
+    private static void openPortableCrafting() {
+        expectingPortableCraftingScreen = true;
+        OpenCelestiumCraftingPayload.send();
     }
 
     private static void returnToInventory(MinecraftClient client) {
@@ -104,6 +110,7 @@ public final class CelestiumLeggingsClient {
             return;
         }
 
+        expectingPortableCraftingScreen = false;
         double cursorX = client.mouse.getX();
         double cursorY = client.mouse.getY();
         ItemStack cursorStack = client.player.currentScreenHandler.getCursorStack().copy();

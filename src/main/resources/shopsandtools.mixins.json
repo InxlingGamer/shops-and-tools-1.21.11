@@ -11,6 +11,7 @@
 	"client": [
 		"client.AnvilScreenMixin",
 		"client.HandledScreenAccessor",
+		"client.InGameHudMixin",
 		"client.RenderLayerInvoker",
 		"client.RenderPipelinesAccessor"
 	],

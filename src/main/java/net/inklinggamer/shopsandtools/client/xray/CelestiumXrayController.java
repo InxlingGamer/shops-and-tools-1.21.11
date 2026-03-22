@@ -139,6 +139,7 @@ public final class CelestiumXrayController {
             client.execute(() -> {
                 renderQueue.clear();
                 renderQueue.addAll(scanned);
+                CelestiumXrayRenderer.markDirty();
                 lastScanOrigin = immutableOrigin;
                 lastScanWorldTime = world.getTime();
                 scanInProgress.set(false);

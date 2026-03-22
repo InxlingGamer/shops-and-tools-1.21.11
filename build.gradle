@@ -24,6 +24,24 @@ fabricApi {
 	}
 }
 
+sourceSets {
+	irisApi {
+		java {
+			srcDir("referencemods/Iris-1.21.9/common/src/api/java")
+			include("net/irisshaders/iris/api/v0/IrisApi.java")
+			include("net/irisshaders/iris/api/v0/IrisApiConfig.java")
+			include("net/irisshaders/iris/api/v0/IrisApiInternal.java")
+			include("net/irisshaders/iris/api/v0/IrisProgram.java")
+			include("net/irisshaders/iris/api/v0/IrisTextVertexSink.java")
+		}
+		compileClasspath += configurations.compileClasspath
+	}
+
+	main {
+		compileClasspath += sourceSets.irisApi.output
+	}
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"

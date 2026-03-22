@@ -6,8 +6,9 @@ import com.mojang.blaze3d.platform.DepthTestFunction;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
+import net.inklinggamer.shopsandtools.mixin.client.RenderLayerInvoker;
+import net.inklinggamer.shopsandtools.mixin.client.RenderPipelinesAccessor;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderSetup;
 import net.minecraft.client.render.VertexConsumer;
@@ -17,26 +18,77 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Vector3f;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collection;
 
 public final class CelestiumXrayRenderer {
     private static final float LINE_WIDTH = 2.0f;
-    private static final RenderPipeline XRAY_PIPELINE = createXrayPipeline();
-    private static final RenderLayer XRAY_LAYER = createXrayLayer();
+    private static RenderPipeline xrayPipeline;
+    private static RenderLayer xrayLayer;
+    private static boolean rendererDisabled;
 
     private CelestiumXrayRenderer() {
     }
 
-    public static void render(WorldRenderContext context, Collection<OreOutlineEntry> entries) {
-        if (entries.isEmpty()) {
+    public static synchronized void render(WorldRenderContext context, Collection<OreOutlineEntry> entries) {
+        if (entries.isEmpty() || !ensureInitialized()) {
             return;
         }
 
         MatrixStack matrices = context.matrices();
-        VertexConsumer consumer = context.consumers().getBuffer(XRAY_LAYER);
+        if (matrices == null || context.consumers() == null) {
+            return;
+        }
+
+        renderBuffered(matrices, context.consumers().getBuffer(xrayLayer), entries);
+    }
+
+    public static synchronized void markDirty() {
+        // Buffered rendering draws directly from the current scan results,
+        // so there is no cached GPU state to invalidate here.
+    }
+
+    private static synchronized boolean ensureInitialized() {
+        if (rendererDisabled) {
+            return false;
+        }
+
+        if (xrayLayer != null) {
+            return true;
+        }
+
+        try {
+            if (xrayPipeline == null) {
+                xrayPipeline = createPipeline();
+            }
+            xrayLayer = createLayer();
+            return true;
+        } catch (RuntimeException exception) {
+            rendererDisabled = true;
+            ShopsAndTools.LOGGER.error("Failed to initialize Celestium xray renderer; disabling xray rendering for this session", exception);
+            return false;
+        }
+    }
+
+    static synchronized RenderPipeline getOrCreatePipeline() {
+        if (rendererDisabled) {
+            return null;
+        }
+
+        if (xrayPipeline != null) {
+            return xrayPipeline;
+        }
+
+        try {
+            xrayPipeline = createPipeline();
+            return xrayPipeline;
+        } catch (RuntimeException exception) {
+            rendererDisabled = true;
+            ShopsAndTools.LOGGER.error("Failed to create the Celestium xray render pipeline; disabling xray rendering for this session", exception);
+            return null;
+        }
+    }
+
+    private static void renderBuffered(MatrixStack matrices, VertexConsumer consumer, Collection<OreOutlineEntry> entries) {
         Vec3d cameraPos = MinecraftClient.getInstance().gameRenderer.getCamera().getCameraPos();
 
         matrices.push();
@@ -49,7 +101,8 @@ public final class CelestiumXrayRenderer {
         matrices.pop();
     }
 
-    public static void clear() {
+    public static synchronized void clear() {
+        // Buffered rendering does not keep per-world GPU buffers to release.
     }
 
     private static void drawBox(MatrixStack matrices, VertexConsumer consumer, OreOutlineEntry entry) {
@@ -106,10 +159,8 @@ public final class CelestiumXrayRenderer {
                 .lineWidth(LINE_WIDTH);
     }
 
-    private static RenderPipeline createXrayPipeline() {
-        RenderPipeline.Snippet lineSnippet = getLineSnippet();
-
-        return RenderPipeline.builder(lineSnippet)
+    private static RenderPipeline createPipeline() {
+        return RenderPipeline.builder(RenderPipelinesAccessor.shopsandtools$getLineSnippet())
                 .withLocation(Identifier.of(ShopsAndTools.MOD_ID, "celestium_xray_lines"))
                 .withVertexShader("core/rendertype_lines")
                 .withFragmentShader("core/rendertype_lines")
@@ -120,28 +171,12 @@ public final class CelestiumXrayRenderer {
                 .build();
     }
 
-    private static RenderPipeline.Snippet getLineSnippet() {
-        try {
-            Field snippetField = RenderPipelines.class.getDeclaredField("RENDERTYPE_LINES_SNIPPET");
-            snippetField.setAccessible(true);
-            return (RenderPipeline.Snippet) snippetField.get(null);
-        } catch (NoSuchFieldException | IllegalAccessException exception) {
-            throw new IllegalStateException("Unable to access the line render snippet", exception);
-        }
-    }
-
-    private static RenderLayer createXrayLayer() {
-        RenderSetup renderSetup = RenderSetup.builder(XRAY_PIPELINE)
+    private static RenderLayer createLayer() {
+        RenderSetup renderSetup = RenderSetup.builder(xrayPipeline)
                 .translucent()
                 .expectedBufferSize(4096)
                 .build();
 
-        try {
-            Method factory = RenderLayer.class.getDeclaredMethod("of", String.class, RenderSetup.class);
-            factory.setAccessible(true);
-            return (RenderLayer) factory.invoke(null, "shopsandtools_celestium_xray", renderSetup);
-        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException exception) {
-            throw new IllegalStateException("Unable to create Celestium xray render layer", exception);
-        }
+        return RenderLayerInvoker.shopsandtools$create("shopsandtools_celestium_xray", renderSetup);
     }
 }

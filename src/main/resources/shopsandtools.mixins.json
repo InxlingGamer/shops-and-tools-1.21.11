@@ -6,7 +6,9 @@
 		"AnvilScreenHandlerMixin"
 	],
 	"client": [
-		"client.AnvilScreenMixin"
+		"client.AnvilScreenMixin",
+		"client.RenderLayerInvoker",
+		"client.RenderPipelinesAccessor"
 	],
 	"injectors": {
 		"defaultRequire": 1

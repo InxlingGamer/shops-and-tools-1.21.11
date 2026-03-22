@@ -6,10 +6,15 @@
 		"AnvilScreenHandlerMixin",
 		"EntityInvoker",
 		"LivingEntityMixin",
-		"ServerPlayNetworkHandlerMixin"
+		"PlayerEntityMixin",
+		"PowderSnowBlockMixin",
+		"ServerPlayNetworkHandlerMixin",
+		"SmithingScreenHandlerMixin",
+		"VibrationListenerMixin"
 	],
 	"client": [
 		"client.AnvilScreenMixin",
+		"client.BossBarHudMixin",
 		"client.HandledScreenAccessor",
 		"client.InGameHudMixin",
 		"client.RenderLayerInvoker",

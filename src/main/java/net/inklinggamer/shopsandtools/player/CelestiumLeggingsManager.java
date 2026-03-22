@@ -2,6 +2,7 @@ package net.inklinggamer.shopsandtools.player;
 
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.inklinggamer.shopsandtools.mixin.EntityInvoker;
+import net.inklinggamer.shopsandtools.network.SyncCelestiumThrustCooldownPayload;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
@@ -10,14 +11,12 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.c2s.play.UpdatePlayerAbilitiesC2SPacket;
-import net.minecraft.network.packet.s2c.play.OverlayMessageS2CPacket;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
 
 import java.util.HashMap;
@@ -25,12 +24,10 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class CelestiumLeggingsManager {
-    private static final String COOLDOWN_MESSAGE_KEY = "message.shopsandtools.celestium_thrust_cooldown";
     private static final int DOLPHINS_GRACE_DURATION_TICKS = 40;
     private static final int DOLPHINS_GRACE_REFRESH_THRESHOLD_TICKS = 20;
     private static final int WITHER_DURATION_TICKS = 100;
     private static final int THRUST_COOLDOWN_TICKS = 60;
-    private static final int COOLDOWN_MESSAGE_THROTTLE_TICKS = 10;
     private static final double THRUST_HORIZONTAL_STRENGTH = 1.2D;
     private static final double THRUST_VERTICAL_STRENGTH = 0.58D;
     private static final double STATIONARY_HORIZONTAL_SPEED_SQUARED_THRESHOLD = 1.0E-4D;
@@ -45,6 +42,11 @@ public final class CelestiumLeggingsManager {
     }
 
     public static void tickPlayer(ServerPlayerEntity player) {
+        if (!player.isAlive()) {
+            resetPlayerState(player);
+            return;
+        }
+
         if (!isCelestiumLeggingsEquipped(player)) {
             resetPlayerState(player);
             return;
@@ -55,7 +57,6 @@ public final class CelestiumLeggingsManager {
         PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
         if (player.isOnGround()) {
             state.doubleJumpUsed = false;
-            state.lastCooldownMessageTick = Long.MIN_VALUE;
         }
 
         syncFlightPermission(player, state);
@@ -93,7 +94,6 @@ public final class CelestiumLeggingsManager {
         cancelFlight(player);
 
         if (state.cooldownEndsAt > worldTime) {
-            maybeSendCooldownMessage(player, state, worldTime);
             return true;
         }
 
@@ -111,6 +111,7 @@ public final class CelestiumLeggingsManager {
 
         state.doubleJumpUsed = true;
         state.cooldownEndsAt = worldTime + THRUST_COOLDOWN_TICKS;
+        SyncCelestiumThrustCooldownPayload.send(player, THRUST_COOLDOWN_TICKS);
         launchPlayer(player, world);
         return true;
     }
@@ -155,16 +156,6 @@ public final class CelestiumLeggingsManager {
         state.flightPermissionActive = false;
         player.getAbilities().allowFlying = false;
         cancelFlight(player);
-    }
-
-    private static void maybeSendCooldownMessage(ServerPlayerEntity player, PlayerState state, long worldTime) {
-        if (worldTime - state.lastCooldownMessageTick < COOLDOWN_MESSAGE_THROTTLE_TICKS) {
-            return;
-        }
-
-        int secondsRemaining = Math.max(1, (int) Math.ceil((state.cooldownEndsAt - worldTime) / 20.0D));
-        player.networkHandler.sendPacket(new OverlayMessageS2CPacket(Text.translatable(COOLDOWN_MESSAGE_KEY, secondsRemaining)));
-        state.lastCooldownMessageTick = worldTime;
     }
 
     private static void cancelFlight(ServerPlayerEntity player) {
@@ -217,6 +208,7 @@ public final class CelestiumLeggingsManager {
     private static void resetPlayerState(ServerPlayerEntity player) {
         PlayerState state = STATES.remove(player.getUuid());
         if (state != null) {
+            SyncCelestiumThrustCooldownPayload.send(player, 0);
             clearFlightPermission(player, state);
         }
     }
@@ -225,6 +217,5 @@ public final class CelestiumLeggingsManager {
         private boolean doubleJumpUsed;
         private boolean flightPermissionActive;
         private long cooldownEndsAt;
-        private long lastCooldownMessageTick = Long.MIN_VALUE;
     }
 }

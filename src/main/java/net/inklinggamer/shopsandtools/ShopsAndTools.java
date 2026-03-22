@@ -8,6 +8,8 @@ import net.inklinggamer.shopsandtools.item.ModItemGroups;
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.inklinggamer.shopsandtools.network.OpenCelestiumCraftingPayload;
 import net.inklinggamer.shopsandtools.network.ReturnToInventoryPayload;
+import net.inklinggamer.shopsandtools.network.SyncCelestiumThrustCooldownPayload;
+import net.inklinggamer.shopsandtools.player.CelestiumBootsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumLeggingsManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +26,12 @@ public class ShopsAndTools implements ModInitializer {
 		ModBlocks.registerModBlocks();
 		OpenCelestiumCraftingPayload.register();
 		ReturnToInventoryPayload.register();
+		SyncCelestiumThrustCooldownPayload.register();
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
+			CelestiumBootsManager.tickServer(server);
 			CelestiumLeggingsManager.tickServer(server);
 			server.getPlayerManager().getPlayerList().forEach(player -> {
+				CelestiumBootsManager.tickPlayer(player);
 				CelestiumChestItem.tickPlayer(player);
 				CelestiumLeggingsManager.tickPlayer(player);
 			});

@@ -4,6 +4,7 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.fabricmc.loader.api.FabricLoader;
+import net.inklinggamer.shopsandtools.client.CelestiumBootsClient;
 import net.inklinggamer.shopsandtools.client.CelestiumLeggingsClient;
 import net.inklinggamer.shopsandtools.client.CelestiumThrustCooldownHud;
 import net.inklinggamer.shopsandtools.client.xray.CelestiumXrayController;
@@ -17,6 +18,7 @@ public class ShopsAndToolsClient implements ClientModInitializer {
             CelestiumXrayIrisCompat.register();
         }
 
+        CelestiumBootsClient.initialize();
         CelestiumLeggingsClient.initialize();
         SyncCelestiumThrustCooldownPayload.registerClient();
         CelestiumXrayController.initialize();

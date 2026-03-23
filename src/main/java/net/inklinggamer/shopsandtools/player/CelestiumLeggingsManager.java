@@ -66,6 +66,19 @@ public final class CelestiumLeggingsManager {
         return player.getEquippedStack(EquipmentSlot.LEGS).isOf(ModItems.CELESTIUM_LEGGINGS);
     }
 
+    public static boolean hasActiveFlightPermission(PlayerEntity player) {
+        if (!isCelestiumLeggingsEquipped(player) || !player.getAbilities().allowFlying) {
+            return false;
+        }
+
+        if (player instanceof ServerPlayerEntity serverPlayer) {
+            PlayerState state = STATES.get(serverPlayer.getUuid());
+            return state != null && state.flightPermissionActive;
+        }
+
+        return isDoubleJumpMovementEligible(player);
+    }
+
     public static void onPlayerDamaged(LivingEntity victim, DamageSource source) {
         if (!(victim instanceof PlayerEntity player) || !isCelestiumLeggingsEquipped(player)) {
             return;
@@ -123,7 +136,7 @@ public final class CelestiumLeggingsManager {
         }
     }
 
-    private static boolean isDoubleJumpMovementEligible(ServerPlayerEntity player) {
+    private static boolean isDoubleJumpMovementEligible(PlayerEntity player) {
         return !player.isCreative()
                 && !player.isSpectator()
                 && !player.hasVehicle()

@@ -3,15 +3,25 @@ package net.inklinggamer.shopsandtools.client;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.inklinggamer.shopsandtools.network.SyncCelestiumSprintKeyPayload;
+import net.inklinggamer.shopsandtools.network.SyncCelestiumWallClimbInputPayload;
 import net.inklinggamer.shopsandtools.player.CelestiumBootsManager;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.sound.BlockSoundGroup;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 
 public final class CelestiumBootsClient {
+    private static final int WALL_CLIMB_SOUND_INTERVAL_TICKS = 4;
+    private static final float WALL_CLIMB_SOUND_VOLUME_MULTIPLIER = 1.15F;
     private static boolean hasObservedState;
-    private static boolean observedSprintKeyHeld;
+    private static boolean observedSneakKeyHeld;
+    private static boolean observedForwardKeyHeld;
+    private static boolean observedLeftKeyHeld;
+    private static boolean observedRightKeyHeld;
     private static boolean observedBootsEquipped;
     private static boolean pendingSync = true;
+    private static long lastWallClimbSoundTick = Long.MIN_VALUE;
+    private static Direction lastWallClimbSoundDirection;
 
     private CelestiumBootsClient() {
     }
@@ -24,36 +34,109 @@ public final class CelestiumBootsClient {
 
     private static void tick(MinecraftClient client) {
         if (client.player == null || client.world == null) {
-            clearServerSprintState();
+            clearServerWallClimbInput();
             resetTracking();
             return;
         }
 
-        boolean sprintKeyHeld = client.options.sprintKey.isPressed();
+        boolean sneakKeyHeld = client.options.sneakKey.isPressed();
+        boolean forwardKeyHeld = client.options.forwardKey.isPressed();
+        boolean leftKeyHeld = client.options.leftKey.isPressed();
+        boolean rightKeyHeld = client.options.rightKey.isPressed();
         boolean bootsEquipped = CelestiumBootsManager.isCelestiumBootsEquipped(client.player);
-        if (!hasObservedState || sprintKeyHeld != observedSprintKeyHeld || bootsEquipped != observedBootsEquipped) {
+        if (!hasObservedState
+                || sneakKeyHeld != observedSneakKeyHeld
+                || forwardKeyHeld != observedForwardKeyHeld
+                || leftKeyHeld != observedLeftKeyHeld
+                || rightKeyHeld != observedRightKeyHeld
+                || bootsEquipped != observedBootsEquipped) {
             hasObservedState = true;
-            observedSprintKeyHeld = sprintKeyHeld;
+            observedSneakKeyHeld = sneakKeyHeld;
+            observedForwardKeyHeld = forwardKeyHeld;
+            observedLeftKeyHeld = leftKeyHeld;
+            observedRightKeyHeld = rightKeyHeld;
             observedBootsEquipped = bootsEquipped;
             pendingSync = true;
         }
 
-        if (pendingSync && ClientPlayNetworking.canSend(SyncCelestiumSprintKeyPayload.ID)) {
-            SyncCelestiumSprintKeyPayload.send(sprintKeyHeld);
+        if (pendingSync && ClientPlayNetworking.canSend(SyncCelestiumWallClimbInputPayload.ID)) {
+            SyncCelestiumWallClimbInputPayload.send(sneakKeyHeld, forwardKeyHeld, leftKeyHeld, rightKeyHeld);
             pendingSync = false;
+        }
+
+        tickWallClimbSound(client, bootsEquipped, sneakKeyHeld, forwardKeyHeld, leftKeyHeld, rightKeyHeld);
+    }
+
+    private static void tickWallClimbSound(
+            MinecraftClient client,
+            boolean bootsEquipped,
+            boolean sneakKeyHeld,
+            boolean forwardKeyHeld,
+            boolean leftKeyHeld,
+            boolean rightKeyHeld
+    ) {
+        if (!bootsEquipped
+                || !sneakKeyHeld
+                || !CelestiumBootsManager.hasWallClimbMovementInput(forwardKeyHeld, leftKeyHeld, rightKeyHeld)
+                || !(client.player.isClimbing() || CelestiumBootsManager.shouldWallClimb(client.player))) {
+            resetWallClimbSoundState();
+            return;
+        }
+
+        Direction wallDirection = CelestiumBootsManager.resolveWallClimbDirection(
+                client.player,
+                lastWallClimbSoundDirection,
+                lastWallClimbSoundDirection != null && sneakKeyHeld
+        );
+        if (wallDirection == null) {
+            resetWallClimbSoundState();
+            return;
+        }
+
+        lastWallClimbSoundDirection = wallDirection;
+
+        long worldTime = client.world.getTime();
+        if (worldTime - lastWallClimbSoundTick < WALL_CLIMB_SOUND_INTERVAL_TICKS) {
+            return;
+        }
+
+        playLocalWallClimbStepSound(client, wallDirection);
+        lastWallClimbSoundTick = worldTime;
+    }
+
+    private static void playLocalWallClimbStepSound(MinecraftClient client, Direction wallDirection) {
+        BlockPos soundPos = CelestiumBootsManager.resolveWallClimbSoundPos(client.player, wallDirection);
+        if (soundPos == null) {
+            soundPos = client.player.getBlockPos();
+        }
+
+        BlockSoundGroup soundGroup = client.world.getBlockState(soundPos).getSoundGroup();
+        if (soundGroup != null && soundGroup.getVolume() > 0.0F) {
+            client.player.playSound(soundGroup.getStepSound(), Math.max(0.1F, soundGroup.getVolume() * WALL_CLIMB_SOUND_VOLUME_MULTIPLIER), soundGroup.getPitch());
         }
     }
 
-    private static void clearServerSprintState() {
-        if (hasObservedState && observedSprintKeyHeld && ClientPlayNetworking.canSend(SyncCelestiumSprintKeyPayload.ID)) {
-            SyncCelestiumSprintKeyPayload.send(false);
+    private static void clearServerWallClimbInput() {
+        if (hasObservedState
+                && (observedSneakKeyHeld || observedForwardKeyHeld || observedLeftKeyHeld || observedRightKeyHeld)
+                && ClientPlayNetworking.canSend(SyncCelestiumWallClimbInputPayload.ID)) {
+            SyncCelestiumWallClimbInputPayload.send(false, false, false, false);
         }
     }
 
     private static void resetTracking() {
         hasObservedState = false;
-        observedSprintKeyHeld = false;
+        observedSneakKeyHeld = false;
+        observedForwardKeyHeld = false;
+        observedLeftKeyHeld = false;
+        observedRightKeyHeld = false;
         observedBootsEquipped = false;
         pendingSync = true;
+        resetWallClimbSoundState();
+    }
+
+    private static void resetWallClimbSoundState() {
+        lastWallClimbSoundTick = Long.MIN_VALUE;
+        lastWallClimbSoundDirection = null;
     }
 }

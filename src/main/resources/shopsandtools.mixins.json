@@ -14,7 +14,6 @@
 	],
 	"client": [
 		"client.AnvilScreenMixin",
-		"client.BossBarHudMixin",
 		"client.HandledScreenAccessor",
 		"client.InGameHudMixin",
 		"client.RenderLayerInvoker",

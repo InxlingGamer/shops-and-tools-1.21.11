@@ -5,6 +5,7 @@
 	"mixins": [
 		"AnvilScreenHandlerMixin",
 		"EntityInvoker",
+		"ExperienceOrbEntityMixin",
 		"LivingEntityMixin",
 		"PlayerEntityMixin",
 		"PowderSnowBlockMixin",

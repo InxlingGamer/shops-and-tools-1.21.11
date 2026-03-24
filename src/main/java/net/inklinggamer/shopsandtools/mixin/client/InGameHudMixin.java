@@ -1,5 +1,6 @@
 package net.inklinggamer.shopsandtools.mixin.client;
 
+import net.inklinggamer.shopsandtools.client.CelestiumRageHud;
 import net.inklinggamer.shopsandtools.client.CelestiumThrustCooldownHud;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -25,11 +26,14 @@ public abstract class InGameHudMixin {
 
     @Inject(method = "renderHotbar", at = @At("RETURN"))
     private void shopsandtools$renderCelestiumThrustCooldownNearHotbar(DrawContext drawContext, RenderTickCounter tickCounter, CallbackInfo ci) {
-        if (this.client.player == null || !CelestiumThrustCooldownHud.isActive()) {
+        if (this.client.player == null) {
             return;
         }
 
-        CelestiumThrustCooldownHud.renderNearHotbar(drawContext, this.client.player);
+        if (CelestiumThrustCooldownHud.isActive()) {
+            CelestiumThrustCooldownHud.renderNearHotbar(drawContext, this.client.player);
+        }
+        CelestiumRageHud.renderNearHotbar(drawContext, this.client.player);
     }
 
     @ModifyConstant(method = "renderHeldItemTooltip", constant = @Constant(intValue = 59))

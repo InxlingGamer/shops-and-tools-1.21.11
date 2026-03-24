@@ -33,15 +33,25 @@ public abstract class SmithingScreenHandlerMixin extends ScreenHandler {
     @Inject(method = "updateResult", at = @At("RETURN"))
     private void shopsandtools$upgradeCelestiumBootsToFeatherFallingFive(CallbackInfo ci) {
         ItemStack result = this.getSlot(SmithingScreenHandler.OUTPUT_ID).getStack();
-        if (!result.isOf(ModItems.CELESTIUM_BOOTS) || !EnchantmentHelper.canHaveEnchantments(result)) {
+        if (!EnchantmentHelper.canHaveEnchantments(result)) {
             return;
         }
 
         Registry<Enchantment> enchantmentRegistry = this.world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT);
-        Enchantment featherFallingValue = enchantmentRegistry.getValueOrThrow(Enchantments.FEATHER_FALLING);
-        RegistryEntry<Enchantment> featherFalling = enchantmentRegistry.getEntry(featherFallingValue);
         ItemStack upgradedResult = result.copy();
-        EnchantmentHelper.apply(upgradedResult, builder -> builder.set(featherFalling, 5));
+
+        if (result.isOf(ModItems.CELESTIUM_BOOTS)) {
+            Enchantment featherFallingValue = enchantmentRegistry.getValueOrThrow(Enchantments.FEATHER_FALLING);
+            RegistryEntry<Enchantment> featherFalling = enchantmentRegistry.getEntry(featherFallingValue);
+            EnchantmentHelper.apply(upgradedResult, builder -> builder.set(featherFalling, 5));
+        }
+
+        if (result.isOf(ModItems.CELESTIUM_SWORD)) {
+            Enchantment sharpnessValue = enchantmentRegistry.getValueOrThrow(Enchantments.SHARPNESS);
+            RegistryEntry<Enchantment> sharpness = enchantmentRegistry.getEntry(sharpnessValue);
+            EnchantmentHelper.apply(upgradedResult, builder -> builder.set(sharpness, 10));
+        }
+
         this.getSlot(SmithingScreenHandler.OUTPUT_ID).setStackNoCallbacks(upgradedResult);
     }
 }

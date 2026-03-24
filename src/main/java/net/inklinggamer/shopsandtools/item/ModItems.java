@@ -82,7 +82,7 @@ public class ModItems {
     // ==========================================
     public static final Item CELESTIUM_SWORD = registerItem("celestium_sword", new Item(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_sword"))).sword(ModToolMaterials.CELESTIUM, 3.0F, -1.9F)));
 
-    public static final Item CELESTIUM_PICKAXE = registerItem("celestium_pickaxe", new Item(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_pickaxe"))).pickaxe(ModToolMaterials.CELESTIUM, 1.0F, -2.8F)));
+    public static final Item CELESTIUM_PICKAXE = registerItem("celestium_pickaxe", new CelestiumPickaxeItem(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_pickaxe"))).pickaxe(ModToolMaterials.CELESTIUM, 1.0F, -2.8F)));
 
     public static final Item CELESTIUM_SPEAR = registerItem("celestium_spear", new Item(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_spear"))).spear(ModToolMaterials.CELESTIUM, 1.05F, 1.075F, 0.5F, 3.0F, 7.5F, 6.5F, 5.1F, 10.0F, 4.6F)));
 

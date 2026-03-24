@@ -9,14 +9,18 @@
 		"LivingEntityMixin",
 		"PlayerEntityMixin",
 		"PowderSnowBlockMixin",
+		"ServerPlayerInteractionManagerMixin",
 		"ServerPlayNetworkHandlerMixin",
 		"SmithingScreenHandlerMixin",
 		"VibrationListenerMixin"
 	],
 	"client": [
 		"client.AnvilScreenMixin",
+		"client.ClientPlayerInteractionManagerAccessor",
+		"client.ClientPlayerInteractionManagerMixin",
 		"client.HandledScreenAccessor",
 		"client.InGameHudMixin",
+		"client.MinecraftClientMixin",
 		"client.RenderLayerInvoker",
 		"client.RenderPipelinesAccessor"
 	],

@@ -11,8 +11,11 @@ import net.inklinggamer.shopsandtools.network.ReturnToInventoryPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumRagePayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumWallClimbInputPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumThrustCooldownPayload;
+import net.inklinggamer.shopsandtools.network.ToggleCelestiumPickaxeAreaModePayload;
+import net.inklinggamer.shopsandtools.network.ToggleCelestiumPickaxeEnchantModePayload;
 import net.inklinggamer.shopsandtools.player.CelestiumBootsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumLeggingsManager;
+import net.inklinggamer.shopsandtools.player.CelestiumPickaxeManager;
 import net.inklinggamer.shopsandtools.player.CelestiumSwordManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,9 +35,12 @@ public class ShopsAndTools implements ModInitializer {
 		SyncCelestiumWallClimbInputPayload.register();
 		SyncCelestiumThrustCooldownPayload.register();
 		SyncCelestiumRagePayload.register();
+		ToggleCelestiumPickaxeAreaModePayload.register();
+		ToggleCelestiumPickaxeEnchantModePayload.register();
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			CelestiumBootsManager.tickServer(server);
 			CelestiumLeggingsManager.tickServer(server);
+			CelestiumPickaxeManager.tickServer(server);
 			CelestiumSwordManager.tickServer(server);
 			server.getPlayerManager().getPlayerList().forEach(player -> {
 				CelestiumBootsManager.tickPlayer(player);

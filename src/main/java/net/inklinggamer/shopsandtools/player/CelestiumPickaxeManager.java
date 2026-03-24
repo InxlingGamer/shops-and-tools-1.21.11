@@ -1,0 +1,143 @@
+package net.inklinggamer.shopsandtools.player;
+
+import net.inklinggamer.shopsandtools.item.CelestiumPickaxeHelper;
+import net.minecraft.item.ItemStack;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.network.ServerPlayerInteractionManager;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+public final class CelestiumPickaxeManager {
+    private static final double XP_REMAINDER_EPSILON = 1.0E-6D;
+    private static final double XP_BONUS_MULTIPLIER = 0.50D;
+    private static final ThreadLocal<Boolean> AREA_BREAK_IN_PROGRESS = ThreadLocal.withInitial(() -> false);
+
+    private static final Map<UUID, PlayerState> STATES = new HashMap<>();
+
+    private CelestiumPickaxeManager() {
+    }
+
+    public static void tickServer(MinecraftServer server) {
+        STATES.entrySet().removeIf(entry -> server.getPlayerManager().getPlayer(entry.getKey()) == null || entry.getValue().canDiscard());
+    }
+
+    public static int applyXpBonus(ServerPlayerEntity player, int baseExperience) {
+        if (baseExperience <= 0 || !isHoldingCelestiumPickaxe(player)) {
+            return baseExperience;
+        }
+
+        PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
+        double totalBonus = baseExperience * XP_BONUS_MULTIPLIER + state.xpBonusRemainder;
+        int bonusExperience = (int) Math.floor(totalBonus);
+        state.xpBonusRemainder = totalBonus - bonusExperience;
+        return baseExperience + bonusExperience;
+    }
+
+    public static boolean isHoldingCelestiumPickaxe(ServerPlayerEntity player) {
+        return CelestiumPickaxeHelper.isCelestiumPickaxe(player.getMainHandStack());
+    }
+
+    public static boolean isAreaMiningEnabled(ServerPlayerEntity player) {
+        return CelestiumPickaxeHelper.isAreaMiningEnabled(player.getMainHandStack());
+    }
+
+    public static HitResult getCurrentTarget(ServerPlayerEntity player) {
+        return player.raycast(player.getBlockInteractionRange(), 1.0F, false);
+    }
+
+    public static boolean canToggleAreaMining(ServerPlayerEntity player, HitResult hitResult) {
+        return CelestiumPickaxeHelper.canToggleAreaMining(
+                player,
+                player.getEntityWorld(),
+                hitResult,
+                player.interactionManager.getGameMode()
+        );
+    }
+
+    public static boolean isValidMiningTarget(ServerPlayerEntity player, BlockPos pos) {
+        return CelestiumPickaxeHelper.isValidMiningTarget(
+                player,
+                player.getEntityWorld(),
+                pos,
+                player.interactionManager.getGameMode()
+        );
+    }
+
+    public static boolean toggleAreaMining(ServerPlayerEntity player) {
+        return CelestiumPickaxeHelper.toggleAreaMining(player.getMainHandStack());
+    }
+
+    public static void beginMiningSelection(ServerPlayerEntity player, BlockPos pos, Direction face) {
+        if (!isHoldingCelestiumPickaxe(player) || !isValidMiningTarget(player, pos)) {
+            clearMiningSelection(player);
+            return;
+        }
+
+        PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
+        state.miningCenter = pos.toImmutable();
+        state.miningFace = face;
+    }
+
+    public static void clearMiningSelection(ServerPlayerEntity player) {
+        PlayerState state = STATES.get(player.getUuid());
+        if (state == null) {
+            return;
+        }
+
+        state.miningCenter = null;
+        state.miningFace = null;
+        if (state.canDiscard()) {
+            STATES.remove(player.getUuid());
+        }
+    }
+
+    public static void onBlockBroken(ServerPlayerEntity player, ServerPlayerInteractionManager interactionManager, BlockPos centerPos) {
+        if (AREA_BREAK_IN_PROGRESS.get()) {
+            return;
+        }
+
+        if (!isAreaMiningEnabled(player)) {
+            clearMiningSelection(player);
+            return;
+        }
+
+        PlayerState state = STATES.get(player.getUuid());
+        if (state == null || state.miningCenter == null || state.miningFace == null || !state.miningCenter.equals(centerPos)) {
+            return;
+        }
+
+        AREA_BREAK_IN_PROGRESS.set(true);
+        try {
+            for (BlockPos targetPos : CelestiumPickaxeHelper.getMiningPlane(centerPos, state.miningFace)) {
+                if (targetPos.equals(centerPos)) {
+                    continue;
+                }
+
+                interactionManager.tryBreakBlock(targetPos);
+            }
+        } finally {
+            AREA_BREAK_IN_PROGRESS.set(false);
+            clearMiningSelection(player);
+        }
+    }
+
+    public static boolean toggleEnchantMode(ItemStack stack, ServerPlayerEntity player) {
+        return CelestiumPickaxeHelper.toggleEnchantMode(stack, player.getRegistryManager());
+    }
+
+    private static final class PlayerState {
+        private double xpBonusRemainder;
+        private BlockPos miningCenter;
+        private Direction miningFace;
+
+        private boolean canDiscard() {
+            return this.miningCenter == null && this.miningFace == null && this.xpBonusRemainder <= XP_REMAINDER_EPSILON;
+        }
+    }
+}

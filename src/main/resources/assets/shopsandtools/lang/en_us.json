@@ -20,9 +20,17 @@
   "message.shopsandtools.celestium_xray_enabled": "§dCelestium Vision §aenabled",
   "message.shopsandtools.celestium_xray_disabled": "§dCelestium Vision §cdisabled",
   "message.shopsandtools.celestium_xray_requires_helmet": "§7Wear a §dCelestium Helmet §7to use §dCelestium Vision",
+  "message.shopsandtools.celestium_pickaxe_area_enabled": "§dCelestium Mining §aenabled",
+  "message.shopsandtools.celestium_pickaxe_area_disabled": "§dCelestium Mining §cdisabled",
+  "message.shopsandtools.celestium_pickaxe_mode_fortune": "§dCelestium Pickaxe §7set to §bFortune V",
+  "message.shopsandtools.celestium_pickaxe_mode_silk_touch": "§dCelestium Pickaxe §7set to §bSilk Touch",
   "container.shopsandtools.celestium_portable_crafting": "Crafting",
   "button.shopsandtools.celestium_portable_crafting": "3x3",
   "tooltip.shopsandtools.celestium_portable_crafting": "Open portable 3x3 crafting",
   "button.shopsandtools.celestium_return_to_inventory": "Back",
-  "tooltip.shopsandtools.celestium_return_to_inventory": "Return to inventory"
+  "tooltip.shopsandtools.celestium_return_to_inventory": "Return to inventory",
+  "tooltip.shopsandtools.celestium_pickaxe_mode_fortune": "Mode: Fortune V",
+  "tooltip.shopsandtools.celestium_pickaxe_mode_silk_touch": "Mode: Silk Touch",
+  "tooltip.shopsandtools.celestium_pickaxe_area_enabled": "3x3 Mining: ON",
+  "tooltip.shopsandtools.celestium_pickaxe_area_disabled": "3x3 Mining: OFF"
 }

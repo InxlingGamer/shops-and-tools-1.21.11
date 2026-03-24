@@ -23,7 +23,7 @@ import java.util.UUID;
 public final class CelestiumSwordManager {
     private static final double XP_REMAINDER_EPSILON = 1.0E-6D;
     private static final int MAX_RAGE_STACKS = 10;
-    private static final int RAGE_DURATION_TICKS = 600;
+    private static final int RAGE_DURATION_TICKS = 1200;
     private static final double XP_BONUS_MULTIPLIER = 0.20D;
     private static final float LIFESTEAL_RATIO = 0.10F;
     private static final double ATTACK_SPEED_PER_STACK = 0.05D;

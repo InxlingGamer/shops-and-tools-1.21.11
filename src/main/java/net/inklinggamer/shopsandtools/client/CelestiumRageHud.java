@@ -5,19 +5,24 @@ import net.inklinggamer.shopsandtools.item.ModItems;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.entity.JumpingMount;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.Arm;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 
 public final class CelestiumRageHud {
     private static final int MAX_RAGE_STACKS = 10;
-    private static final int BAR_WIDTH = 182;
+    private static final int DEFAULT_BAR_WIDTH = 74;
+    private static final int OFFHAND_BAR_WIDTH = 56;
     private static final int BAR_HEIGHT = 5;
-    private static final int HOTBAR_Y_OFFSET = 32;
-    private static final int BAR_GAP = 1;
-    private static final Identifier BACKGROUND_TEXTURE = Identifier.ofVanilla("hud/jump_bar_background");
+    private static final int HOTBAR_HALF_WIDTH = 91;
+    private static final int HOTBAR_HEIGHT = 22;
+    private static final int OFFHAND_SLOT_WIDTH = 29;
+    private static final int BAR_GAP = 4;
+    private static final int LEFT_SCREEN_MARGIN = 2;
+    private static final int VERTICAL_ALIGNMENT_OFFSET = 15;
+    private static final Identifier BACKGROUND_TEXTURE = Identifier.ofVanilla("boss_bar/red_background");
     private static final Identifier PROGRESS_TEXTURE = Identifier.ofVanilla("boss_bar/red_progress");
     private static final RenderPipeline RENDER_PIPELINE = RenderPipelines.GUI_TEXTURED;
 
@@ -41,27 +46,29 @@ public final class CelestiumRageHud {
             return;
         }
 
-        int x = drawContext.getScaledWindowWidth() / 2 - BAR_WIDTH / 2;
-        int y = drawContext.getScaledWindowHeight() - HOTBAR_Y_OFFSET;
-        if (player.getVehicle() instanceof JumpingMount) {
-            y -= BAR_HEIGHT + BAR_GAP;
+        int centerX = drawContext.getScaledWindowWidth() / 2;
+        int hotbarY = drawContext.getScaledWindowHeight() - HOTBAR_HEIGHT;
+        int barY = hotbarY + VERTICAL_ALIGNMENT_OFFSET;
+        int barWidth = DEFAULT_BAR_WIDTH;
+        int barX = centerX - HOTBAR_HALF_WIDTH - BAR_GAP - barWidth;
+
+        ItemStack offhandStack = player.getOffHandStack();
+        boolean leftOffhandVisible = !offhandStack.isEmpty() && player.getMainArm().getOpposite() == Arm.LEFT;
+        if (leftOffhandVisible) {
+            barWidth = OFFHAND_BAR_WIDTH;
+            int leftOffhandSlotX = centerX - HOTBAR_HALF_WIDTH - OFFHAND_SLOT_WIDTH;
+            barX = leftOffhandSlotX - BAR_GAP - barWidth;
         }
 
-        drawContext.drawGuiTexture(RENDER_PIPELINE, BACKGROUND_TEXTURE, x, y, BAR_WIDTH, BAR_HEIGHT);
+        barX = Math.max(LEFT_SCREEN_MARGIN, barX);
+        drawContext.drawGuiTexture(RENDER_PIPELINE, BACKGROUND_TEXTURE, barX, barY, barWidth, BAR_HEIGHT);
 
-        int progressWidth = MathHelper.clamp((int) ((rageStacks / (float) MAX_RAGE_STACKS) * BAR_WIDTH), 0, BAR_WIDTH);
+        int progressWidth = MathHelper.clamp((int) ((rageStacks / (float) MAX_RAGE_STACKS) * barWidth), 0, barWidth);
         if (progressWidth <= 0) {
             return;
         }
 
-        drawContext.drawGuiTexture(RENDER_PIPELINE, PROGRESS_TEXTURE, x, y, progressWidth, BAR_HEIGHT);
-        drawContext.drawCenteredTextWithShadow(
-                MinecraftClient.getInstance().textRenderer,
-                Text.literal(Integer.toString(rageStacks)),
-                x + BAR_WIDTH / 2,
-                y - 9,
-                0xFF5555
-        );
+        drawContext.drawGuiTexture(RENDER_PIPELINE, PROGRESS_TEXTURE, barX, barY, progressWidth, BAR_HEIGHT);
     }
 
     private static boolean isVisible(PlayerEntity player) {

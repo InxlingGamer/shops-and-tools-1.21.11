@@ -2,23 +2,28 @@ package net.inklinggamer.shopsandtools.player;
 
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.inklinggamer.shopsandtools.mixin.EntityInvoker;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.registry.tag.TagKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.World;
 import net.minecraft.world.event.GameEvent;
 
@@ -33,6 +38,8 @@ public final class CelestiumBootsManager {
     private static final double WALL_STRAFE_SPEED = 0.12D;
     private static final double WALL_STICK_SPEED = 0.08D;
     private static final double WALL_CONTACT_EPSILON = 1.0E-4D;
+    private static final TagKey<Block> FENCES_TAG = TagKey.of(RegistryKeys.BLOCK, Identifier.of("minecraft", "fences"));
+    private static final TagKey<Block> WALLS_TAG = TagKey.of(RegistryKeys.BLOCK, Identifier.of("minecraft", "walls"));
     private static final Direction[] HORIZONTAL_DIRECTIONS = {
             Direction.NORTH,
             Direction.SOUTH,
@@ -233,7 +240,11 @@ public final class CelestiumBootsManager {
 
     private static boolean hasValidClimbSurface(PlayerEntity player, Direction direction, boolean continuingWallClimb) {
         return hasClimbColumn(player, direction)
-                || continuingWallClimb && !player.isOnGround() && hasClimbColumnBelowFeet(player, direction);
+                || hasTallFenceOrWall(player, direction)
+                || continuingWallClimb && !player.isOnGround() && (
+                        hasClimbColumnBelowFeet(player, direction)
+                        || hasTallFenceOrWallBelowFeet(player, direction)
+                );
     }
 
     private static boolean hasClimbColumn(PlayerEntity player, Direction direction) {
@@ -250,8 +261,72 @@ public final class CelestiumBootsManager {
         return hasClimbColumn(world, playerBox, lowerY, direction);
     }
 
+    private static boolean hasTallFenceOrWall(PlayerEntity player, Direction direction) {
+        World world = player.getEntityWorld();
+        Box playerBox = player.getBoundingBox();
+        int lowerY = MathHelper.floor(playerBox.minY + WALL_CONTACT_EPSILON);
+        return hasTallFenceOrWall(world, playerBox, lowerY, direction);
+    }
+
+    private static boolean hasTallFenceOrWallBelowFeet(PlayerEntity player, Direction direction) {
+        World world = player.getEntityWorld();
+        Box playerBox = player.getBoundingBox();
+        int lowerY = MathHelper.floor(playerBox.minY + WALL_CONTACT_EPSILON) - 1;
+        return hasTallFenceOrWall(world, playerBox, lowerY, direction);
+    }
+
     private static boolean hasClimbColumn(World world, Box playerBox, int lowerY, Direction direction) {
         return hasWallSegment(world, playerBox, lowerY, direction) && hasWallSegment(world, playerBox, lowerY + 1, direction);
+    }
+
+    private static boolean hasTallFenceOrWall(World world, Box playerBox, int y, Direction direction) {
+        switch (direction) {
+            case WEST -> {
+                int x = MathHelper.floor(playerBox.minX - WALL_CONTACT_EPSILON);
+                int minZ = MathHelper.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
+                int maxZ = MathHelper.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
+                for (int z = minZ; z <= maxZ; z++) {
+                    if (isTallFenceOrWall(world, new BlockPos(x, y, z))) {
+                        return true;
+                    }
+                }
+            }
+            case EAST -> {
+                int x = MathHelper.floor(playerBox.maxX + WALL_CONTACT_EPSILON);
+                int minZ = MathHelper.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
+                int maxZ = MathHelper.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
+                for (int z = minZ; z <= maxZ; z++) {
+                    if (isTallFenceOrWall(world, new BlockPos(x, y, z))) {
+                        return true;
+                    }
+                }
+            }
+            case NORTH -> {
+                int z = MathHelper.floor(playerBox.minZ - WALL_CONTACT_EPSILON);
+                int minX = MathHelper.floor(playerBox.minX + WALL_CONTACT_EPSILON);
+                int maxX = MathHelper.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
+                for (int x = minX; x <= maxX; x++) {
+                    if (isTallFenceOrWall(world, new BlockPos(x, y, z))) {
+                        return true;
+                    }
+                }
+            }
+            case SOUTH -> {
+                int z = MathHelper.floor(playerBox.maxZ + WALL_CONTACT_EPSILON);
+                int minX = MathHelper.floor(playerBox.minX + WALL_CONTACT_EPSILON);
+                int maxX = MathHelper.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
+                for (int x = minX; x <= maxX; x++) {
+                    if (isTallFenceOrWall(world, new BlockPos(x, y, z))) {
+                        return true;
+                    }
+                }
+            }
+            default -> {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     private static boolean hasWallSegment(World world, Box playerBox, int y, Direction direction) {
@@ -310,6 +385,20 @@ public final class CelestiumBootsManager {
                 && !state.isIn(BlockTags.CLIMBABLE)
                 && state.blocksMovement()
                 && !state.getCollisionShape(world, pos).isEmpty();
+    }
+
+    private static boolean isTallFenceOrWall(World world, BlockPos pos) {
+        BlockState state = world.getBlockState(pos);
+        if (!state.isIn(FENCES_TAG) && !state.isIn(WALLS_TAG)) {
+            return false;
+        }
+
+        VoxelShape collisionShape = state.getCollisionShape(world, pos);
+        return !state.isAir()
+                && !state.isIn(BlockTags.CLIMBABLE)
+                && state.blocksMovement()
+                && !collisionShape.isEmpty()
+                && collisionShape.getMax(Direction.Axis.Y) > 1.0D + WALL_CONTACT_EPSILON;
     }
 
     private static void applyWallMovement(ServerPlayerEntity player, Direction wallDirection) {

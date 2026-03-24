@@ -2,6 +2,7 @@ package net.inklinggamer.shopsandtools.mixin;
 
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.inklinggamer.shopsandtools.player.CelestiumLeggingsManager;
+import net.inklinggamer.shopsandtools.player.CelestiumSwordManager;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
@@ -12,6 +13,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -26,6 +28,18 @@ public abstract class LivingEntityMixin {
     private void shopsandtools$applyCelestiumRetaliation(ServerWorld world, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValueZ()) {
             CelestiumLeggingsManager.onPlayerDamaged((LivingEntity) (Object) this, source);
+            shopsandtools$awardCelestiumSwordRage(source);
+        }
+    }
+
+    private void shopsandtools$awardCelestiumSwordRage(DamageSource source) {
+        Object self = this;
+        if (!(self instanceof net.minecraft.entity.mob.MobEntity mob) || mob.isAlive()) {
+            return;
+        }
+
+        if (source.getAttacker() instanceof ServerPlayerEntity player) {
+            CelestiumSwordManager.onSwordMobKilled(player);
         }
     }
 

@@ -15,9 +15,11 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class CelestiumSwordManager {
@@ -30,6 +32,7 @@ public final class CelestiumSwordManager {
     private static final Identifier RAGE_ATTACK_SPEED_MODIFIER_ID = Identifier.of(ShopsAndTools.MOD_ID, "celestium_sword_rage_attack_speed");
 
     private static final Map<UUID, PlayerState> STATES = new HashMap<>();
+    private static final Set<UUID> ACTIVE_ATTACKERS = new HashSet<>();
 
     private CelestiumSwordManager() {
     }
@@ -63,16 +66,30 @@ public final class CelestiumSwordManager {
         return player.getEquippedStack(EquipmentSlot.MAINHAND).isOf(ModItems.CELESTIUM_SWORD);
     }
 
-    public static void onDirectSwordDamage(ServerPlayerEntity player, float damageDealt, boolean killedMob) {
+    public static void beginSwordAttack(ServerPlayerEntity player) {
+        if (isCelestiumSwordEquipped(player)) {
+            ACTIVE_ATTACKERS.add(player.getUuid());
+        }
+    }
+
+    public static void endSwordAttack(ServerPlayerEntity player) {
+        ACTIVE_ATTACKERS.remove(player.getUuid());
+    }
+
+    public static void onDirectSwordDamage(ServerPlayerEntity player, float damageDealt) {
         if (!isCelestiumSwordEquipped(player) || damageDealt <= 0.0F) {
             return;
         }
 
         player.heal(damageDealt * LIFESTEAL_RATIO);
+    }
 
-        if (killedMob) {
-            addRageStack(player);
+    public static void onSwordMobKilled(ServerPlayerEntity player) {
+        if (!ACTIVE_ATTACKERS.contains(player.getUuid()) || !isCelestiumSwordEquipped(player)) {
+            return;
         }
+
+        addRageStack(player);
     }
 
     public static int applyXpBonus(ServerPlayerEntity player, int baseExperience) {

@@ -5,7 +5,6 @@ import net.inklinggamer.shopsandtools.player.CelestiumLeggingsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumSwordManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.player.PlayerAbilities;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -52,10 +51,13 @@ public abstract class PlayerEntityMixin {
     @Inject(method = "attack", at = @At("HEAD"))
     private void shopsandtools$captureCelestiumSwordTarget(Entity target, CallbackInfo ci) {
         PlayerEntity player = (PlayerEntity) (Object) this;
-        if (player.getEntityWorld().isClient()
-                || !(player instanceof ServerPlayerEntity)
-                || !CelestiumSwordManager.isCelestiumSwordEquipped(player)
-                || !(target instanceof LivingEntity livingTarget)) {
+        if (player.getEntityWorld().isClient() || !(player instanceof ServerPlayerEntity serverPlayer)) {
+            this.shopsandtools$celestiumSwordTarget = null;
+            return;
+        }
+
+        CelestiumSwordManager.beginSwordAttack(serverPlayer);
+        if (!CelestiumSwordManager.isCelestiumSwordEquipped(player) || !(target instanceof LivingEntity livingTarget)) {
             this.shopsandtools$celestiumSwordTarget = null;
             return;
         }
@@ -67,8 +69,15 @@ public abstract class PlayerEntityMixin {
     @Inject(method = "attack", at = @At("RETURN"))
     private void shopsandtools$applyCelestiumSwordEffects(Entity target, CallbackInfo ci) {
         PlayerEntity player = (PlayerEntity) (Object) this;
-        if (this.shopsandtools$celestiumSwordTarget == null || !(player instanceof ServerPlayerEntity serverPlayer)) {
+        if (!(player instanceof ServerPlayerEntity serverPlayer)) {
             this.shopsandtools$celestiumSwordTarget = null;
+            this.shopsandtools$celestiumSwordInitialCombinedHealth = 0.0F;
+            return;
+        }
+
+        CelestiumSwordManager.endSwordAttack(serverPlayer);
+        if (this.shopsandtools$celestiumSwordTarget == null) {
+            this.shopsandtools$celestiumSwordInitialCombinedHealth = 0.0F;
             return;
         }
 
@@ -76,14 +85,12 @@ public abstract class PlayerEntityMixin {
         float initialCombinedHealth = this.shopsandtools$celestiumSwordInitialCombinedHealth;
         float remainingCombinedHealth = Math.max(0.0F, livingTarget.getHealth() + livingTarget.getAbsorptionAmount());
         float dealtDamage = Math.max(0.0F, initialCombinedHealth - remainingCombinedHealth);
-        boolean killedMob = livingTarget instanceof MobEntity
-                && (remainingCombinedHealth <= 0.0F || dealtDamage + 1.0E-3F >= initialCombinedHealth || !livingTarget.isAlive());
 
         this.shopsandtools$celestiumSwordTarget = null;
         this.shopsandtools$celestiumSwordInitialCombinedHealth = 0.0F;
 
         if (dealtDamage > 0.0F) {
-            CelestiumSwordManager.onDirectSwordDamage(serverPlayer, dealtDamage, killedMob);
+            CelestiumSwordManager.onDirectSwordDamage(serverPlayer, dealtDamage);
         }
     }
 }

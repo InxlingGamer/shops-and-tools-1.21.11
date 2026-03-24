@@ -16,6 +16,7 @@ public final class CelestiumBootsClient {
     private static boolean hasObservedState;
     private static boolean observedSneakKeyHeld;
     private static boolean observedForwardKeyHeld;
+    private static boolean observedBackwardKeyHeld;
     private static boolean observedLeftKeyHeld;
     private static boolean observedRightKeyHeld;
     private static boolean observedBootsEquipped;
@@ -41,18 +42,21 @@ public final class CelestiumBootsClient {
 
         boolean sneakKeyHeld = client.options.sneakKey.isPressed();
         boolean forwardKeyHeld = client.options.forwardKey.isPressed();
+        boolean backwardKeyHeld = client.options.backKey.isPressed();
         boolean leftKeyHeld = client.options.leftKey.isPressed();
         boolean rightKeyHeld = client.options.rightKey.isPressed();
         boolean bootsEquipped = CelestiumBootsManager.isCelestiumBootsEquipped(client.player);
         if (!hasObservedState
                 || sneakKeyHeld != observedSneakKeyHeld
                 || forwardKeyHeld != observedForwardKeyHeld
+                || backwardKeyHeld != observedBackwardKeyHeld
                 || leftKeyHeld != observedLeftKeyHeld
                 || rightKeyHeld != observedRightKeyHeld
                 || bootsEquipped != observedBootsEquipped) {
             hasObservedState = true;
             observedSneakKeyHeld = sneakKeyHeld;
             observedForwardKeyHeld = forwardKeyHeld;
+            observedBackwardKeyHeld = backwardKeyHeld;
             observedLeftKeyHeld = leftKeyHeld;
             observedRightKeyHeld = rightKeyHeld;
             observedBootsEquipped = bootsEquipped;
@@ -60,11 +64,11 @@ public final class CelestiumBootsClient {
         }
 
         if (pendingSync && ClientPlayNetworking.canSend(SyncCelestiumWallClimbInputPayload.ID)) {
-            SyncCelestiumWallClimbInputPayload.send(sneakKeyHeld, forwardKeyHeld, leftKeyHeld, rightKeyHeld);
+            SyncCelestiumWallClimbInputPayload.send(sneakKeyHeld, forwardKeyHeld, backwardKeyHeld, leftKeyHeld, rightKeyHeld);
             pendingSync = false;
         }
 
-        tickWallClimbSound(client, bootsEquipped, sneakKeyHeld, forwardKeyHeld, leftKeyHeld, rightKeyHeld);
+        tickWallClimbSound(client, bootsEquipped, sneakKeyHeld, forwardKeyHeld, backwardKeyHeld, leftKeyHeld, rightKeyHeld);
     }
 
     private static void tickWallClimbSound(
@@ -72,12 +76,13 @@ public final class CelestiumBootsClient {
             boolean bootsEquipped,
             boolean sneakKeyHeld,
             boolean forwardKeyHeld,
+            boolean backwardKeyHeld,
             boolean leftKeyHeld,
             boolean rightKeyHeld
     ) {
         if (!bootsEquipped
                 || !sneakKeyHeld
-                || !CelestiumBootsManager.hasWallClimbMovementInput(forwardKeyHeld, leftKeyHeld, rightKeyHeld)
+                || !CelestiumBootsManager.hasWallClimbMovementInput(forwardKeyHeld, backwardKeyHeld, leftKeyHeld, rightKeyHeld)
                 || !(client.player.isClimbing() || CelestiumBootsManager.shouldWallClimb(client.player))) {
             resetWallClimbSoundState();
             return;
@@ -118,9 +123,9 @@ public final class CelestiumBootsClient {
 
     private static void clearServerWallClimbInput() {
         if (hasObservedState
-                && (observedSneakKeyHeld || observedForwardKeyHeld || observedLeftKeyHeld || observedRightKeyHeld)
+                && (observedSneakKeyHeld || observedForwardKeyHeld || observedBackwardKeyHeld || observedLeftKeyHeld || observedRightKeyHeld)
                 && ClientPlayNetworking.canSend(SyncCelestiumWallClimbInputPayload.ID)) {
-            SyncCelestiumWallClimbInputPayload.send(false, false, false, false);
+            SyncCelestiumWallClimbInputPayload.send(false, false, false, false, false);
         }
     }
 
@@ -128,6 +133,7 @@ public final class CelestiumBootsClient {
         hasObservedState = false;
         observedSneakKeyHeld = false;
         observedForwardKeyHeld = false;
+        observedBackwardKeyHeld = false;
         observedLeftKeyHeld = false;
         observedRightKeyHeld = false;
         observedBootsEquipped = false;

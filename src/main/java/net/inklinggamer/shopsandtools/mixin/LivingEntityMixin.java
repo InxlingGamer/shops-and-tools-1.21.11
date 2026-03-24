@@ -1,6 +1,7 @@
 package net.inklinggamer.shopsandtools.mixin;
 
 import net.inklinggamer.shopsandtools.item.ModItems;
+import net.inklinggamer.shopsandtools.player.CelestiumBootsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumLeggingsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumSwordManager;
 import net.minecraft.enchantment.Enchantment;
@@ -60,6 +61,16 @@ public abstract class LivingEntityMixin {
         RegistryEntry<Enchantment> featherFalling = enchantmentRegistry.getEntry(featherFallingValue);
         if (EnchantmentHelper.getLevel(featherFalling, boots) >= CELESTIUM_FEATHER_FALLING_IMMUNITY_LEVEL) {
             cir.setReturnValue(0);
+        }
+    }
+
+    @Inject(method = "isHoldingOntoLadder", at = @At("RETURN"), cancellable = true)
+    private void shopsandtools$allowCelestiumWallClimbDescent(CallbackInfoReturnable<Boolean> cir) {
+        Object self = this;
+        if (cir.getReturnValueZ()
+                && self instanceof PlayerEntity player
+                && CelestiumBootsManager.shouldWallClimb(player)) {
+            cir.setReturnValue(false);
         }
     }
 }

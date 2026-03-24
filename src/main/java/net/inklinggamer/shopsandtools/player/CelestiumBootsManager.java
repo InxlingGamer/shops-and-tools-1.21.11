@@ -74,10 +74,11 @@ public final class CelestiumBootsManager {
         return player.getEquippedStack(EquipmentSlot.FEET).isOf(ModItems.CELESTIUM_BOOTS);
     }
 
-    public static void setWallClimbInput(ServerPlayerEntity player, boolean sneakHeld, boolean forwardHeld, boolean leftHeld, boolean rightHeld) {
+    public static void setWallClimbInput(ServerPlayerEntity player, boolean sneakHeld, boolean forwardHeld, boolean backwardHeld, boolean leftHeld, boolean rightHeld) {
         PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
         state.sneakKeyHeld = sneakHeld;
         state.forwardKeyHeld = forwardHeld;
+        state.backwardKeyHeld = backwardHeld;
         state.leftKeyHeld = leftHeld;
         state.rightKeyHeld = rightHeld;
 
@@ -98,7 +99,7 @@ public final class CelestiumBootsManager {
                 preferredDirection = state.wallDirection;
             }
         } else {
-            continuingWallClimb = isSneakKeyHeld(player);
+            continuingWallClimb = isSneakKeyHeld(player) && !player.isOnGround();
         }
 
         return resolveWallClimbDirection(player, preferredDirection, continuingWallClimb) != null;
@@ -116,8 +117,8 @@ public final class CelestiumBootsManager {
         return isMovingOnWall(player);
     }
 
-    public static boolean hasWallClimbMovementInput(boolean forwardHeld, boolean leftHeld, boolean rightHeld) {
-        return forwardHeld || getSidewaysInput(leftHeld, rightHeld) != 0;
+    public static boolean hasWallClimbMovementInput(boolean forwardHeld, boolean backwardHeld, boolean leftHeld, boolean rightHeld) {
+        return getVerticalWallInput(forwardHeld, backwardHeld) != 0 || getSidewaysInput(leftHeld, rightHeld) != 0;
     }
 
     private static Direction resolveWallDirection(PlayerEntity player, Direction preferredDirection, boolean continuingWallClimb) {
@@ -134,27 +135,15 @@ public final class CelestiumBootsManager {
             return null;
         }
 
-        if (preferredDirection != null) {
-            if (hasClimbColumn(player, preferredDirection) || continuingWallClimb && hasWallContact(player, preferredDirection)) {
-                return preferredDirection;
-            }
+        if (!continuingWallClimb && !isForwardKeyHeld(player)) {
+            return null;
         }
 
-        for (Direction direction : HORIZONTAL_DIRECTIONS) {
-            if (hasClimbColumn(player, direction)) {
-                return direction;
-            }
+        if (preferredDirection != null && hasValidClimbSurface(player, preferredDirection, continuingWallClimb)) {
+            return preferredDirection;
         }
 
-        if (continuingWallClimb) {
-            for (Direction direction : HORIZONTAL_DIRECTIONS) {
-                if (hasWallContact(player, direction)) {
-                    return direction;
-                }
-            }
-        }
-
-        return null;
+        return findBestWallDirection(player, continuingWallClimb);
     }
 
     public static boolean shouldMuffleMovementVibrations(Entity entity, RegistryEntry<GameEvent> event) {
@@ -183,6 +172,15 @@ public final class CelestiumBootsManager {
         return player.forwardSpeed > 0.0F;
     }
 
+    private static boolean isBackwardKeyHeld(PlayerEntity player) {
+        if (player instanceof ServerPlayerEntity serverPlayer) {
+            PlayerState state = STATES.get(serverPlayer.getUuid());
+            return state != null && state.backwardKeyHeld;
+        }
+
+        return player.forwardSpeed < 0.0F;
+    }
+
     private static int getSidewaysInput(PlayerEntity player) {
         if (player instanceof ServerPlayerEntity serverPlayer) {
             PlayerState state = STATES.get(serverPlayer.getUuid());
@@ -200,29 +198,60 @@ public final class CelestiumBootsManager {
         return (rightHeld ? 1 : 0) - (leftHeld ? 1 : 0);
     }
 
+    private static int getVerticalWallInput(PlayerEntity player) {
+        return getVerticalWallInput(isForwardKeyHeld(player), isBackwardKeyHeld(player));
+    }
+
+    private static int getVerticalWallInput(boolean forwardHeld, boolean backwardHeld) {
+        return (forwardHeld ? 1 : 0) - (backwardHeld ? 1 : 0);
+    }
+
     private static boolean isMovingOnWall(PlayerEntity player) {
-        return isForwardKeyHeld(player) || getSidewaysInput(player) != 0;
+        return getVerticalWallInput(player) != 0 || getSidewaysInput(player) != 0;
+    }
+
+    private static Direction findBestWallDirection(PlayerEntity player, boolean continuingWallClimb) {
+        Direction bestDirection = null;
+        double bestScore = Double.NEGATIVE_INFINITY;
+        Vec3d horizontalLook = getHorizontalClimbLookVector(player);
+
+        for (Direction direction : HORIZONTAL_DIRECTIONS) {
+            if (!hasValidClimbSurface(player, direction, continuingWallClimb)) {
+                continue;
+            }
+
+            Vec3d wallNormal = new Vec3d(direction.getOffsetX(), 0.0D, direction.getOffsetZ());
+            double score = horizontalLook.dotProduct(wallNormal);
+            if (score > bestScore) {
+                bestScore = score;
+                bestDirection = direction;
+            }
+        }
+
+        return bestDirection;
+    }
+
+    private static boolean hasValidClimbSurface(PlayerEntity player, Direction direction, boolean continuingWallClimb) {
+        return hasClimbColumn(player, direction)
+                || continuingWallClimb && !player.isOnGround() && hasClimbColumnBelowFeet(player, direction);
     }
 
     private static boolean hasClimbColumn(PlayerEntity player, Direction direction) {
         World world = player.getEntityWorld();
         Box playerBox = player.getBoundingBox();
         int lowerY = MathHelper.floor(playerBox.minY + WALL_CONTACT_EPSILON);
-        return hasWallSegment(world, playerBox, lowerY, direction) && hasWallSegment(world, playerBox, lowerY + 1, direction);
+        return hasClimbColumn(world, playerBox, lowerY, direction);
     }
 
-    private static boolean hasWallContact(PlayerEntity player, Direction direction) {
-        Box playerBox = player.getBoundingBox();
-        int minY = MathHelper.floor(playerBox.minY + WALL_CONTACT_EPSILON);
-        int maxY = MathHelper.floor(playerBox.maxY - WALL_CONTACT_EPSILON);
+    private static boolean hasClimbColumnBelowFeet(PlayerEntity player, Direction direction) {
         World world = player.getEntityWorld();
-        for (int y = minY; y <= maxY; y++) {
-            if (hasWallSegment(world, playerBox, y, direction)) {
-                return true;
-            }
-        }
+        Box playerBox = player.getBoundingBox();
+        int lowerY = MathHelper.floor(playerBox.minY + WALL_CONTACT_EPSILON) - 1;
+        return hasClimbColumn(world, playerBox, lowerY, direction);
+    }
 
-        return false;
+    private static boolean hasClimbColumn(World world, Box playerBox, int lowerY, Direction direction) {
+        return hasWallSegment(world, playerBox, lowerY, direction) && hasWallSegment(world, playerBox, lowerY + 1, direction);
     }
 
     private static boolean hasWallSegment(World world, Box playerBox, int y, Direction direction) {
@@ -285,7 +314,7 @@ public final class CelestiumBootsManager {
 
     private static void applyWallMovement(ServerPlayerEntity player, Direction wallDirection) {
         Vec3d wallNormal = new Vec3d(wallDirection.getOffsetX(), 0.0D, wallDirection.getOffsetZ());
-        double verticalSpeed = isForwardKeyHeld(player) ? WALL_CLIMB_SPEED : 0.0D;
+        double verticalSpeed = getVerticalWallInput(player) * WALL_CLIMB_SPEED;
         Vec3d strafeVelocity = getWallStrafeVelocity(player, wallNormal);
         Vec3d adjustedVelocity = strafeVelocity.add(wallNormal.multiply(WALL_STICK_SPEED)).add(0.0D, verticalSpeed, 0.0D);
         player.setVelocity(adjustedVelocity);
@@ -378,6 +407,17 @@ public final class CelestiumBootsManager {
         return new Vec3d(-Math.cos(yawRadians), 0.0D, -Math.sin(yawRadians));
     }
 
+    private static Vec3d getHorizontalClimbLookVector(PlayerEntity player) {
+        Vec3d look = player.getRotationVector();
+        Vec3d horizontalLook = new Vec3d(look.x, 0.0D, look.z);
+        if (horizontalLook.lengthSquared() > 1.0E-6D) {
+            return horizontalLook.normalize();
+        }
+
+        double yawRadians = Math.toRadians(player.getYaw());
+        return new Vec3d(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
+    }
+
     private static BlockPos findWallSegment(World world, Box playerBox, int y, Direction direction) {
         switch (direction) {
             case WEST -> {
@@ -435,6 +475,7 @@ public final class CelestiumBootsManager {
     private static final class PlayerState {
         private boolean sneakKeyHeld;
         private boolean forwardKeyHeld;
+        private boolean backwardKeyHeld;
         private boolean leftKeyHeld;
         private boolean rightKeyHeld;
         private boolean wallClimbing;

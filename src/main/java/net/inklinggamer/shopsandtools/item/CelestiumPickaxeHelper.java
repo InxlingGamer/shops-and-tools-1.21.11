@@ -1,6 +1,11 @@
 package net.inklinggamer.shopsandtools.item;
 
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.ButtonBlock;
+import net.minecraft.block.ComparatorBlock;
+import net.minecraft.block.LeverBlock;
+import net.minecraft.block.RepeaterBlock;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
 import net.minecraft.enchantment.Enchantment;
@@ -82,6 +87,14 @@ public final class CelestiumPickaxeHelper {
             return false;
         }
 
+        if (hitResult != null && hitResult.getType() == HitResult.Type.ENTITY) {
+            return false;
+        }
+
+        if (isInteractiveBlockTarget(player, world, hitResult)) {
+            return false;
+        }
+
         ItemStack offhandStack = player.getOffHandStack();
         if (offhandStack.isEmpty()) {
             return true;
@@ -149,6 +162,28 @@ public final class CelestiumPickaxeHelper {
         }
 
         return placementContext.canPlace();
+    }
+
+    private static boolean isInteractiveBlockTarget(PlayerEntity player, World world, HitResult hitResult) {
+        if (!(hitResult instanceof BlockHitResult blockHitResult) || hitResult.getType() != HitResult.Type.BLOCK) {
+            return false;
+        }
+
+        BlockPos pos = blockHitResult.getBlockPos();
+        if (!player.canInteractWithBlockAt(pos, 1.0D)) {
+            return false;
+        }
+
+        BlockState state = world.getBlockState(pos);
+        if (state.isAir() || state.createScreenHandlerFactory(world, pos) != null) {
+            return !state.isAir();
+        }
+
+        Block block = state.getBlock();
+        return block instanceof ButtonBlock
+                || block instanceof LeverBlock
+                || block instanceof RepeaterBlock
+                || block instanceof ComparatorBlock;
     }
 
     private static void applyEnchantMode(ItemStack stack, DynamicRegistryManager registryManager, boolean silkModeEnabled) {

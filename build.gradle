@@ -108,10 +108,19 @@ tasks.register("runCelestiumShovelTests", JavaExec) {
 	dependsOn(tasks.named("testClasses"))
 }
 
+tasks.register("runCelestiumHorseArmorTests", JavaExec) {
+	group = "verification"
+	description = "Runs the self-contained Celestium horse armor tests."
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "net.inklinggamer.shopsandtools.player.CelestiumHorseArmorManagerTest"
+	dependsOn(tasks.named("testClasses"))
+}
+
 tasks.named("test") {
 	dependsOn(tasks.named("runXpBonusTests"))
 	dependsOn(tasks.named("runCelestiumHoeTests"))
 	dependsOn(tasks.named("runCelestiumShovelTests"))
+	dependsOn(tasks.named("runCelestiumHorseArmorTests"))
 	failOnNoDiscoveredTests = false
 }
 

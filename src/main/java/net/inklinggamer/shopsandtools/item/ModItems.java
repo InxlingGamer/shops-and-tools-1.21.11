@@ -74,7 +74,7 @@ public class ModItems {
 
     public static final Item CELESTIUM_BOOTS = registerItem("celestium_boots", new CelestiumBootsItem(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_boots"))).armor(ModArmorMaterials.CELESTIUM, EquipmentType.BOOTS)));
 
-    public static final Item CELESTIUM_HORSE_ARMOR = registerItem("celestium_horse_armor", new Item(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_horse_armor"))).horseArmor(ModArmorMaterials.CELESTIUM)));
+    public static final Item CELESTIUM_HORSE_ARMOR = registerItem("celestium_horse_armor", new CelestiumHorseArmorItem(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_horse_armor"))).horseArmor(ModArmorMaterials.CELESTIUM)));
 
 
     // ==========================================

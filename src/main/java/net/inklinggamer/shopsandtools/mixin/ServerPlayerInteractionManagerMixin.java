@@ -4,10 +4,12 @@ import net.inklinggamer.shopsandtools.player.CelestiumAxeManager;
 import net.inklinggamer.shopsandtools.player.CelestiumPickaxeManager;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
+import net.minecraft.world.BlockView;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import org.spongepowered.asm.mixin.Final;
@@ -15,6 +17,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -40,6 +43,30 @@ public abstract class ServerPlayerInteractionManagerMixin {
         if (action == PlayerActionC2SPacket.Action.ABORT_DESTROY_BLOCK) {
             CelestiumPickaxeManager.clearMiningSelection(this.player);
         }
+    }
+
+    @Redirect(
+            method = "processBlockBreakingAction",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/block/BlockState;calcBlockBreakingDelta(Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/world/BlockView;Lnet/minecraft/util/math/BlockPos;)F"
+            )
+    )
+    private float shopsandtools$useSlowestAreaMiningDelta(BlockState state, PlayerEntity player, BlockView world, BlockPos pos) {
+        float vanillaDelta = state.calcBlockBreakingDelta(player, world, pos);
+        return CelestiumPickaxeManager.getAreaMiningDelta(this.player, pos, vanillaDelta);
+    }
+
+    @Redirect(
+            method = "continueMining",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/block/BlockState;calcBlockBreakingDelta(Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/world/BlockView;Lnet/minecraft/util/math/BlockPos;)F"
+            )
+    )
+    private float shopsandtools$useSlowestAreaMiningDeltaWhileContinuing(BlockState state, PlayerEntity player, BlockView world, BlockPos pos) {
+        float vanillaDelta = state.calcBlockBreakingDelta(player, world, pos);
+        return CelestiumPickaxeManager.getAreaMiningDelta(this.player, pos, vanillaDelta);
     }
 
     @Inject(method = "tryBreakBlock", at = @At("HEAD"))

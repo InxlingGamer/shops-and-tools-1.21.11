@@ -11,6 +11,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -106,7 +107,7 @@ public final class CelestiumPickaxeManager {
 
         AREA_BREAK_IN_PROGRESS.set(true);
         try {
-            for (BlockPos targetPos : CelestiumPickaxeHelper.getMiningPlane(centerPos, state.miningFace)) {
+            for (BlockPos targetPos : getAreaMiningTargets(player, centerPos)) {
                 if (targetPos.equals(centerPos)) {
                     continue;
                 }
@@ -121,6 +122,50 @@ public final class CelestiumPickaxeManager {
 
     public static boolean toggleEnchantMode(ItemStack stack, ServerPlayerEntity player) {
         return CelestiumPickaxeHelper.toggleEnchantMode(stack, player.getRegistryManager());
+    }
+
+    public static float getAreaMiningDelta(ServerPlayerEntity player, BlockPos centerPos, float fallbackDelta) {
+        PlayerState state = getActiveMiningState(player, centerPos);
+        if (state == null) {
+            return fallbackDelta;
+        }
+
+        float areaMiningDelta = CelestiumPickaxeHelper.getAreaMiningTargets(
+                player,
+                player.getEntityWorld(),
+                centerPos,
+                state.miningFace,
+                player.interactionManager.getGameMode()
+        ).effectiveBreakingDelta();
+        return areaMiningDelta > 0.0F ? areaMiningDelta : fallbackDelta;
+    }
+
+    public static List<BlockPos> getAreaMiningTargets(ServerPlayerEntity player, BlockPos centerPos) {
+        PlayerState state = getActiveMiningState(player, centerPos);
+        if (state == null) {
+            return List.of();
+        }
+
+        return CelestiumPickaxeHelper.getAreaMiningTargets(
+                player,
+                player.getEntityWorld(),
+                centerPos,
+                state.miningFace,
+                player.interactionManager.getGameMode()
+        ).positions();
+    }
+
+    private static PlayerState getActiveMiningState(ServerPlayerEntity player, BlockPos centerPos) {
+        if (!isAreaMiningEnabled(player)) {
+            return null;
+        }
+
+        PlayerState state = STATES.get(player.getUuid());
+        if (state == null || state.miningCenter == null || state.miningFace == null || !state.miningCenter.equals(centerPos)) {
+            return null;
+        }
+
+        return state;
     }
 
     private static final class PlayerState {

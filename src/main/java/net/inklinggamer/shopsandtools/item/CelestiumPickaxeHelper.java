@@ -116,19 +116,45 @@ public final class CelestiumPickaxeHelper {
     }
 
     public static boolean isValidMiningTarget(PlayerEntity player, World world, BlockPos pos, GameMode gameMode) {
+        return getMiningDelta(player, world, pos, gameMode) > 0.0F;
+    }
+
+    public static AreaMiningTargets getAreaMiningTargets(PlayerEntity player, World world, BlockPos center, Direction face, GameMode gameMode) {
+        List<BlockPos> positions = new ArrayList<>(9);
+        float effectiveBreakingDelta = Float.MAX_VALUE;
+
+        for (BlockPos pos : getMiningPlane(center, face)) {
+            float miningDelta = getMiningDelta(player, world, pos, gameMode);
+            if (miningDelta <= 0.0F) {
+                continue;
+            }
+
+            positions.add(pos.toImmutable());
+            effectiveBreakingDelta = Math.min(effectiveBreakingDelta, miningDelta);
+        }
+
+        return new AreaMiningTargets(
+                positions,
+                effectiveBreakingDelta == Float.MAX_VALUE ? 0.0F : effectiveBreakingDelta
+        );
+    }
+
+    public static float getMiningDelta(PlayerEntity player, World world, BlockPos pos, GameMode gameMode) {
         if (!player.canInteractWithBlockAt(pos, 1.0D) || player.isBlockBreakingRestricted(world, pos, gameMode)) {
-            return false;
+            return 0.0F;
         }
 
         BlockState state = world.getBlockState(pos);
         if (state.isAir() || state.getHardness(world, pos) < 0.0F) {
-            return false;
+            return 0.0F;
         }
 
         ItemStack tool = player.getMainHandStack();
-        return !tool.isEmpty()
-                && tool.canMine(state, world, pos, player)
-                && state.calcBlockBreakingDelta(player, world, pos) > 0.0F;
+        if (tool.isEmpty() || !tool.canMine(state, world, pos, player)) {
+            return 0.0F;
+        }
+
+        return state.calcBlockBreakingDelta(player, world, pos);
     }
 
     public static List<BlockPos> getMiningPlane(BlockPos center, Direction face) {
@@ -230,5 +256,8 @@ public final class CelestiumPickaxeHelper {
                 nbt.remove(key);
             }
         });
+    }
+
+    public record AreaMiningTargets(List<BlockPos> positions, float effectiveBreakingDelta) {
     }
 }

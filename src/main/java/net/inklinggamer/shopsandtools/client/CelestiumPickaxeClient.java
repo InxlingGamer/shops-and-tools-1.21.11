@@ -13,6 +13,7 @@ import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.client.input.KeyInput;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
+import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.screen.slot.Slot;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -92,6 +93,34 @@ public final class CelestiumPickaxeClient {
         breakingFace = null;
     }
 
+    public static float getAreaMiningDelta(MinecraftClient client, BlockPos pos, float fallbackDelta) {
+        if (breakingFace == null || breakingCenter == null || !breakingCenter.equals(pos)) {
+            return fallbackDelta;
+        }
+
+        float areaMiningDelta = shopsandtools$getAreaMiningTargets(client, pos, breakingFace).effectiveBreakingDelta();
+        return areaMiningDelta > 0.0F ? areaMiningDelta : fallbackDelta;
+    }
+
+    public static boolean shouldDeferBreakPrediction(MinecraftClient client, BlockPos pos) {
+        return shopsandtools$canUseAreaMining(client)
+                && breakingCenter != null
+                && breakingCenter.equals(pos);
+    }
+
+    public static void playDeferredBreakSound(MinecraftClient client, BlockPos pos) {
+        if (client.player == null || client.world == null) {
+            return;
+        }
+
+        BlockSoundGroup soundGroup = client.world.getBlockState(pos).getSoundGroup();
+        if (soundGroup == null || soundGroup.getVolume() <= 0.0F) {
+            return;
+        }
+
+        client.player.playSound(soundGroup.getBreakSound(), soundGroup.getVolume(), soundGroup.getPitch());
+    }
+
     private static void registerInventoryToggleInput(MinecraftClient client, Screen screen, int scaledWidth, int scaledHeight) {
         if (!(screen instanceof InventoryScreen inventoryScreen)) {
             return;
@@ -133,7 +162,7 @@ public final class CelestiumPickaxeClient {
             return;
         }
 
-        outlinePositions.addAll(CelestiumPickaxeHelper.getMiningPlane(hitResult.getBlockPos(), hitResult.getSide()));
+        outlinePositions.addAll(shopsandtools$getAreaMiningTargets(client, hitResult.getBlockPos(), hitResult.getSide()).positions());
     }
 
     private static void updateBreakingAnimation(MinecraftClient client) {
@@ -174,9 +203,8 @@ public final class CelestiumPickaxeClient {
         }
 
         int currentStage = Math.max(-1, Math.min(9, (int) (accessor.shopsandtools$getCurrentBreakingProgress() * 10.0F) - 1));
-        List<BlockPos> targets = CelestiumPickaxeHelper.getMiningPlane(currentBreakingPos, breakingFace).stream()
+        List<BlockPos> targets = shopsandtools$getAreaMiningTargets(client, currentBreakingPos, breakingFace).positions().stream()
                 .filter(pos -> !pos.equals(currentBreakingPos))
-                .filter(pos -> !client.world.getBlockState(pos).isAir())
                 .toList();
 
         if (currentStage == lastBreakingStage && breakingAnimationPositions.equals(targets)) {
@@ -211,6 +239,20 @@ public final class CelestiumPickaxeClient {
         return client.player != null
                 && CelestiumPickaxeHelper.isCelestiumPickaxe(client.player.getMainHandStack())
                 && CelestiumPickaxeHelper.isAreaMiningEnabled(client.player.getMainHandStack());
+    }
+
+    private static CelestiumPickaxeHelper.AreaMiningTargets shopsandtools$getAreaMiningTargets(MinecraftClient client, BlockPos centerPos, Direction face) {
+        if (!shopsandtools$canUseAreaMining(client) || client.player == null || client.world == null || client.interactionManager == null) {
+            return new CelestiumPickaxeHelper.AreaMiningTargets(List.of(), 0.0F);
+        }
+
+        return CelestiumPickaxeHelper.getAreaMiningTargets(
+                client.player,
+                client.world,
+                centerPos,
+                face,
+                client.interactionManager.getCurrentGameMode()
+        );
     }
 
     private static boolean shopsandtools$isShiftKey(int keyCode) {

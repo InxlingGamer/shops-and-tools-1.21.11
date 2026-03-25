@@ -79,7 +79,9 @@ public final class CelestiumRageHud {
     }
 
     private static boolean isVisible(PlayerEntity player) {
-        return player != null && rageStacks > 0 && player.getMainHandStack().isOf(ModItems.CELESTIUM_SWORD);
+        return player != null
+                && rageStacks > 0
+                && (player.getMainHandStack().isOf(ModItems.CELESTIUM_SWORD) || player.getMainHandStack().isOf(ModItems.CELESTIUM_AXE));
     }
 
     private static void renderMaxStackPulse(DrawContext drawContext, int x, int y, int progressWidth) {

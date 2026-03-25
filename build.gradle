@@ -84,6 +84,19 @@ java {
 	targetCompatibility = JavaVersion.VERSION_21
 }
 
+tasks.register("runXpBonusTests", JavaExec) {
+	group = "verification"
+	description = "Runs the self-contained Celestium XP multiplier tests."
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "net.inklinggamer.shopsandtools.player.CelestiumExperienceManagerTest"
+	dependsOn(tasks.named("testClasses"))
+}
+
+tasks.named("test") {
+	dependsOn(tasks.named("runXpBonusTests"))
+	failOnNoDiscoveredTests = false
+}
+
 tasks.named("sourcesJar") {
 	dependsOn(tasks.named("runDatagen"))
 }

@@ -23,10 +23,8 @@ import java.util.Set;
 import java.util.UUID;
 
 public final class CelestiumSwordManager {
-    private static final double XP_REMAINDER_EPSILON = 1.0E-6D;
     private static final int MAX_RAGE_STACKS = 10;
     private static final int RAGE_DURATION_TICKS = 1200;
-    private static final double XP_BONUS_MULTIPLIER = 0.20D;
     private static final float LIFESTEAL_RATIO = 0.10F;
     private static final double ATTACK_SPEED_PER_STACK = 0.05D;
     private static final Identifier RAGE_ATTACK_SPEED_MODIFIER_ID = Identifier.of(ShopsAndTools.MOD_ID, "celestium_sword_rage_attack_speed");
@@ -66,13 +64,22 @@ public final class CelestiumSwordManager {
         return player.getEquippedStack(EquipmentSlot.MAINHAND).isOf(ModItems.CELESTIUM_SWORD);
     }
 
-    public static void beginSwordAttack(ServerPlayerEntity player) {
-        if (isCelestiumSwordEquipped(player)) {
+    public static boolean isCelestiumSwordHeldForXp(PlayerEntity player) {
+        return player.getMainHandStack().isOf(ModItems.CELESTIUM_SWORD)
+                || player.getOffHandStack().isOf(ModItems.CELESTIUM_SWORD);
+    }
+
+    public static boolean isCelestiumRageWeaponEquipped(PlayerEntity player) {
+        return isCelestiumSwordEquipped(player) || CelestiumAxeManager.isCelestiumAxeEquipped(player);
+    }
+
+    public static void beginRageWeaponAttack(ServerPlayerEntity player) {
+        if (isCelestiumRageWeaponEquipped(player)) {
             ACTIVE_ATTACKERS.add(player.getUuid());
         }
     }
 
-    public static void endSwordAttack(ServerPlayerEntity player) {
+    public static void endRageWeaponAttack(ServerPlayerEntity player) {
         ACTIVE_ATTACKERS.remove(player.getUuid());
     }
 
@@ -84,24 +91,12 @@ public final class CelestiumSwordManager {
         player.heal(damageDealt * LIFESTEAL_RATIO);
     }
 
-    public static void onSwordMobKilled(ServerPlayerEntity player) {
-        if (!ACTIVE_ATTACKERS.contains(player.getUuid()) || !isCelestiumSwordEquipped(player)) {
+    public static void onRageWeaponMobKilled(ServerPlayerEntity player) {
+        if (!ACTIVE_ATTACKERS.contains(player.getUuid()) || !isCelestiumRageWeaponEquipped(player)) {
             return;
         }
 
         addRageStack(player);
-    }
-
-    public static int applyXpBonus(ServerPlayerEntity player, int baseExperience) {
-        if (baseExperience <= 0 || !isCelestiumSwordEquipped(player)) {
-            return baseExperience;
-        }
-
-        PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
-        double totalBonus = baseExperience * XP_BONUS_MULTIPLIER + state.xpBonusRemainder;
-        int bonusExperience = (int) Math.floor(totalBonus);
-        state.xpBonusRemainder = totalBonus - bonusExperience;
-        return baseExperience + bonusExperience;
     }
 
     private static void addRageStack(ServerPlayerEntity player) {
@@ -129,7 +124,7 @@ public final class CelestiumSwordManager {
             return;
         }
 
-        int appliedStacks = isCelestiumSwordEquipped(player) ? state.rageExpirations.size() : 0;
+        int appliedStacks = isCelestiumRageWeaponEquipped(player) ? state.rageExpirations.size() : 0;
         if (state.appliedAttackSpeedStacks == appliedStacks) {
             return;
         }
@@ -180,12 +175,11 @@ public final class CelestiumSwordManager {
 
     private static final class PlayerState {
         private final List<Long> rageExpirations = new ArrayList<>();
-        private double xpBonusRemainder;
         private int lastSyncedRageStacks = -1;
         private int appliedAttackSpeedStacks = -1;
 
         private boolean canDiscard() {
-            return this.rageExpirations.isEmpty() && this.xpBonusRemainder <= XP_REMAINDER_EPSILON;
+            return this.rageExpirations.isEmpty();
         }
     }
 }

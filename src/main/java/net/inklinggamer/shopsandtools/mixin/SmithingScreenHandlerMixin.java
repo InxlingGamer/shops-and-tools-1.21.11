@@ -1,7 +1,8 @@
 package net.inklinggamer.shopsandtools.mixin;
 
-import net.inklinggamer.shopsandtools.item.ModItems;
 import net.inklinggamer.shopsandtools.item.CelestiumPickaxeHelper;
+import net.inklinggamer.shopsandtools.item.CelestiumAxeHelper;
+import net.inklinggamer.shopsandtools.item.ModItems;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
@@ -55,6 +56,10 @@ public abstract class SmithingScreenHandlerMixin extends ScreenHandler {
 
         if (result.isOf(ModItems.CELESTIUM_PICKAXE)) {
             CelestiumPickaxeHelper.initializeSmithingResult(upgradedResult, this.world.getRegistryManager());
+        }
+
+        if (result.isOf(ModItems.CELESTIUM_AXE)) {
+            CelestiumAxeHelper.initializeSmithingResult(upgradedResult, this.world.getRegistryManager());
         }
 
         this.getSlot(SmithingScreenHandler.OUTPUT_ID).setStackNoCallbacks(upgradedResult);

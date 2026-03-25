@@ -2,6 +2,7 @@ package net.inklinggamer.shopsandtools.player;
 
 import net.inklinggamer.shopsandtools.item.CelestiumPickaxeHelper;
 import net.minecraft.item.ItemStack;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
@@ -14,8 +15,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class CelestiumPickaxeManager {
-    private static final double XP_REMAINDER_EPSILON = 1.0E-6D;
-    private static final double XP_BONUS_MULTIPLIER = 0.50D;
     private static final ThreadLocal<Boolean> AREA_BREAK_IN_PROGRESS = ThreadLocal.withInitial(() -> false);
 
     private static final Map<UUID, PlayerState> STATES = new HashMap<>();
@@ -27,20 +26,13 @@ public final class CelestiumPickaxeManager {
         STATES.entrySet().removeIf(entry -> server.getPlayerManager().getPlayer(entry.getKey()) == null || entry.getValue().canDiscard());
     }
 
-    public static int applyXpBonus(ServerPlayerEntity player, int baseExperience) {
-        if (baseExperience <= 0 || !isHoldingCelestiumPickaxe(player)) {
-            return baseExperience;
-        }
-
-        PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
-        double totalBonus = baseExperience * XP_BONUS_MULTIPLIER + state.xpBonusRemainder;
-        int bonusExperience = (int) Math.floor(totalBonus);
-        state.xpBonusRemainder = totalBonus - bonusExperience;
-        return baseExperience + bonusExperience;
-    }
-
     public static boolean isHoldingCelestiumPickaxe(ServerPlayerEntity player) {
         return CelestiumPickaxeHelper.isCelestiumPickaxe(player.getMainHandStack());
+    }
+
+    public static boolean isCelestiumPickaxeHeldForXp(PlayerEntity player) {
+        return CelestiumPickaxeHelper.isCelestiumPickaxe(player.getMainHandStack())
+                || CelestiumPickaxeHelper.isCelestiumPickaxe(player.getOffHandStack());
     }
 
     public static boolean isAreaMiningEnabled(ServerPlayerEntity player) {
@@ -132,12 +124,11 @@ public final class CelestiumPickaxeManager {
     }
 
     private static final class PlayerState {
-        private double xpBonusRemainder;
         private BlockPos miningCenter;
         private Direction miningFace;
 
         private boolean canDiscard() {
-            return this.miningCenter == null && this.miningFace == null && this.xpBonusRemainder <= XP_REMAINDER_EPSILON;
+            return this.miningCenter == null && this.miningFace == null;
         }
     }
 }

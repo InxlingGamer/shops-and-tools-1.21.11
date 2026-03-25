@@ -1,7 +1,6 @@
 package net.inklinggamer.shopsandtools.mixin;
 
-import net.inklinggamer.shopsandtools.player.CelestiumPickaxeManager;
-import net.inklinggamer.shopsandtools.player.CelestiumSwordManager;
+import net.inklinggamer.shopsandtools.player.CelestiumExperienceManager;
 import net.minecraft.entity.ExperienceOrbEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -20,9 +19,7 @@ public abstract class ExperienceOrbEntityMixin {
     )
     private void shopsandtools$applyCelestiumSwordXpBonus(PlayerEntity player, int experience) {
         if (player instanceof ServerPlayerEntity serverPlayer) {
-            int adjustedExperience = CelestiumSwordManager.applyXpBonus(serverPlayer, experience);
-            adjustedExperience = CelestiumPickaxeManager.applyXpBonus(serverPlayer, adjustedExperience);
-            player.addExperience(adjustedExperience);
+            player.addExperience(CelestiumExperienceManager.applyHeldXpBonus(serverPlayer, experience));
             return;
         }
 

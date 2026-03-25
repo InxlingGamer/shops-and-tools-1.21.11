@@ -1,5 +1,6 @@
 package net.inklinggamer.shopsandtools.mixin;
 
+import net.inklinggamer.shopsandtools.player.CelestiumAxeManager;
 import net.inklinggamer.shopsandtools.player.CelestiumBootsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumLeggingsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumSwordManager;
@@ -20,10 +21,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin {
     @Unique
-    private LivingEntity shopsandtools$celestiumSwordTarget;
+    private LivingEntity shopsandtools$celestiumWeaponTarget;
 
     @Unique
-    private float shopsandtools$celestiumSwordInitialCombinedHealth;
+    private float shopsandtools$celestiumWeaponInitialCombinedHealth;
+
+    @Unique
+    private float shopsandtools$celestiumWeaponAttackCooldownProgress;
+
+    @Unique
+    private boolean shopsandtools$celestiumSwordAttack;
+
+    @Unique
+    private boolean shopsandtools$celestiumAxeAttack;
 
     @Inject(method = "isClimbing", at = @At("RETURN"), cancellable = true)
     private void shopsandtools$allowWallClimbing(CallbackInfoReturnable<Boolean> cir) {
@@ -49,48 +59,68 @@ public abstract class PlayerEntityMixin {
     }
 
     @Inject(method = "attack", at = @At("HEAD"))
-    private void shopsandtools$captureCelestiumSwordTarget(Entity target, CallbackInfo ci) {
+    private void shopsandtools$captureCelestiumWeaponTarget(Entity target, CallbackInfo ci) {
         PlayerEntity player = (PlayerEntity) (Object) this;
         if (player.getEntityWorld().isClient() || !(player instanceof ServerPlayerEntity serverPlayer)) {
-            this.shopsandtools$celestiumSwordTarget = null;
+            shopsandtools$clearCelestiumAttackState();
             return;
         }
 
-        CelestiumSwordManager.beginSwordAttack(serverPlayer);
-        if (!CelestiumSwordManager.isCelestiumSwordEquipped(player) || !(target instanceof LivingEntity livingTarget)) {
-            this.shopsandtools$celestiumSwordTarget = null;
+        this.shopsandtools$celestiumSwordAttack = CelestiumSwordManager.isCelestiumSwordEquipped(player);
+        this.shopsandtools$celestiumAxeAttack = CelestiumAxeManager.isCelestiumAxeEquipped(player);
+        this.shopsandtools$celestiumWeaponAttackCooldownProgress = player.getAttackCooldownProgress(0.5F);
+        CelestiumSwordManager.beginRageWeaponAttack(serverPlayer);
+
+        if (!(this.shopsandtools$celestiumSwordAttack || this.shopsandtools$celestiumAxeAttack) || !(target instanceof LivingEntity livingTarget)) {
+            this.shopsandtools$celestiumWeaponTarget = null;
             return;
         }
 
-        this.shopsandtools$celestiumSwordTarget = livingTarget;
-        this.shopsandtools$celestiumSwordInitialCombinedHealth = livingTarget.getHealth() + livingTarget.getAbsorptionAmount();
+        this.shopsandtools$celestiumWeaponTarget = livingTarget;
+        this.shopsandtools$celestiumWeaponInitialCombinedHealth = livingTarget.getHealth() + livingTarget.getAbsorptionAmount();
     }
 
     @Inject(method = "attack", at = @At("RETURN"))
-    private void shopsandtools$applyCelestiumSwordEffects(Entity target, CallbackInfo ci) {
+    private void shopsandtools$applyCelestiumWeaponEffects(Entity target, CallbackInfo ci) {
         PlayerEntity player = (PlayerEntity) (Object) this;
         if (!(player instanceof ServerPlayerEntity serverPlayer)) {
-            this.shopsandtools$celestiumSwordTarget = null;
-            this.shopsandtools$celestiumSwordInitialCombinedHealth = 0.0F;
+            shopsandtools$clearCelestiumAttackState();
             return;
         }
 
-        CelestiumSwordManager.endSwordAttack(serverPlayer);
-        if (this.shopsandtools$celestiumSwordTarget == null) {
-            this.shopsandtools$celestiumSwordInitialCombinedHealth = 0.0F;
+        CelestiumSwordManager.endRageWeaponAttack(serverPlayer);
+        if (this.shopsandtools$celestiumWeaponTarget == null) {
+            this.shopsandtools$celestiumWeaponInitialCombinedHealth = 0.0F;
             return;
         }
 
-        LivingEntity livingTarget = this.shopsandtools$celestiumSwordTarget;
-        float initialCombinedHealth = this.shopsandtools$celestiumSwordInitialCombinedHealth;
+        LivingEntity livingTarget = this.shopsandtools$celestiumWeaponTarget;
+        float initialCombinedHealth = this.shopsandtools$celestiumWeaponInitialCombinedHealth;
         float remainingCombinedHealth = Math.max(0.0F, livingTarget.getHealth() + livingTarget.getAbsorptionAmount());
         float dealtDamage = Math.max(0.0F, initialCombinedHealth - remainingCombinedHealth);
+        float attackCooldownProgress = this.shopsandtools$celestiumWeaponAttackCooldownProgress;
+        boolean swordAttack = this.shopsandtools$celestiumSwordAttack;
+        boolean axeAttack = this.shopsandtools$celestiumAxeAttack;
 
-        this.shopsandtools$celestiumSwordTarget = null;
-        this.shopsandtools$celestiumSwordInitialCombinedHealth = 0.0F;
+        shopsandtools$clearCelestiumAttackState();
 
         if (dealtDamage > 0.0F) {
-            CelestiumSwordManager.onDirectSwordDamage(serverPlayer, dealtDamage);
+            if (swordAttack) {
+                CelestiumSwordManager.onDirectSwordDamage(serverPlayer, dealtDamage);
+            }
+
+            if (axeAttack) {
+                CelestiumAxeManager.onDirectAxeDamage(serverPlayer, livingTarget, attackCooldownProgress, dealtDamage);
+            }
         }
+    }
+
+    @Unique
+    private void shopsandtools$clearCelestiumAttackState() {
+        this.shopsandtools$celestiumWeaponTarget = null;
+        this.shopsandtools$celestiumWeaponInitialCombinedHealth = 0.0F;
+        this.shopsandtools$celestiumWeaponAttackCooldownProgress = 0.0F;
+        this.shopsandtools$celestiumSwordAttack = false;
+        this.shopsandtools$celestiumAxeAttack = false;
     }
 }

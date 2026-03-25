@@ -29,18 +29,18 @@ public abstract class LivingEntityMixin {
     private void shopsandtools$applyCelestiumRetaliation(ServerWorld world, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValueZ()) {
             CelestiumLeggingsManager.onPlayerDamaged((LivingEntity) (Object) this, source);
-            shopsandtools$awardCelestiumSwordRage(source);
+            shopsandtools$awardCelestiumRage(source);
         }
     }
 
-    private void shopsandtools$awardCelestiumSwordRage(DamageSource source) {
+    private void shopsandtools$awardCelestiumRage(DamageSource source) {
         Object self = this;
         if (!(self instanceof net.minecraft.entity.mob.MobEntity mob) || mob.isAlive()) {
             return;
         }
 
         if (source.getAttacker() instanceof ServerPlayerEntity player) {
-            CelestiumSwordManager.onSwordMobKilled(player);
+            CelestiumSwordManager.onRageWeaponMobKilled(player);
         }
     }
 

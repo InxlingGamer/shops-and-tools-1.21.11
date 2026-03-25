@@ -20,6 +20,7 @@ import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -145,7 +146,7 @@ public final class CelestiumPickaxeHelper {
         }
 
         BlockState state = world.getBlockState(pos);
-        if (state.isAir() || state.getHardness(world, pos) < 0.0F) {
+        if (state.isAir() || state.getHardness(world, pos) < 0.0F || !state.isIn(BlockTags.PICKAXE_MINEABLE)) {
             return 0.0F;
         }
 

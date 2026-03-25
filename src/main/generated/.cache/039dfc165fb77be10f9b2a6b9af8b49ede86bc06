@@ -1,3 +1,4 @@
 // 1.21.11	-999999999-01-01T00:00:00	Shops and Tools/Tags for minecraft:block
 aa1131bd7c1a7347600154e49e35c4ca00748565 data/minecraft/tags/block/incorrect_for_diamond_tool.json
 aa1131bd7c1a7347600154e49e35c4ca00748565 data/minecraft/tags/block/mineable/pickaxe.json
+e6ff20636b51b9f60310dbc4486080774eb843e3 data/shopsandtools/tags/block/celestium_shovel_area_mineable.json

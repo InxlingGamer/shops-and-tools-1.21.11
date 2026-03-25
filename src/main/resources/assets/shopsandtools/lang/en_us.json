@@ -24,6 +24,9 @@
   "message.shopsandtools.celestium_pickaxe_area_disabled": "§dCelestium Mining §cdisabled",
   "message.shopsandtools.celestium_pickaxe_mode_fortune": "§dCelestium Pickaxe §7set to §bFortune V",
   "message.shopsandtools.celestium_pickaxe_mode_silk_touch": "§dCelestium Pickaxe §7set to §bSilk Touch",
+  "message.shopsandtools.celestium_shovel_area_enabled": "§dCelestium Excavation §aenabled",
+  "message.shopsandtools.celestium_shovel_area_disabled": "§dCelestium Excavation §cdisabled",
+  "message.shopsandtools.celestium_shovel_trial_chamber_not_found": "§7No §dTrial Chamber §7found nearby",
   "container.shopsandtools.celestium_portable_crafting": "Crafting",
   "button.shopsandtools.celestium_portable_crafting": "3x3",
   "tooltip.shopsandtools.celestium_portable_crafting": "Open portable 3x3 crafting",
@@ -32,5 +35,7 @@
   "tooltip.shopsandtools.celestium_pickaxe_mode_fortune": "Mode: Fortune V",
   "tooltip.shopsandtools.celestium_pickaxe_mode_silk_touch": "Mode: Silk Touch",
   "tooltip.shopsandtools.celestium_pickaxe_area_enabled": "3x3 Mining: ON",
-  "tooltip.shopsandtools.celestium_pickaxe_area_disabled": "3x3 Mining: OFF"
+  "tooltip.shopsandtools.celestium_pickaxe_area_disabled": "3x3 Mining: OFF",
+  "tooltip.shopsandtools.celestium_shovel_area_enabled": "3x3 Excavation: ON",
+  "tooltip.shopsandtools.celestium_shovel_area_disabled": "3x3 Excavation: OFF"
 }

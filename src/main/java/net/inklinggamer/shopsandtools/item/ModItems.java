@@ -86,7 +86,7 @@ public class ModItems {
 
     public static final Item CELESTIUM_SPEAR = registerItem("celestium_spear", new Item(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_spear"))).spear(ModToolMaterials.CELESTIUM, 1.05F, 1.075F, 0.5F, 3.0F, 7.5F, 6.5F, 5.1F, 10.0F, 4.6F)));
 
-    public static final Item CELESTIUM_SHOVEL = registerItem("celestium_shovel", new ShovelItem(ModToolMaterials.CELESTIUM, 1.5F, -3.0F, new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_shovel")))));
+    public static final Item CELESTIUM_SHOVEL = registerItem("celestium_shovel", new CelestiumShovelItem(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_shovel")))));
 
     public static final Item CELESTIUM_AXE = registerItem("celestium_axe", new AxeItem(ModToolMaterials.CELESTIUM, 5.0F, -3.0F, new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_axe")))));
 

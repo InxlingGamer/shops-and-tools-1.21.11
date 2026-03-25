@@ -9,10 +9,13 @@ import net.inklinggamer.shopsandtools.client.CelestiumLeggingsClient;
 import net.inklinggamer.shopsandtools.client.CelestiumPickaxeClient;
 import net.inklinggamer.shopsandtools.client.CelestiumPickaxeOutlineIrisCompat;
 import net.inklinggamer.shopsandtools.client.CelestiumRageHud;
+import net.inklinggamer.shopsandtools.client.CelestiumShovelClient;
 import net.inklinggamer.shopsandtools.client.CelestiumThrustCooldownHud;
+import net.inklinggamer.shopsandtools.client.CelestiumTrialChamberMarkerIrisCompat;
 import net.inklinggamer.shopsandtools.client.xray.CelestiumXrayController;
 import net.inklinggamer.shopsandtools.client.xray.CelestiumXrayIrisCompat;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumRagePayload;
+import net.inklinggamer.shopsandtools.network.SyncCelestiumTrialChamberMarkerPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumThrustCooldownPayload;
 
 public class ShopsAndToolsClient implements ClientModInitializer {
@@ -20,13 +23,16 @@ public class ShopsAndToolsClient implements ClientModInitializer {
     public void onInitializeClient() {
         if (FabricLoader.getInstance().isModLoaded("iris")) {
             CelestiumPickaxeOutlineIrisCompat.register();
+            CelestiumTrialChamberMarkerIrisCompat.register();
             CelestiumXrayIrisCompat.register();
         }
 
         CelestiumBootsClient.initialize();
         CelestiumLeggingsClient.initialize();
         CelestiumPickaxeClient.initialize();
+        CelestiumShovelClient.initialize();
         SyncCelestiumRagePayload.registerClient();
+        SyncCelestiumTrialChamberMarkerPayload.registerClient();
         SyncCelestiumThrustCooldownPayload.registerClient();
         CelestiumXrayController.initialize();
         ClientTickEvents.END_CLIENT_TICK.register(CelestiumRageHud::tick);
@@ -34,6 +40,7 @@ public class ShopsAndToolsClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(CelestiumPickaxeClient::tick);
         ClientTickEvents.END_CLIENT_TICK.register(CelestiumXrayController::tick);
         WorldRenderEvents.END_MAIN.register(CelestiumPickaxeClient::render);
+        WorldRenderEvents.END_MAIN.register(CelestiumShovelClient::render);
         WorldRenderEvents.END_MAIN.register(CelestiumXrayController::render);
     }
 }

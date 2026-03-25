@@ -2,6 +2,7 @@ package net.inklinggamer.shopsandtools.mixin;
 
 import net.inklinggamer.shopsandtools.player.CelestiumAxeManager;
 import net.inklinggamer.shopsandtools.player.CelestiumPickaxeManager;
+import net.inklinggamer.shopsandtools.player.CelestiumShovelManager;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -37,11 +38,13 @@ public abstract class ServerPlayerInteractionManagerMixin {
     private void shopsandtools$trackCelestiumPickaxeMiningFace(BlockPos pos, PlayerActionC2SPacket.Action action, Direction direction, int worldHeight, int sequence, CallbackInfo ci) {
         if (action == PlayerActionC2SPacket.Action.START_DESTROY_BLOCK) {
             CelestiumPickaxeManager.beginMiningSelection(this.player, pos, direction);
+            CelestiumShovelManager.beginMiningSelection(this.player, pos, direction);
             return;
         }
 
         if (action == PlayerActionC2SPacket.Action.ABORT_DESTROY_BLOCK) {
             CelestiumPickaxeManager.clearMiningSelection(this.player);
+            CelestiumShovelManager.clearMiningSelection(this.player);
         }
     }
 
@@ -54,7 +57,8 @@ public abstract class ServerPlayerInteractionManagerMixin {
     )
     private float shopsandtools$useSlowestAreaMiningDelta(BlockState state, PlayerEntity player, BlockView world, BlockPos pos) {
         float vanillaDelta = state.calcBlockBreakingDelta(player, world, pos);
-        return CelestiumPickaxeManager.getAreaMiningDelta(this.player, pos, vanillaDelta);
+        float adjustedDelta = CelestiumPickaxeManager.getAreaMiningDelta(this.player, pos, vanillaDelta);
+        return CelestiumShovelManager.getAreaMiningDelta(this.player, pos, adjustedDelta);
     }
 
     @Redirect(
@@ -66,7 +70,8 @@ public abstract class ServerPlayerInteractionManagerMixin {
     )
     private float shopsandtools$useSlowestAreaMiningDeltaWhileContinuing(BlockState state, PlayerEntity player, BlockView world, BlockPos pos) {
         float vanillaDelta = state.calcBlockBreakingDelta(player, world, pos);
-        return CelestiumPickaxeManager.getAreaMiningDelta(this.player, pos, vanillaDelta);
+        float adjustedDelta = CelestiumPickaxeManager.getAreaMiningDelta(this.player, pos, vanillaDelta);
+        return CelestiumShovelManager.getAreaMiningDelta(this.player, pos, adjustedDelta);
     }
 
     @Inject(method = "tryBreakBlock", at = @At("HEAD"))
@@ -84,6 +89,14 @@ public abstract class ServerPlayerInteractionManagerMixin {
                 : this.shopsandtools$brokenBlockSnapshots.pop();
         if (cir.getReturnValueZ()) {
             CelestiumPickaxeManager.onBlockBroken(this.player, (ServerPlayerInteractionManager) (Object) this, pos);
+            CelestiumShovelManager.onBlockBroken(
+                    this.player,
+                    (ServerPlayerInteractionManager) (Object) this,
+                    pos,
+                    snapshot != null && snapshot.pos().equals(pos) ? snapshot.state() : null,
+                    snapshot != null && snapshot.pos().equals(pos) ? snapshot.blockEntity() : null,
+                    snapshot != null && snapshot.pos().equals(pos) ? snapshot.tool() : ItemStack.EMPTY
+            );
             if (snapshot != null && snapshot.pos().equals(pos)) {
                 CelestiumAxeManager.onBlockBroken(this.player, pos, snapshot.state(), snapshot.blockEntity(), snapshot.tool());
             }

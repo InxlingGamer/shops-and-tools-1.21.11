@@ -12,6 +12,7 @@ public class ModTags {
 
         public static final TagKey<Block> NEEDS_CELESTIUM_TOOL = createTag("needs_celestium_tool");
         public static final TagKey<Block> INCORRECT_FOR_CELESTIUM_TOOL = createTag("incorrect_for_celestium_tool");
+        public static final TagKey<Block> CELESTIUM_SHOVEL_AREA_MINEABLE = createTag("celestium_shovel_area_mineable");
 
 
         private static TagKey<Block> createTag(String name) {

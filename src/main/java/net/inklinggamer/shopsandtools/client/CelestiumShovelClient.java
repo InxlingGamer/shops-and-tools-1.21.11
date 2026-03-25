@@ -26,6 +26,7 @@ public final class CelestiumShovelClient {
 
     private static boolean areaToggleHeld;
     private static boolean slamArmHeld;
+    private static boolean slamMiningSuppressed;
     private static boolean slamJumped;
     private static boolean slamSneakPrimed;
     private static boolean wasOnGround;
@@ -50,7 +51,9 @@ public final class CelestiumShovelClient {
         if (client.player == null || client.world == null) {
             areaToggleHeld = false;
             slamArmHeld = false;
+            slamMiningSuppressed = false;
             clearOutline();
+            clearBreakingState();
             clearBreakingAnimation(client);
             clearTrialChamberMarker();
             return;
@@ -62,9 +65,15 @@ public final class CelestiumShovelClient {
 
         if (!client.options.attackKey.isPressed()) {
             slamArmHeld = false;
+            slamMiningSuppressed = false;
         }
 
         updateSlamSequence(client);
+        if (slamMiningSuppressed) {
+            clearBreakingState();
+            clearOutline();
+            clearBreakingAnimation(client);
+        }
         updateOutline(client);
         updateBreakingAnimation(client);
         tickTrialChamberMarker(client);
@@ -103,6 +112,10 @@ public final class CelestiumShovelClient {
             return false;
         }
 
+        if (slamMiningSuppressed) {
+            return true;
+        }
+
         if (!slamJumped
                 || !slamSneakPrimed
                 || !CelestiumShovelHelper.canArmSlam(client.player, client.world, client.crosshairTarget)) {
@@ -114,12 +127,21 @@ public final class CelestiumShovelClient {
         }
 
         slamArmHeld = true;
+        slamMiningSuppressed = true;
+        clearBreakingState();
+        clearOutline();
+        clearBreakingAnimation(client);
         client.player.swingHand(Hand.MAIN_HAND);
         ArmCelestiumShovelSlamPayload.send();
         return true;
     }
 
     public static void onBreakingAttempt(BlockPos pos, Direction direction) {
+        if (slamMiningSuppressed) {
+            clearBreakingState();
+            return;
+        }
+
         breakingCenter = pos.toImmutable();
         breakingFace = direction;
     }
@@ -130,6 +152,10 @@ public final class CelestiumShovelClient {
     }
 
     public static float getAreaMiningDelta(MinecraftClient client, BlockPos pos, float fallbackDelta) {
+        if (slamMiningSuppressed) {
+            return fallbackDelta;
+        }
+
         if (breakingFace == null || breakingCenter == null || !breakingCenter.equals(pos)) {
             return fallbackDelta;
         }
@@ -139,6 +165,10 @@ public final class CelestiumShovelClient {
     }
 
     public static boolean shouldDeferBreakPrediction(MinecraftClient client, BlockPos pos) {
+        if (slamMiningSuppressed) {
+            return false;
+        }
+
         return shopsandtools$canUseAreaMining(client)
                 && breakingCenter != null
                 && breakingCenter.equals(pos);
@@ -169,6 +199,7 @@ public final class CelestiumShovelClient {
 
         if (!CelestiumShovelHelper.canUseGroundSlam(client.player)) {
             resetSlamSequence();
+            slamMiningSuppressed = false;
             wasOnGround = onGround;
             wasSneaking = sneaking;
             return;
@@ -185,6 +216,7 @@ public final class CelestiumShovelClient {
 
         if (onGround) {
             resetSlamSequence();
+            slamMiningSuppressed = false;
         }
 
         wasOnGround = onGround;
@@ -193,7 +225,7 @@ public final class CelestiumShovelClient {
 
     private static void updateOutline(MinecraftClient client) {
         outlinePositions.clear();
-        if (!shopsandtools$canUseAreaMining(client) || client.interactionManager == null) {
+        if (slamMiningSuppressed || !shopsandtools$canUseAreaMining(client) || client.interactionManager == null) {
             return;
         }
 
@@ -215,7 +247,7 @@ public final class CelestiumShovelClient {
 
     private static void updateBreakingAnimation(MinecraftClient client) {
         ClientPlayerInteractionManager interactionManager = client.interactionManager;
-        if (!shopsandtools$canUseAreaMining(client) || interactionManager == null) {
+        if (slamMiningSuppressed || !shopsandtools$canUseAreaMining(client) || interactionManager == null) {
             clearBreakingAnimation(client);
             return;
         }
@@ -315,12 +347,12 @@ public final class CelestiumShovelClient {
     private static void resetState() {
         areaToggleHeld = false;
         slamArmHeld = false;
+        slamMiningSuppressed = false;
         slamJumped = false;
         slamSneakPrimed = false;
         wasOnGround = false;
         wasSneaking = false;
-        breakingCenter = null;
-        breakingFace = null;
+        clearBreakingState();
         outlinePositions.clear();
         breakingAnimationPositions.clear();
         lastBreakingStage = -1;

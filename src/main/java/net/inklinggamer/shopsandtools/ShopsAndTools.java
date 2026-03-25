@@ -10,6 +10,7 @@ import net.inklinggamer.shopsandtools.network.OpenCelestiumCraftingPayload;
 import net.inklinggamer.shopsandtools.network.ReturnToInventoryPayload;
 import net.inklinggamer.shopsandtools.network.ArmCelestiumShovelSlamPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumRagePayload;
+import net.inklinggamer.shopsandtools.network.SyncCelestiumSpearStunCooldownPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumTrialChamberMarkerPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumWallClimbInputPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumThrustCooldownPayload;
@@ -22,6 +23,7 @@ import net.inklinggamer.shopsandtools.player.CelestiumHoeManager;
 import net.inklinggamer.shopsandtools.player.CelestiumLeggingsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumPickaxeManager;
 import net.inklinggamer.shopsandtools.player.CelestiumShovelManager;
+import net.inklinggamer.shopsandtools.player.CelestiumSpearManager;
 import net.inklinggamer.shopsandtools.player.CelestiumSwordManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +41,7 @@ public class ShopsAndTools implements ModInitializer {
 		OpenCelestiumCraftingPayload.register();
 		ReturnToInventoryPayload.register();
 		SyncCelestiumWallClimbInputPayload.register();
+		SyncCelestiumSpearStunCooldownPayload.register();
 		SyncCelestiumThrustCooldownPayload.register();
 		SyncCelestiumRagePayload.register();
 		SyncCelestiumTrialChamberMarkerPayload.register();
@@ -53,6 +56,7 @@ public class ShopsAndTools implements ModInitializer {
 			CelestiumLeggingsManager.tickServer(server);
 			CelestiumPickaxeManager.tickServer(server);
 			CelestiumShovelManager.tickServer(server);
+			CelestiumSpearManager.tickServer(server);
 			CelestiumSwordManager.tickServer(server);
 			server.getPlayerManager().getPlayerList().forEach(player -> {
 				CelestiumBootsManager.tickPlayer(player);
@@ -61,6 +65,7 @@ public class ShopsAndTools implements ModInitializer {
 				CelestiumHoeManager.tickPlayer(player);
 				CelestiumLeggingsManager.tickPlayer(player);
 				CelestiumShovelManager.tickPlayer(player);
+				CelestiumSpearManager.tickPlayer(player);
 				CelestiumSwordManager.tickPlayer(player);
 			});
 		});

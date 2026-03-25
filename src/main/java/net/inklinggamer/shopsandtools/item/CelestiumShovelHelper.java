@@ -4,9 +4,11 @@ import net.inklinggamer.shopsandtools.util.ModTags;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.ButtonBlock;
+import net.minecraft.block.CampfireBlock;
 import net.minecraft.block.ComparatorBlock;
 import net.minecraft.block.LeverBlock;
 import net.minecraft.block.RepeaterBlock;
+import net.minecraft.block.Blocks;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
 import net.minecraft.enchantment.Enchantment;
@@ -20,6 +22,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.util.Hand;
@@ -81,28 +84,31 @@ public final class CelestiumShovelHelper {
             return false;
         }
 
-        if (hitResult != null && hitResult.getType() == HitResult.Type.ENTITY) {
-            return false;
-        }
-
-        if (isInteractiveBlockTarget(player, world, hitResult)) {
-            return false;
-        }
-
-        if (isValidMiningTarget(player, world, hitResult, gameMode)) {
-            return false;
-        }
+        boolean entityTarget = hitResult != null && hitResult.getType() == HitResult.Type.ENTITY;
+        boolean interactiveTarget = isInteractiveBlockTarget(player, world, hitResult);
+        boolean offhandPlacementWouldSucceed = false;
 
         ItemStack offhandStack = player.getOffHandStack();
-        if (offhandStack.isEmpty()) {
-            return true;
+        if (!offhandStack.isEmpty() && offhandStack.getItem() instanceof BlockItem blockItem) {
+            offhandPlacementWouldSucceed = canPlaceOffhandBlock(player, offhandStack, blockItem, hitResult);
         }
 
-        if (offhandStack.getItem() instanceof BlockItem blockItem) {
-            return !canPlaceOffhandBlock(player, offhandStack, blockItem, hitResult);
+        boolean validMiningTarget = isValidMiningTarget(player, world, hitResult, gameMode);
+        boolean preservesNormalShovelUse = false;
+        if (validMiningTarget && hitResult instanceof BlockHitResult blockHitResult && hitResult.getType() == HitResult.Type.BLOCK) {
+            BlockPos pos = blockHitResult.getBlockPos();
+            if (player.canInteractWithBlockAt(pos, 1.0D)) {
+                preservesNormalShovelUse = preservesNormalShovelUse(world, pos, world.getBlockState(pos));
+            }
         }
 
-        return true;
+        return shouldAllowAreaToggle(
+                entityTarget,
+                interactiveTarget,
+                offhandPlacementWouldSucceed,
+                validMiningTarget,
+                preservesNormalShovelUse
+        );
     }
 
     public static boolean isValidMiningTarget(PlayerEntity player, World world, HitResult hitResult, GameMode gameMode) {
@@ -119,6 +125,54 @@ public final class CelestiumShovelHelper {
 
     public static boolean isLooseEarthBlock(BlockState state) {
         return state.isIn(ModTags.Blocks.CELESTIUM_SHOVEL_AREA_MINEABLE) && state.isIn(BlockTags.SHOVEL_MINEABLE);
+    }
+
+    public static boolean shouldAllowAreaToggle(
+            boolean entityTarget,
+            boolean interactiveTarget,
+            boolean offhandPlacementWouldSucceed,
+            boolean validMiningTarget,
+            boolean preservesNormalShovelUse
+    ) {
+        if (entityTarget || interactiveTarget || offhandPlacementWouldSucceed) {
+            return false;
+        }
+
+        if (!validMiningTarget) {
+            return true;
+        }
+
+        return !preservesNormalShovelUse;
+    }
+
+    public static boolean isPathConvertibleShovelBlock(BlockState state) {
+        return isPathConvertibleShovelBlockId(Registries.BLOCK.getId(state.getBlock()).toString());
+    }
+
+    public static boolean isPathConvertibleShovelBlockId(String blockId) {
+        return switch (blockId) {
+            case "minecraft:dirt",
+                    "minecraft:grass_block",
+                    "minecraft:coarse_dirt",
+                    "minecraft:podzol",
+                    "minecraft:rooted_dirt",
+                    "minecraft:mycelium" -> true;
+            default -> false;
+        };
+    }
+
+    public static boolean preservesNormalShovelUse(World world, BlockPos pos, BlockState state) {
+        if (state.isOf(Blocks.DIRT_PATH)) {
+            return true;
+        }
+
+        if (isPathConvertibleShovelBlock(state)) {
+            return world.getBlockState(pos.up()).isAir();
+        }
+
+        return state.getBlock() instanceof CampfireBlock
+                && state.contains(CampfireBlock.LIT)
+                && state.get(CampfireBlock.LIT);
     }
 
     public static boolean canUseGroundSlam(PlayerEntity player) {

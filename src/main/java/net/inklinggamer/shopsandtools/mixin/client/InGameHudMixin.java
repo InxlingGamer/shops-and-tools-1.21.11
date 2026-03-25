@@ -1,6 +1,7 @@
 package net.inklinggamer.shopsandtools.mixin.client;
 
 import net.inklinggamer.shopsandtools.client.CelestiumRageHud;
+import net.inklinggamer.shopsandtools.client.CelestiumSpearStunCooldownHud;
 import net.inklinggamer.shopsandtools.client.CelestiumThrustCooldownHud;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
@@ -32,6 +33,9 @@ public abstract class InGameHudMixin {
 
         if (CelestiumThrustCooldownHud.isActive()) {
             CelestiumThrustCooldownHud.renderNearHotbar(drawContext, this.client.player);
+        }
+        if (CelestiumSpearStunCooldownHud.isActive()) {
+            CelestiumSpearStunCooldownHud.renderNearHotbar(drawContext, this.client.player);
         }
         CelestiumRageHud.renderNearHotbar(drawContext, this.client.player);
     }

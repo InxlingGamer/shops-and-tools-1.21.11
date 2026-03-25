@@ -5,9 +5,11 @@
 	"mixins": [
 		"AnvilScreenHandlerMixin",
 		"BlockItemMixin",
+		"ChangeItemDamageEnchantmentEffectMixin",
 		"EntityInvoker",
 		"ExperienceOrbEntityMixin",
 		"LivingEntityMixin",
+		"MobEntityMixin",
 		"PlayerEntityMixin",
 		"PowderSnowBlockMixin",
 		"ServerPlayerInteractionManagerMixin",

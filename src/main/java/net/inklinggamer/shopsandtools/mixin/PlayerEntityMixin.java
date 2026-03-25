@@ -71,7 +71,8 @@ public abstract class PlayerEntityMixin {
         this.shopsandtools$celestiumWeaponAttackCooldownProgress = player.getAttackCooldownProgress(0.5F);
         CelestiumSwordManager.beginRageWeaponAttack(serverPlayer);
 
-        if (!(this.shopsandtools$celestiumSwordAttack || this.shopsandtools$celestiumAxeAttack) || !(target instanceof LivingEntity livingTarget)) {
+        if (!(this.shopsandtools$celestiumSwordAttack || this.shopsandtools$celestiumAxeAttack)
+                || !(target instanceof LivingEntity livingTarget)) {
             this.shopsandtools$celestiumWeaponTarget = null;
             return;
         }

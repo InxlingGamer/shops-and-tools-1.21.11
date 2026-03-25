@@ -34,6 +34,7 @@ import java.util.UUID;
 public final class CelestiumShovelManager {
     private static final ThreadLocal<Boolean> AREA_BREAK_IN_PROGRESS = ThreadLocal.withInitial(() -> false);
 
+    private static final int SLAM_MINING_SUPPRESSION_TICKS = 6;
     private static final int TRIAL_CHAMBER_MARKER_DURATION_TICKS = 1200;
     private static final int TRIAL_CHAMBER_SEARCH_RADIUS_CHUNKS = 512;
     private static final float RAW_GOLD_DROP_CHANCE = 0.05F;
@@ -70,6 +71,7 @@ public final class CelestiumShovelManager {
             STATES.put(player.getUuid(), state);
         }
 
+        state.tickSuppression();
         updateGroundSlamTracking(player, state, canUseGroundSlam);
 
         if (state.canDiscard(canUseGroundSlam)) {
@@ -112,12 +114,18 @@ public final class CelestiumShovelManager {
     }
 
     public static void beginMiningSelection(ServerPlayerEntity player, BlockPos pos, Direction face) {
+        PlayerState state = STATES.get(player.getUuid());
+        if (state != null && state.isMiningSuppressed()) {
+            clearMiningSelection(player);
+            return;
+        }
+
         if (!isHoldingCelestiumShovel(player) || !isValidMiningTarget(player, pos)) {
             clearMiningSelection(player);
             return;
         }
 
-        PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState(player.isOnGround(), player.isSneaking()));
+        state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState(player.isOnGround(), player.isSneaking()));
         state.miningCenter = pos.toImmutable();
         state.miningFace = face;
     }
@@ -144,7 +152,9 @@ public final class CelestiumShovelManager {
             return false;
         }
 
+        clearMiningSelection(player);
         state.slamArmed = true;
+        state.slamSearchActive = true;
         return true;
     }
 
@@ -162,12 +172,17 @@ public final class CelestiumShovelManager {
             return;
         }
 
+        PlayerState state = STATES.get(player.getUuid());
+        if (state != null && state.isMiningSuppressed()) {
+            clearMiningSelection(player);
+            return;
+        }
+
         if (!isAreaMiningEnabled(player)) {
             clearMiningSelection(player);
             return;
         }
 
-        PlayerState state = STATES.get(player.getUuid());
         if (state == null || state.miningCenter == null || state.miningFace == null || !state.miningCenter.equals(centerPos)) {
             return;
         }
@@ -224,7 +239,11 @@ public final class CelestiumShovelManager {
         }
 
         PlayerState state = STATES.get(player.getUuid());
-        if (state == null || state.miningCenter == null || state.miningFace == null || !state.miningCenter.equals(centerPos)) {
+        if (state == null
+                || state.isMiningSuppressed()
+                || state.miningCenter == null
+                || state.miningFace == null
+                || !state.miningCenter.equals(centerPos)) {
             return null;
         }
 
@@ -268,6 +287,9 @@ public final class CelestiumShovelManager {
 
         if (!canUseGroundSlam) {
             state.resetSlamState();
+            if (!state.isMiningSuppressed()) {
+                state.slamSearchActive = false;
+            }
             state.wasOnGround = onGround;
             state.wasSneaking = sneaking;
             return;
@@ -277,6 +299,9 @@ public final class CelestiumShovelManager {
             state.slamJumped = true;
             state.slamSneakPrimed = false;
             state.slamArmed = false;
+            if (!state.isMiningSuppressed()) {
+                state.slamSearchActive = false;
+            }
         }
 
         if (!onGround && state.slamJumped && !state.slamSneakPrimed && sneaking && !state.wasSneaking) {
@@ -285,17 +310,23 @@ public final class CelestiumShovelManager {
 
         if (!state.wasOnGround && onGround) {
             if (state.slamArmed) {
-                triggerGroundSlam(player);
+                triggerGroundSlam(player, state);
             }
             state.resetSlamState();
+            if (!state.isMiningSuppressed()) {
+                state.slamSearchActive = false;
+            }
         }
 
         state.wasOnGround = onGround;
         state.wasSneaking = sneaking;
     }
 
-    private static void triggerGroundSlam(ServerPlayerEntity player) {
+    private static void triggerGroundSlam(ServerPlayerEntity player, PlayerState state) {
         ServerWorld world = (ServerWorld) player.getEntityWorld();
+        clearMiningSelection(player);
+        state.startMiningSuppression();
+
         world.playSound(
                 null,
                 player.getX(),
@@ -349,6 +380,8 @@ public final class CelestiumShovelManager {
         private boolean slamJumped;
         private boolean slamSneakPrimed;
         private boolean slamArmed;
+        private boolean slamSearchActive;
+        private int miningSuppressionTicks;
         private boolean wasOnGround;
         private boolean wasSneaking;
 
@@ -363,12 +396,32 @@ public final class CelestiumShovelManager {
             this.slamArmed = false;
         }
 
+        private void startMiningSuppression() {
+            this.miningSuppressionTicks = SLAM_MINING_SUPPRESSION_TICKS;
+        }
+
+        private void tickSuppression() {
+            if (this.miningSuppressionTicks > 0) {
+                this.miningSuppressionTicks--;
+            }
+
+            if (this.miningSuppressionTicks == 0 && !this.slamJumped && !this.slamSneakPrimed && !this.slamArmed) {
+                this.slamSearchActive = false;
+            }
+        }
+
+        private boolean isMiningSuppressed() {
+            return this.slamSearchActive && this.miningSuppressionTicks > 0;
+        }
+
         private boolean canDiscard(boolean keepForGroundSlamTracking) {
             return this.miningCenter == null
                     && this.miningFace == null
                     && !this.slamJumped
                     && !this.slamSneakPrimed
                     && !this.slamArmed
+                    && !this.slamSearchActive
+                    && this.miningSuppressionTicks <= 0
                     && !keepForGroundSlamTracking;
         }
     }

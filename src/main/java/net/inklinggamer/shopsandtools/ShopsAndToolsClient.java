@@ -11,11 +11,13 @@ import net.inklinggamer.shopsandtools.client.CelestiumPickaxeClient;
 import net.inklinggamer.shopsandtools.client.CelestiumPickaxeOutlineIrisCompat;
 import net.inklinggamer.shopsandtools.client.CelestiumRageHud;
 import net.inklinggamer.shopsandtools.client.CelestiumShovelClient;
+import net.inklinggamer.shopsandtools.client.CelestiumSpearStunCooldownHud;
 import net.inklinggamer.shopsandtools.client.CelestiumThrustCooldownHud;
 import net.inklinggamer.shopsandtools.client.CelestiumTrialChamberMarkerIrisCompat;
 import net.inklinggamer.shopsandtools.client.xray.CelestiumXrayController;
 import net.inklinggamer.shopsandtools.client.xray.CelestiumXrayIrisCompat;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumRagePayload;
+import net.inklinggamer.shopsandtools.network.SyncCelestiumSpearStunCooldownPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumTrialChamberMarkerPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumThrustCooldownPayload;
 
@@ -33,10 +35,12 @@ public class ShopsAndToolsClient implements ClientModInitializer {
         CelestiumPickaxeClient.initialize();
         CelestiumShovelClient.initialize();
         SyncCelestiumRagePayload.registerClient();
+        SyncCelestiumSpearStunCooldownPayload.registerClient();
         SyncCelestiumTrialChamberMarkerPayload.registerClient();
         SyncCelestiumThrustCooldownPayload.registerClient();
         CelestiumXrayController.initialize();
         ClientTickEvents.END_CLIENT_TICK.register(CelestiumRageHud::tick);
+        ClientTickEvents.END_CLIENT_TICK.register(CelestiumSpearStunCooldownHud::tick);
         ClientTickEvents.END_CLIENT_TICK.register(CelestiumThrustCooldownHud::tick);
         ClientTickEvents.END_CLIENT_TICK.register(CelestiumHoeClient::tick);
         ClientTickEvents.END_CLIENT_TICK.register(CelestiumPickaxeClient::tick);

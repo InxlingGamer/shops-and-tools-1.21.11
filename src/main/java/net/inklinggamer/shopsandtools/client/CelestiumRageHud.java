@@ -6,23 +6,12 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Arm;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.MathHelper;
 
 public final class CelestiumRageHud {
     private static final int MAX_RAGE_STACKS = 10;
-    private static final int DEFAULT_BAR_WIDTH = 74;
-    private static final int OFFHAND_BAR_WIDTH = 56;
-    private static final int BAR_HEIGHT = 5;
-    private static final int HOTBAR_HALF_WIDTH = 91;
-    private static final int HOTBAR_HEIGHT = 22;
-    private static final int OFFHAND_SLOT_WIDTH = 29;
-    private static final int BAR_GAP = 4;
-    private static final int LEFT_SCREEN_MARGIN = 2;
-    private static final int VERTICAL_ALIGNMENT_OFFSET = 15;
     private static final Identifier BACKGROUND_TEXTURE = Identifier.ofVanilla("boss_bar/red_background");
     private static final Identifier PROGRESS_TEXTURE = Identifier.ofVanilla("boss_bar/red_progress");
     private static final RenderPipeline RENDER_PIPELINE = RenderPipelines.GUI_TEXTURED;
@@ -50,29 +39,19 @@ public final class CelestiumRageHud {
             return;
         }
 
-        int centerX = drawContext.getScaledWindowWidth() / 2;
-        int hotbarY = drawContext.getScaledWindowHeight() - HOTBAR_HEIGHT;
-        int barY = hotbarY + VERTICAL_ALIGNMENT_OFFSET;
-        int barWidth = DEFAULT_BAR_WIDTH;
-        int barX = centerX - HOTBAR_HALF_WIDTH - BAR_GAP - barWidth;
+        LeftHotbarStatusBarLayout.Layout layout = LeftHotbarStatusBarLayout.resolve(drawContext, player);
+        int barX = layout.x();
+        int barY = layout.y();
+        int barWidth = layout.width();
 
-        ItemStack offhandStack = player.getOffHandStack();
-        boolean leftOffhandVisible = !offhandStack.isEmpty() && player.getMainArm().getOpposite() == Arm.LEFT;
-        if (leftOffhandVisible) {
-            barWidth = OFFHAND_BAR_WIDTH;
-            int leftOffhandSlotX = centerX - HOTBAR_HALF_WIDTH - OFFHAND_SLOT_WIDTH;
-            barX = leftOffhandSlotX - BAR_GAP - barWidth;
-        }
-
-        barX = Math.max(LEFT_SCREEN_MARGIN, barX);
-        drawContext.drawGuiTexture(RENDER_PIPELINE, BACKGROUND_TEXTURE, barX, barY, barWidth, BAR_HEIGHT);
+        drawContext.drawGuiTexture(RENDER_PIPELINE, BACKGROUND_TEXTURE, barX, barY, barWidth, LeftHotbarStatusBarLayout.BAR_HEIGHT);
 
         int progressWidth = MathHelper.clamp((int) ((rageStacks / (float) MAX_RAGE_STACKS) * barWidth), 0, barWidth);
         if (progressWidth <= 0) {
             return;
         }
 
-        drawContext.drawGuiTexture(RENDER_PIPELINE, PROGRESS_TEXTURE, barX, barY, progressWidth, BAR_HEIGHT);
+        drawContext.drawGuiTexture(RENDER_PIPELINE, PROGRESS_TEXTURE, barX, barY, progressWidth, LeftHotbarStatusBarLayout.BAR_HEIGHT);
         if (rageStacks == MAX_RAGE_STACKS) {
             renderMaxStackPulse(drawContext, barX, barY, progressWidth);
         }
@@ -88,7 +67,7 @@ public final class CelestiumRageHud {
         float cycle = (Util.getMeasuringTimeMs() % MAX_STACK_PULSE_PERIOD_MS) / (float) MAX_STACK_PULSE_PERIOD_MS;
         float breathe = 0.5F + 0.5F * MathHelper.sin(cycle * (float) (Math.PI * 2.0D));
         int darkAlpha = MathHelper.clamp((int) MathHelper.lerp(breathe, 48.0F, 92.0F), 0, 255);
-        drawContext.fill(x, y, x + progressWidth, y + BAR_HEIGHT, withAlpha(MAX_STACK_DARK_RED_RGB, darkAlpha));
+        drawContext.fill(x, y, x + progressWidth, y + LeftHotbarStatusBarLayout.BAR_HEIGHT, withAlpha(MAX_STACK_DARK_RED_RGB, darkAlpha));
 
         float bandWidth = Math.max(10.0F, progressWidth * 0.28F);
         float bandCenter = MathHelper.lerp(cycle, -bandWidth, progressWidth + bandWidth);
@@ -104,7 +83,7 @@ public final class CelestiumRageHud {
             float intensity = normalized * normalized * highlightStrength;
             int lightAlpha = MathHelper.clamp((int) (intensity * 170.0F), 0, 255);
             if (lightAlpha > 0) {
-                drawContext.fill(x + column, y, x + column + 1, y + BAR_HEIGHT, withAlpha(MAX_STACK_LIGHT_RED_RGB, lightAlpha));
+                drawContext.fill(x + column, y, x + column + 1, y + LeftHotbarStatusBarLayout.BAR_HEIGHT, withAlpha(MAX_STACK_LIGHT_RED_RGB, lightAlpha));
             }
         }
     }

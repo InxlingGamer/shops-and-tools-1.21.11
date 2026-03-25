@@ -1,6 +1,7 @@
 package net.inklinggamer.shopsandtools.mixin;
 
 import net.inklinggamer.shopsandtools.item.CelestiumPickaxeHelper;
+import net.inklinggamer.shopsandtools.item.CelestiumSpearHelper;
 import net.inklinggamer.shopsandtools.item.CelestiumShovelHelper;
 import net.inklinggamer.shopsandtools.item.CelestiumAxeHelper;
 import net.inklinggamer.shopsandtools.item.CelestiumHoeHelper;
@@ -54,6 +55,10 @@ public abstract class SmithingScreenHandlerMixin extends ScreenHandler {
             Enchantment sharpnessValue = enchantmentRegistry.getValueOrThrow(Enchantments.SHARPNESS);
             RegistryEntry<Enchantment> sharpness = enchantmentRegistry.getEntry(sharpnessValue);
             EnchantmentHelper.apply(upgradedResult, builder -> builder.set(sharpness, 10));
+        }
+
+        if (result.isOf(ModItems.CELESTIUM_SPEAR)) {
+            CelestiumSpearHelper.initializeSmithingResult(upgradedResult, this.world.getRegistryManager());
         }
 
         if (result.isOf(ModItems.CELESTIUM_PICKAXE)) {

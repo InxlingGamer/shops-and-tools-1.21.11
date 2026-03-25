@@ -100,9 +100,18 @@ tasks.register("runCelestiumHoeTests", JavaExec) {
 	dependsOn(tasks.named("testClasses"))
 }
 
+tasks.register("runCelestiumShovelTests", JavaExec) {
+	group = "verification"
+	description = "Runs the self-contained Celestium shovel feature tests."
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "net.inklinggamer.shopsandtools.player.CelestiumShovelFeatureTest"
+	dependsOn(tasks.named("testClasses"))
+}
+
 tasks.named("test") {
 	dependsOn(tasks.named("runXpBonusTests"))
 	dependsOn(tasks.named("runCelestiumHoeTests"))
+	dependsOn(tasks.named("runCelestiumShovelTests"))
 	failOnNoDiscoveredTests = false
 }
 

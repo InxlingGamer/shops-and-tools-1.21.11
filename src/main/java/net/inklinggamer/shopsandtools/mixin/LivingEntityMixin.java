@@ -1,13 +1,16 @@
 package net.inklinggamer.shopsandtools.mixin;
 
 import net.inklinggamer.shopsandtools.item.ModItems;
+import net.inklinggamer.shopsandtools.item.CelestiumSpearHelper;
 import net.inklinggamer.shopsandtools.player.CelestiumBootsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumLeggingsManager;
+import net.inklinggamer.shopsandtools.player.CelestiumSpearManager;
 import net.inklinggamer.shopsandtools.player.CelestiumSwordManager;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -16,9 +19,11 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.Vec3d;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
@@ -29,7 +34,19 @@ public abstract class LivingEntityMixin {
     private void shopsandtools$applyCelestiumRetaliation(ServerWorld world, DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValueZ()) {
             CelestiumLeggingsManager.onPlayerDamaged((LivingEntity) (Object) this, source);
+            shopsandtools$applyCelestiumSpearEffects(source);
             shopsandtools$awardCelestiumRage(source);
+        }
+    }
+
+    private void shopsandtools$applyCelestiumSpearEffects(DamageSource source) {
+        Object self = this;
+        if (!(self instanceof LivingEntity victim) || source.getAttacker() == victim) {
+            return;
+        }
+
+        if (source.getAttacker() instanceof ServerPlayerEntity player && CelestiumSpearHelper.isCelestiumSpearEquipped(player)) {
+            CelestiumSpearManager.onDirectSpearDamage(player, victim, 1.0F);
         }
     }
 
@@ -72,5 +89,17 @@ public abstract class LivingEntityMixin {
                 && CelestiumBootsManager.shouldWallClimb(player)) {
             cir.setReturnValue(false);
         }
+    }
+
+    @Inject(method = "travel", at = @At("HEAD"), cancellable = true)
+    private void shopsandtools$preventStunnedMobMovement(Vec3d movementInput, CallbackInfo ci) {
+        Object self = this;
+        if (!(self instanceof MobEntity mob) || !CelestiumSpearManager.isStunned(mob)) {
+            return;
+        }
+
+        mob.getNavigation().stop();
+        mob.setVelocity(Vec3d.ZERO);
+        ci.cancel();
     }
 }

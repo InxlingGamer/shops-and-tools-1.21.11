@@ -38,5 +38,12 @@ public class ModBlockTagProvider extends FabricTagProvider.BlockTagProvider {
                 .add(Blocks.GRAVEL)
                 .add(Blocks.SOUL_SAND)
                 .add(Blocks.SOUL_SOIL);
+
+        valueLookupBuilder(ModTags.Blocks.CELESTIUM_HOE_SUPPORTED_CROPS)
+                .add(Blocks.WHEAT)
+                .add(Blocks.CARROTS)
+                .add(Blocks.POTATOES)
+                .add(Blocks.BEETROOTS)
+                .add(Blocks.NETHER_WART);
     }
 }

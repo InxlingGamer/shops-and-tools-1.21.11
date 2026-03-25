@@ -37,5 +37,7 @@
   "tooltip.shopsandtools.celestium_pickaxe_area_enabled": "3x3 Mining: ON",
   "tooltip.shopsandtools.celestium_pickaxe_area_disabled": "3x3 Mining: OFF",
   "tooltip.shopsandtools.celestium_shovel_area_enabled": "3x3 Excavation: ON",
-  "tooltip.shopsandtools.celestium_shovel_area_disabled": "3x3 Excavation: OFF"
+  "tooltip.shopsandtools.celestium_shovel_area_disabled": "3x3 Excavation: OFF",
+  "tooltip.shopsandtools.celestium_hoe_harvest": "3x3 Harvest: Mature crops",
+  "tooltip.shopsandtools.celestium_hoe_growth_aura": "Growth Aura: 100x100"
 }

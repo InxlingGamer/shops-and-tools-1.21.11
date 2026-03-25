@@ -18,6 +18,7 @@ import net.inklinggamer.shopsandtools.network.ToggleCelestiumPickaxeEnchantModeP
 import net.inklinggamer.shopsandtools.network.ToggleCelestiumShovelAreaModePayload;
 import net.inklinggamer.shopsandtools.player.CelestiumBootsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumExperienceManager;
+import net.inklinggamer.shopsandtools.player.CelestiumHoeManager;
 import net.inklinggamer.shopsandtools.player.CelestiumLeggingsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumPickaxeManager;
 import net.inklinggamer.shopsandtools.player.CelestiumShovelManager;
@@ -48,6 +49,7 @@ public class ShopsAndTools implements ModInitializer {
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			CelestiumBootsManager.tickServer(server);
 			CelestiumExperienceManager.tickServer(server);
+			CelestiumHoeManager.tickServer(server);
 			CelestiumLeggingsManager.tickServer(server);
 			CelestiumPickaxeManager.tickServer(server);
 			CelestiumShovelManager.tickServer(server);
@@ -56,6 +58,7 @@ public class ShopsAndTools implements ModInitializer {
 				CelestiumBootsManager.tickPlayer(player);
 				CelestiumChestItem.tickPlayer(player);
 				CelestiumExperienceManager.tickPlayer(player);
+				CelestiumHoeManager.tickPlayer(player);
 				CelestiumLeggingsManager.tickPlayer(player);
 				CelestiumShovelManager.tickPlayer(player);
 				CelestiumSwordManager.tickPlayer(player);

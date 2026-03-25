@@ -90,7 +90,7 @@ public class ModItems {
 
     public static final Item CELESTIUM_AXE = registerItem("celestium_axe", new AxeItem(ModToolMaterials.CELESTIUM, 5.0F, -3.0F, new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_axe")))));
 
-    public static final Item CELESTIUM_HOE = registerItem("celestium_hoe", new HoeItem(ModToolMaterials.CELESTIUM, -4.0F, 0.0F, new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_hoe")))));
+    public static final Item CELESTIUM_HOE = registerItem("celestium_hoe", new CelestiumHoeItem(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_hoe")))));
 
 
     private static Item.Settings createCelestiumChestplateSettings(String itemName) {

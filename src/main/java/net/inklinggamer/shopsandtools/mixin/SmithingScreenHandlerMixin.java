@@ -3,6 +3,7 @@ package net.inklinggamer.shopsandtools.mixin;
 import net.inklinggamer.shopsandtools.item.CelestiumPickaxeHelper;
 import net.inklinggamer.shopsandtools.item.CelestiumShovelHelper;
 import net.inklinggamer.shopsandtools.item.CelestiumAxeHelper;
+import net.inklinggamer.shopsandtools.item.CelestiumHoeHelper;
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -65,6 +66,10 @@ public abstract class SmithingScreenHandlerMixin extends ScreenHandler {
 
         if (result.isOf(ModItems.CELESTIUM_AXE)) {
             CelestiumAxeHelper.initializeSmithingResult(upgradedResult, this.world.getRegistryManager());
+        }
+
+        if (result.isOf(ModItems.CELESTIUM_HOE)) {
+            CelestiumHoeHelper.initializeSmithingResult(upgradedResult, this.world.getRegistryManager());
         }
 
         this.getSlot(SmithingScreenHandler.OUTPUT_ID).setStackNoCallbacks(upgradedResult);

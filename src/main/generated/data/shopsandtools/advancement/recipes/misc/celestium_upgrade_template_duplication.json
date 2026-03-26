@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "celestium:celestium_chestplate"
+        "recipe": "shopsandtools:celestium_upgrade_template_duplication"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -26,7 +26,7 @@
   ],
   "rewards": {
     "recipes": [
-      "celestium:celestium_chestplate"
+      "shopsandtools:celestium_upgrade_template_duplication"
     ]
   }
 }

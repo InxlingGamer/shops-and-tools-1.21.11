@@ -17,9 +17,9 @@ public class ModHeldItemAssetProvider implements DataProvider {
             new InHandItemDefinition(
                     "celestium_spear",
                     "minecraft:item/generated",
-                    "shopsandtools:item/celestium_spear",
+                    ShopsAndTools.MOD_ID + ":item/celestium_spear",
                     "minecraft:item/spear_in_hand",
-                    "shopsandtools:item/celestium_spear_in_hand",
+                    ShopsAndTools.MOD_ID + ":item/celestium_spear_in_hand",
                     1.95D
             )
     );
@@ -44,7 +44,7 @@ public class ModHeldItemAssetProvider implements DataProvider {
 
     @Override
     public String getName() {
-        return "Held Item Assets";
+        return "Celestium Held Item Assets";
     }
 
     private JsonObject createSimpleModel(String parent, String texture) {

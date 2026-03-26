@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "celestium:celestium_hoe"
+        "recipe": "shopsandtools:celestium_hoe"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -26,7 +26,7 @@
   ],
   "rewards": {
     "recipes": [
-      "celestium:celestium_hoe"
+      "shopsandtools:celestium_hoe"
     ]
   }
 }

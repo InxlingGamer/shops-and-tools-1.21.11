@@ -3,6 +3,7 @@ package net.inklinggamer.shopsandtools.datagen;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.minecraft.data.DataProvider;
 import net.minecraft.data.DataWriter;
 
@@ -25,17 +26,17 @@ public class ModEquipmentAssetProvider implements DataProvider {
 
     @Override
     public String getName() {
-        return "Equipment Assets";
+        return "Celestium Equipment Assets";
     }
 
     private JsonObject createEquipmentModel(boolean includeHorseBody, boolean includeWings) {
         JsonObject root = new JsonObject();
         JsonObject layers = new JsonObject();
-        JsonArray humanoid = createTextureLayer("shopsandtools:celestium");
-        JsonArray humanoidLeggings = createTextureLayer("shopsandtools:celestium");
+        JsonArray humanoid = createTextureLayer(getTextureId("celestium"));
+        JsonArray humanoidLeggings = createTextureLayer(getTextureId("celestium"));
 
         if (includeHorseBody) {
-            layers.add("horse_body", createTextureLayer("shopsandtools:celestium"));
+            layers.add("horse_body", createTextureLayer(getTextureId("celestium")));
         }
         layers.add("humanoid", humanoid);
         layers.add("humanoid_leggings", humanoidLeggings);
@@ -61,10 +62,14 @@ public class ModEquipmentAssetProvider implements DataProvider {
         return textureLayer;
     }
 
+    private String getTextureId(String textureName) {
+        return ShopsAndTools.MOD_ID + ":" + textureName;
+    }
+
     private Path getEquipmentPath(String fileName) {
         return output.getPath()
                 .resolve("assets")
-                .resolve("shopsandtools")
+                .resolve(ShopsAndTools.MOD_ID)
                 .resolve("equipment")
                 .resolve(fileName + ".json");
     }

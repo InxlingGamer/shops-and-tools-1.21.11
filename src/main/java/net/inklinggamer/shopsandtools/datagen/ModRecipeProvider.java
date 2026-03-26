@@ -22,6 +22,6 @@ public class ModRecipeProvider extends FabricRecipeProvider {
 
     @Override
     public String getName() {
-        return "ShopsAndTools Recipes";
+        return "Celestium Recipes";
     }
 }

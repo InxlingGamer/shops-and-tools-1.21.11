@@ -132,11 +132,27 @@ tasks.register("runCelestiumBlockTests", JavaExec) {
 	dependsOn(tasks.named("testClasses"))
 }
 
+tasks.register("runCelestiumBlockItemAssetTests", JavaExec) {
+	group = "verification"
+	description = "Runs the self-contained Celestium block item asset tests."
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "net.inklinggamer.shopsandtools.datagen.CelestiumBlockItemAssetTest"
+	dependsOn(tasks.named("testClasses"))
+}
+
 tasks.register("runCelestiumIrisCompatTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium Iris compatibility tests."
 	classpath = sourceSets.test.runtimeClasspath
 	mainClass = "net.inklinggamer.shopsandtools.client.CelestiumFroglightIrisCompatTest"
+	dependsOn(tasks.named("testClasses"))
+}
+
+tasks.register("runCelestiumMetadataTests", JavaExec) {
+	group = "verification"
+	description = "Runs the self-contained Celestium metadata and build naming tests."
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "net.inklinggamer.shopsandtools.CelestiumMetadataTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -171,7 +187,9 @@ tasks.named("test") {
 	dependsOn(tasks.named("runCelestiumHorseArmorTests"))
 	dependsOn(tasks.named("runCelestiumBootsTests"))
 	dependsOn(tasks.named("runCelestiumBlockTests"))
+	dependsOn(tasks.named("runCelestiumBlockItemAssetTests"))
 	dependsOn(tasks.named("runCelestiumIrisCompatTests"))
+	dependsOn(tasks.named("runCelestiumMetadataTests"))
 	dependsOn(tasks.named("runCelestiumItemTests"))
 	dependsOn(tasks.named("runCelestiumTrimTagTests"))
 	dependsOn(tasks.named("runCelestiumAdvancementTests"))

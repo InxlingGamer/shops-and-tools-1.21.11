@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "celestium:celestium_horse_armor"
+        "recipe": "shopsandtools:celestium_sword"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -26,7 +26,7 @@
   ],
   "rewards": {
     "recipes": [
-      "celestium:celestium_horse_armor"
+      "shopsandtools:celestium_sword"
     ]
   }
 }

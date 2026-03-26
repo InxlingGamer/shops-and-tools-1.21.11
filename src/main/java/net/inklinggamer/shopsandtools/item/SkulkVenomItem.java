@@ -1,5 +1,6 @@
 package net.inklinggamer.shopsandtools.item;
 
+import net.inklinggamer.shopsandtools.advancement.ModAdvancementActions;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.effect.StatusEffectInstance;
@@ -7,6 +8,7 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 
 public class SkulkVenomItem extends Item {
@@ -38,6 +40,9 @@ public class SkulkVenomItem extends Item {
                 player.addStatusEffect(new StatusEffectInstance(StatusEffects.STRENGTH, 40, 2, false, false, true));
                 player.addStatusEffect(new StatusEffectInstance(StatusEffects.HASTE, 40, 2, false, false, true));
                 player.addStatusEffect(new StatusEffectInstance(StatusEffects.SPEED, 40, 1, false, false, true));
+                if (player instanceof ServerPlayerEntity serverPlayer) {
+                    ModAdvancementActions.triggerAStrangeEnergy(serverPlayer);
+                }
             } else {
                 // 3. Out of XP! The parasite turns on the player.
                 // Applies Wither II (Amplifier 1)

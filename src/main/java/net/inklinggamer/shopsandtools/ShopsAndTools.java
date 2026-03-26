@@ -2,6 +2,10 @@ package net.inklinggamer.shopsandtools;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
+import net.inklinggamer.shopsandtools.advancement.CelestiumAdvancementHelper;
+import net.inklinggamer.shopsandtools.advancement.ModAdvancementActions;
+import net.inklinggamer.shopsandtools.advancement.ModAdvancementCriteria;
 import net.inklinggamer.shopsandtools.block.ModBlocks;
 import net.inklinggamer.shopsandtools.item.CelestiumChestItem;
 import net.inklinggamer.shopsandtools.item.ModItemGroups;
@@ -35,6 +39,7 @@ public class ShopsAndTools implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		ModAdvancementCriteria.register();
 		ModItems.registerModItems();
 		ModItemGroups.registerItemGroups();
 		ModBlocks.registerModBlocks();
@@ -49,6 +54,7 @@ public class ShopsAndTools implements ModInitializer {
 		ToggleCelestiumPickaxeEnchantModePayload.register();
 		ToggleCelestiumShovelAreaModePayload.register();
 		ArmCelestiumShovelSlamPayload.register();
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> ModAdvancementActions.triggerPlayerJoined(handler.player));
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			CelestiumBootsManager.tickServer(server);
 			CelestiumExperienceManager.tickServer(server);
@@ -67,6 +73,9 @@ public class ShopsAndTools implements ModInitializer {
 				CelestiumShovelManager.tickPlayer(player);
 				CelestiumSpearManager.tickPlayer(player);
 				CelestiumSwordManager.tickPlayer(player);
+				if (CelestiumAdvancementHelper.isFullyAscended(player)) {
+					ModAdvancementActions.triggerFullyAscended(player);
+				}
 			});
 		});
 	}

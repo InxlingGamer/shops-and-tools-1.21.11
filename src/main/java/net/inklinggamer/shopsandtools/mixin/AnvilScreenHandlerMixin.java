@@ -1,12 +1,15 @@
 package net.inklinggamer.shopsandtools.mixin;
 
+import net.inklinggamer.shopsandtools.advancement.ModAdvancementActions;
 import net.inklinggamer.shopsandtools.item.ModItems;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.screen.AnvilScreenHandler;
 import net.minecraft.screen.Property;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.server.network.ServerPlayerEntity;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -91,5 +94,12 @@ public abstract class AnvilScreenHandlerMixin extends ScreenHandler {
     @ModifyConstant(method = "updateResult", constant = @Constant(intValue = 40, ordinal = 2))
     private int shopsandtools$removeOutputTooExpensiveLimit(int vanillaLimit) {
         return shopsandtools$noTooExpensiveLimit;
+    }
+
+    @Inject(method = "onTakeOutput", at = @At("TAIL"))
+    private void shopsandtools$triggerBoundToTheSky(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
+        if (stack.isOf(ModItems.CELESTIUM_ELYTRA_CHESTPLATE) && player instanceof ServerPlayerEntity serverPlayer) {
+            ModAdvancementActions.triggerBoundToTheSky(serverPlayer);
+        }
     }
 }

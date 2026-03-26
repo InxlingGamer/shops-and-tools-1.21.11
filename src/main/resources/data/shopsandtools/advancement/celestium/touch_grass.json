@@ -1,0 +1,35 @@
+{
+  "parent": "shopsandtools:celestium/beyond_netherite",
+  "display": {
+    "icon": {
+      "id": "minecraft:short_grass"
+    },
+    "title": {
+      "translate": "advancements.shopsandtools.celestium.touch_grass.title",
+      "color": "light_purple"
+    },
+    "description": {
+      "translate": "advancements.shopsandtools.celestium.touch_grass.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "touch_grass": {
+      "trigger": "shopsandtools:action_performed",
+      "conditions": {
+        "action": "shopsandtools:touch_grass"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "touch_grass"
+    ]
+  ],
+  "rewards": {
+    "function": "shopsandtools:advancements/touch_grass_reward"
+  }
+}

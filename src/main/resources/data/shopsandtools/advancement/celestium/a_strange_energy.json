@@ -1,0 +1,32 @@
+{
+  "parent": "shopsandtools:celestium/executioner_of_the_deep",
+  "display": {
+    "icon": {
+      "id": "shopsandtools:skulk_venom"
+    },
+    "title": {
+      "translate": "advancements.shopsandtools.celestium.a_strange_energy.title",
+      "color": "light_purple"
+    },
+    "description": {
+      "translate": "advancements.shopsandtools.celestium.a_strange_energy.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "a_strange_energy": {
+      "trigger": "shopsandtools:action_performed",
+      "conditions": {
+        "action": "shopsandtools:a_strange_energy"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "a_strange_energy"
+    ]
+  ]
+}

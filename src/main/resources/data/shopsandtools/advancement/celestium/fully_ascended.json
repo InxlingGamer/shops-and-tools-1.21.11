@@ -1,0 +1,32 @@
+{
+  "parent": "shopsandtools:celestium/beyond_netherite",
+  "display": {
+    "icon": {
+      "id": "shopsandtools:celestium_helmet"
+    },
+    "title": {
+      "translate": "advancements.shopsandtools.celestium.fully_ascended.title",
+      "color": "light_purple"
+    },
+    "description": {
+      "translate": "advancements.shopsandtools.celestium.fully_ascended.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "fully_ascended": {
+      "trigger": "shopsandtools:action_performed",
+      "conditions": {
+        "action": "shopsandtools:fully_ascended"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "fully_ascended"
+    ]
+  ]
+}

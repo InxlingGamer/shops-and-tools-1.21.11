@@ -1,0 +1,32 @@
+{
+  "parent": "shopsandtools:celestium/beyond_netherite",
+  "display": {
+    "icon": {
+      "id": "shopsandtools:celestium_elytra_chestplate"
+    },
+    "title": {
+      "translate": "advancements.shopsandtools.celestium.bound_to_the_sky.title",
+      "color": "light_purple"
+    },
+    "description": {
+      "translate": "advancements.shopsandtools.celestium.bound_to_the_sky.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "bound_to_the_sky": {
+      "trigger": "shopsandtools:action_performed",
+      "conditions": {
+        "action": "shopsandtools:bound_to_the_sky"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "bound_to_the_sky"
+    ]
+  ]
+}

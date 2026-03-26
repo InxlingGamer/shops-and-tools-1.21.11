@@ -1,0 +1,32 @@
+{
+  "display": {
+    "icon": {
+      "id": "shopsandtools:celestium_block"
+    },
+    "title": {
+      "translate": "advancements.shopsandtools.celestium.root.title",
+      "color": "light_purple"
+    },
+    "description": {
+      "translate": "advancements.shopsandtools.celestium.root.description"
+    },
+    "frame": "task",
+    "show_toast": false,
+    "announce_to_chat": false,
+    "hidden": false,
+    "background": "shopsandtools:gui/advancements/backgrounds/celestium_block"
+  },
+  "criteria": {
+    "player_joined": {
+      "trigger": "shopsandtools:action_performed",
+      "conditions": {
+        "action": "shopsandtools:player_joined"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "player_joined"
+    ]
+  ]
+}

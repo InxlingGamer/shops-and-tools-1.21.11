@@ -1,0 +1,45 @@
+{
+  "parent": "shopsandtools:celestium/root",
+  "display": {
+    "icon": {
+      "id": "shopsandtools:warden_heart"
+    },
+    "title": {
+      "translate": "advancements.shopsandtools.celestium.executioner_of_the_deep.title",
+      "color": "light_purple"
+    },
+    "description": {
+      "translate": "advancements.shopsandtools.celestium.executioner_of_the_deep.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "killed_warden": {
+      "trigger": "minecraft:player_killed_entity",
+      "conditions": {
+        "entity": {
+          "type": "minecraft:warden"
+        }
+      }
+    },
+    "has_warden_heart": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "shopsandtools:warden_heart"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "killed_warden",
+      "has_warden_heart"
+    ]
+  ]
+}

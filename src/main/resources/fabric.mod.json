@@ -1,11 +1,11 @@
 {
 	"schemaVersion": 1,
-	"id": "shopsandtools",
+	"id": "celestium",
 	"version": "${version}",
-	"name": "Shops and Tools",
-	"description": "Mod that adds basic shops as well as armor and tools to the InkyMC Minecraft Server",
+	"name": "Celestium",
+	"description": "Unlock a whole new set of armor and tools forged by the strongest and rarest materials in the game",
 	"authors": [
-		"InklingGamer"
+		"InxlingGamer"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",

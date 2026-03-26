@@ -1,18 +1,7 @@
 package net.inklinggamer.shopsandtools.mixin;
 
-import net.inklinggamer.shopsandtools.item.CelestiumPickaxeHelper;
-import net.inklinggamer.shopsandtools.item.CelestiumSpearHelper;
-import net.inklinggamer.shopsandtools.item.CelestiumShovelHelper;
-import net.inklinggamer.shopsandtools.item.CelestiumAxeHelper;
-import net.inklinggamer.shopsandtools.item.CelestiumHoeHelper;
-import net.inklinggamer.shopsandtools.item.ModItems;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
+import net.inklinggamer.shopsandtools.item.CelestiumSmithingResultHelper;
 import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.screen.SmithingScreenHandler;
@@ -38,43 +27,14 @@ public abstract class SmithingScreenHandlerMixin extends ScreenHandler {
     @Inject(method = "updateResult", at = @At("RETURN"))
     private void shopsandtools$upgradeCelestiumBootsToFeatherFallingFive(CallbackInfo ci) {
         ItemStack result = this.getSlot(SmithingScreenHandler.OUTPUT_ID).getStack();
-        if (!EnchantmentHelper.canHaveEnchantments(result)) {
+        if (result.isEmpty()) {
             return;
         }
 
-        Registry<Enchantment> enchantmentRegistry = this.world.getRegistryManager().getOrThrow(RegistryKeys.ENCHANTMENT);
-        ItemStack upgradedResult = result.copy();
-
-        if (result.isOf(ModItems.CELESTIUM_BOOTS)) {
-            Enchantment featherFallingValue = enchantmentRegistry.getValueOrThrow(Enchantments.FEATHER_FALLING);
-            RegistryEntry<Enchantment> featherFalling = enchantmentRegistry.getEntry(featherFallingValue);
-            EnchantmentHelper.apply(upgradedResult, builder -> builder.set(featherFalling, 5));
-        }
-
-        if (result.isOf(ModItems.CELESTIUM_SWORD)) {
-            Enchantment sharpnessValue = enchantmentRegistry.getValueOrThrow(Enchantments.SHARPNESS);
-            RegistryEntry<Enchantment> sharpness = enchantmentRegistry.getEntry(sharpnessValue);
-            EnchantmentHelper.apply(upgradedResult, builder -> builder.set(sharpness, 10));
-        }
-
-        if (result.isOf(ModItems.CELESTIUM_SPEAR)) {
-            CelestiumSpearHelper.initializeSmithingResult(upgradedResult, this.world.getRegistryManager());
-        }
-
-        if (result.isOf(ModItems.CELESTIUM_PICKAXE)) {
-            CelestiumPickaxeHelper.initializeSmithingResult(upgradedResult, this.world.getRegistryManager());
-        }
-
-        if (result.isOf(ModItems.CELESTIUM_SHOVEL)) {
-            CelestiumShovelHelper.initializeSmithingResult(upgradedResult, this.world.getRegistryManager());
-        }
-
-        if (result.isOf(ModItems.CELESTIUM_AXE)) {
-            CelestiumAxeHelper.initializeSmithingResult(upgradedResult, this.world.getRegistryManager());
-        }
-
-        if (result.isOf(ModItems.CELESTIUM_HOE)) {
-            CelestiumHoeHelper.initializeSmithingResult(upgradedResult, this.world.getRegistryManager());
+        // Vanilla smithing has already built the correct output, including trims.
+        ItemStack upgradedResult = CelestiumSmithingResultHelper.postProcess(result, this.world.getRegistryManager());
+        if (ItemStack.areEqual(result, upgradedResult)) {
+            return;
         }
 
         this.getSlot(SmithingScreenHandler.OUTPUT_ID).setStackNoCallbacks(upgradedResult);

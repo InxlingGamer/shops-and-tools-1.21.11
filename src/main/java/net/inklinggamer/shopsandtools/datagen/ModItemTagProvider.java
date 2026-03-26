@@ -25,9 +25,6 @@ public class ModItemTagProvider extends FabricTagProvider.ItemTagProvider {
         valueLookupBuilder(ItemTags.SPEARS).add(ModItems.CELESTIUM_SPEAR);
 
         // Armor tags
-        valueLookupBuilder(ItemTags.TRIMMABLE_ARMOR)
-                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS);
-
         valueLookupBuilder(ItemTags.ARMOR_ENCHANTABLE)
                 .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS);
 

@@ -18,8 +18,8 @@ public class ModEquipmentAssetProvider implements DataProvider {
 
     @Override
     public CompletableFuture<?> run(DataWriter writer) {
-        CompletableFuture<?> celestiumFuture = DataProvider.writeToPath(writer, createEquipmentModel(false), getEquipmentPath("celestium"));
-        CompletableFuture<?> celestiumElytraFuture = DataProvider.writeToPath(writer, createEquipmentModel(true), getEquipmentPath("celestium_elytra"));
+        CompletableFuture<?> celestiumFuture = DataProvider.writeToPath(writer, createEquipmentModel(true, false), getEquipmentPath("celestium"));
+        CompletableFuture<?> celestiumElytraFuture = DataProvider.writeToPath(writer, createEquipmentModel(false, true), getEquipmentPath("celestium_elytra"));
         return CompletableFuture.allOf(celestiumFuture, celestiumElytraFuture);
     }
 
@@ -28,20 +28,15 @@ public class ModEquipmentAssetProvider implements DataProvider {
         return "Equipment Assets";
     }
 
-    private JsonObject createEquipmentModel(boolean includeWings) {
+    private JsonObject createEquipmentModel(boolean includeHorseBody, boolean includeWings) {
         JsonObject root = new JsonObject();
         JsonObject layers = new JsonObject();
+        JsonArray humanoid = createTextureLayer("shopsandtools:celestium");
+        JsonArray humanoidLeggings = createTextureLayer("shopsandtools:celestium");
 
-        JsonArray humanoid = new JsonArray();
-        JsonObject humanoidTexture = new JsonObject();
-        humanoidTexture.addProperty("texture", "shopsandtools:celestium");
-        humanoid.add(humanoidTexture);
-
-        JsonArray humanoidLeggings = new JsonArray();
-        JsonObject leggingsTexture = new JsonObject();
-        leggingsTexture.addProperty("texture", "shopsandtools:celestium");
-        humanoidLeggings.add(leggingsTexture);
-
+        if (includeHorseBody) {
+            layers.add("horse_body", createTextureLayer("shopsandtools:celestium"));
+        }
         layers.add("humanoid", humanoid);
         layers.add("humanoid_leggings", humanoidLeggings);
 
@@ -56,6 +51,14 @@ public class ModEquipmentAssetProvider implements DataProvider {
 
         root.add("layers", layers);
         return root;
+    }
+
+    private JsonArray createTextureLayer(String textureId) {
+        JsonArray textureLayer = new JsonArray();
+        JsonObject texture = new JsonObject();
+        texture.addProperty("texture", textureId);
+        textureLayer.add(texture);
+        return textureLayer;
     }
 
     private Path getEquipmentPath(String fileName) {

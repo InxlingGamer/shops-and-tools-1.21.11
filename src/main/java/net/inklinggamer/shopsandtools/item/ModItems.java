@@ -27,7 +27,7 @@ public class ModItems {
     // ==========================================
     // BASIC ITEMS & MATERIALS
     // ==========================================
-    public static final Item CELESTIUM = registerItem("celestium", new Item(new Item.Settings().fireproof().component(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true).registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium")))));
+    public static final Item CELESTIUM = registerItem("celestium", new CelestiumItem(new Item.Settings().fireproof().component(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true).registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium")))));
 
     public static final Item SKULK_VENOM = registerItem("skulk_venom", new SkulkVenomItem(new Item.Settings().maxCount(1).component(DataComponentTypes.ENCHANTMENT_GLINT_OVERRIDE, true).registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"skulk_venom")))) {
         @Override
@@ -91,7 +91,6 @@ public class ModItems {
     public static final Item CELESTIUM_AXE = registerItem("celestium_axe", new AxeItem(ModToolMaterials.CELESTIUM, 5.0F, -3.0F, new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_axe")))));
 
     public static final Item CELESTIUM_HOE = registerItem("celestium_hoe", new CelestiumHoeItem(new Item.Settings().fireproof().registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID,"celestium_hoe")))));
-
 
     private static Item.Settings createCelestiumChestplateSettings(String itemName) {
         return new Item.Settings()

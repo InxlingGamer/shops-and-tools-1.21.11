@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.inklinggamer.shopsandtools.client.CelestiumBootsClient;
+import net.inklinggamer.shopsandtools.client.CelestiumFroglightIrisCompat;
 import net.inklinggamer.shopsandtools.client.CelestiumHoeClient;
 import net.inklinggamer.shopsandtools.client.CelestiumLeggingsClient;
 import net.inklinggamer.shopsandtools.client.CelestiumPickaxeClient;
@@ -25,6 +26,7 @@ public class ShopsAndToolsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         if (FabricLoader.getInstance().isModLoaded("iris")) {
+            CelestiumFroglightIrisCompat.register();
             CelestiumPickaxeOutlineIrisCompat.register();
             CelestiumTrialChamberMarkerIrisCompat.register();
             CelestiumXrayIrisCompat.register();

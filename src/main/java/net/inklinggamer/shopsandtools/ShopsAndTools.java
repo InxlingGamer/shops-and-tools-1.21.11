@@ -7,6 +7,8 @@ import net.inklinggamer.shopsandtools.advancement.CelestiumAdvancementHelper;
 import net.inklinggamer.shopsandtools.advancement.ModAdvancementActions;
 import net.inklinggamer.shopsandtools.advancement.ModAdvancementCriteria;
 import net.inklinggamer.shopsandtools.block.ModBlocks;
+import net.inklinggamer.shopsandtools.entity.WardenBossBarManager;
+import net.inklinggamer.shopsandtools.entity.WardenCombatManager;
 import net.inklinggamer.shopsandtools.item.CelestiumChestItem;
 import net.inklinggamer.shopsandtools.item.ModItemGroups;
 import net.inklinggamer.shopsandtools.item.ModItems;
@@ -43,6 +45,8 @@ public class ShopsAndTools implements ModInitializer {
 		ModItems.registerModItems();
 		ModItemGroups.registerItemGroups();
 		ModBlocks.registerModBlocks();
+		WardenCombatManager.register();
+		WardenBossBarManager.register();
 		OpenCelestiumCraftingPayload.register();
 		ReturnToInventoryPayload.register();
 		SyncCelestiumWallClimbInputPayload.register();
@@ -64,6 +68,7 @@ public class ShopsAndTools implements ModInitializer {
 			CelestiumShovelManager.tickServer(server);
 			CelestiumSpearManager.tickServer(server);
 			CelestiumSwordManager.tickServer(server);
+			WardenBossBarManager.tickServer(server);
 			server.getPlayerManager().getPlayerList().forEach(player -> {
 				CelestiumBootsManager.tickPlayer(player);
 				CelestiumChestItem.tickPlayer(player);

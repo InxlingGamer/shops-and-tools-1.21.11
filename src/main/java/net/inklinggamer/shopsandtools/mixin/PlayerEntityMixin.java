@@ -90,18 +90,19 @@ public abstract class PlayerEntityMixin {
         }
 
         CelestiumSwordManager.endRageWeaponAttack(serverPlayer);
-        if (this.shopsandtools$celestiumWeaponTarget == null) {
-            this.shopsandtools$celestiumWeaponInitialCombinedHealth = 0.0F;
-            return;
-        }
-
         LivingEntity livingTarget = this.shopsandtools$celestiumWeaponTarget;
-        float initialCombinedHealth = this.shopsandtools$celestiumWeaponInitialCombinedHealth;
-        float remainingCombinedHealth = Math.max(0.0F, livingTarget.getHealth() + livingTarget.getAbsorptionAmount());
-        float dealtDamage = Math.max(0.0F, initialCombinedHealth - remainingCombinedHealth);
         float attackCooldownProgress = this.shopsandtools$celestiumWeaponAttackCooldownProgress;
         boolean swordAttack = this.shopsandtools$celestiumSwordAttack;
         boolean axeAttack = this.shopsandtools$celestiumAxeAttack;
+
+        if (livingTarget == null) {
+            shopsandtools$clearCelestiumAttackState();
+            return;
+        }
+
+        float initialCombinedHealth = this.shopsandtools$celestiumWeaponInitialCombinedHealth;
+        float remainingCombinedHealth = Math.max(0.0F, livingTarget.getHealth() + livingTarget.getAbsorptionAmount());
+        float dealtDamage = Math.max(0.0F, initialCombinedHealth - remainingCombinedHealth);
 
         shopsandtools$clearCelestiumAttackState();
 

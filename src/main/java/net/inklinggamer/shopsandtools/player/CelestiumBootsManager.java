@@ -15,8 +15,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -32,7 +30,6 @@ import java.util.Map;
 import java.util.UUID;
 
 public final class CelestiumBootsManager {
-    private static final int LADDER_SOUND_INTERVAL_TICKS = 4;
     private static final float WALL_CLIMB_SOUND_VOLUME_MULTIPLIER = 1.15F;
     private static final double WALL_CLIMB_SPEED = 0.2D;
     private static final double WALL_STRAFE_SPEED = 0.12D;
@@ -69,7 +66,7 @@ public final class CelestiumBootsManager {
         state.wallDirection = wallDirection;
 
         if (!attached) {
-            state.lastWallClimbSoundTick = Long.MIN_VALUE;
+            resetWallClimbSoundState(state);
             return;
         }
 
@@ -92,7 +89,7 @@ public final class CelestiumBootsManager {
         if (!sneakHeld) {
             state.wallClimbing = false;
             state.wallDirection = null;
-            state.lastWallClimbSoundTick = Long.MIN_VALUE;
+            resetWallClimbSoundState(state);
         }
     }
 
@@ -118,6 +115,25 @@ public final class CelestiumBootsManager {
 
     public static BlockPos resolveWallClimbSoundPos(PlayerEntity player, Direction wallDirection) {
         return wallDirection == null ? null : resolveWallSoundPos(player, wallDirection);
+    }
+
+    public static Vec3d getWallClimbVelocity(PlayerEntity player, Direction wallDirection) {
+        Vec3d wallNormal = new Vec3d(wallDirection.getOffsetX(), 0.0D, wallDirection.getOffsetZ());
+        double verticalSpeed = getVerticalWallInput(player) * WALL_CLIMB_SPEED;
+        Vec3d strafeVelocity = getWallStrafeVelocity(player, wallNormal);
+        return strafeVelocity.add(wallNormal.multiply(WALL_STICK_SPEED)).add(0.0D, verticalSpeed, 0.0D);
+    }
+
+    public static WallClimbSoundTransition evaluateWallClimbSoundTransition(BlockPos previousSoundPos, BlockPos currentSoundPos) {
+        if (currentSoundPos == null) {
+            return new WallClimbSoundTransition(false, previousSoundPos);
+        }
+
+        if (previousSoundPos == null) {
+            return new WallClimbSoundTransition(false, currentSoundPos);
+        }
+
+        return new WallClimbSoundTransition(!currentSoundPos.equals(previousSoundPos), currentSoundPos);
     }
 
     public static boolean hasWallClimbMovementInput(PlayerEntity player) {
@@ -402,78 +418,55 @@ public final class CelestiumBootsManager {
     }
 
     private static void applyWallMovement(ServerPlayerEntity player, Direction wallDirection) {
-        Vec3d wallNormal = new Vec3d(wallDirection.getOffsetX(), 0.0D, wallDirection.getOffsetZ());
-        double verticalSpeed = getVerticalWallInput(player) * WALL_CLIMB_SPEED;
-        Vec3d strafeVelocity = getWallStrafeVelocity(player, wallNormal);
-        Vec3d adjustedVelocity = strafeVelocity.add(wallNormal.multiply(WALL_STICK_SPEED)).add(0.0D, verticalSpeed, 0.0D);
-        player.setVelocity(adjustedVelocity);
+        player.setVelocity(getWallClimbVelocity(player, wallDirection));
         player.fallDistance = 0.0D;
         ((EntityInvoker) player).shopsandtools$invokeScheduleVelocityUpdate();
     }
 
     private static void playWallClimbSound(ServerPlayerEntity player, PlayerState state) {
         if (!isMovingOnWall(player)) {
-            state.lastWallClimbSoundTick = Long.MIN_VALUE;
+            resetWallClimbSoundState(state);
             return;
         }
 
-        long worldTime = player.getEntityWorld().getTime();
-        if (worldTime - state.lastWallClimbSoundTick < LADDER_SOUND_INTERVAL_TICKS) {
+        BlockPos soundPos = resolveWallSoundPos(player, state.wallDirection);
+        WallClimbSoundTransition transition = evaluateWallClimbSoundTransition(state.lastWallClimbSoundPos, soundPos);
+        state.lastWallClimbSoundPos = transition.trackedSoundPos();
+        if (!transition.shouldPlaySound() || soundPos == null) {
             return;
         }
 
-        playWallStepSound(player, state.wallDirection);
-        state.lastWallClimbSoundTick = worldTime;
+        playWallStepSound(player, soundPos);
     }
 
-    private static void playWallStepSound(ServerPlayerEntity player, Direction wallDirection) {
-        BlockPos soundPos = wallDirection == null ? null : resolveWallSoundPos(player, wallDirection);
-        SoundEvent sound = SoundEvents.BLOCK_LADDER_STEP;
-        float volume = 1.0F;
-        float pitch = 1.0F;
-        double soundX = player.getX();
-        double soundY = player.getY();
-        double soundZ = player.getZ();
-
-        if (soundPos != null) {
-            BlockState soundState = player.getEntityWorld().getBlockState(soundPos);
-            BlockSoundGroup soundGroup = soundState.getSoundGroup();
-            if (soundGroup != null) {
-                sound = soundGroup.getStepSound();
-                volume = Math.max(0.1F, soundGroup.getVolume() * WALL_CLIMB_SOUND_VOLUME_MULTIPLIER);
-                pitch = soundGroup.getPitch();
-            }
-
-            soundX = soundPos.getX() + 0.5D;
-            soundY = soundPos.getY() + 0.5D;
-            soundZ = soundPos.getZ() + 0.5D;
+    private static void playWallStepSound(ServerPlayerEntity player, BlockPos soundPos) {
+        BlockSoundGroup soundGroup = player.getEntityWorld().getBlockState(soundPos).getSoundGroup();
+        if (soundGroup == null || soundGroup.getVolume() <= 0.0F) {
+            return;
         }
 
         player.getEntityWorld().playSound(
                 player,
-                soundX,
-                soundY,
-                soundZ,
-                sound,
+                soundPos.getX() + 0.5D,
+                soundPos.getY() + 0.5D,
+                soundPos.getZ() + 0.5D,
+                soundGroup.getStepSound(),
                 SoundCategory.PLAYERS,
-                volume,
-                pitch
+                Math.max(0.1F, soundGroup.getVolume() * WALL_CLIMB_SOUND_VOLUME_MULTIPLIER),
+                soundGroup.getPitch()
         );
     }
 
     private static BlockPos resolveWallSoundPos(PlayerEntity player, Direction wallDirection) {
         Box playerBox = player.getBoundingBox();
         World world = player.getEntityWorld();
-        int minY = MathHelper.floor(playerBox.minY + WALL_CONTACT_EPSILON);
-        int maxY = MathHelper.floor(playerBox.maxY - WALL_CONTACT_EPSILON);
-        for (int y = minY; y <= maxY; y++) {
-            BlockPos soundPos = findWallSegment(world, playerBox, y, wallDirection);
-            if (soundPos != null) {
-                return soundPos;
-            }
+        int feetY = MathHelper.floor(playerBox.minY + WALL_CONTACT_EPSILON);
+        BlockPos soundPos = findWallSoundSurface(world, playerBox, feetY, wallDirection);
+        if (soundPos != null) {
+            return soundPos;
         }
 
-        return null;
+        return player.isOnGround() ? null : findWallSoundSurface(world, playerBox, feetY - 1, wallDirection);
     }
 
     private static Vec3d getWallStrafeVelocity(PlayerEntity player, Vec3d wallNormal) {
@@ -507,7 +500,7 @@ public final class CelestiumBootsManager {
         return new Vec3d(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
     }
 
-    private static BlockPos findWallSegment(World world, Box playerBox, int y, Direction direction) {
+    private static BlockPos findWallSoundSurface(World world, Box playerBox, int y, Direction direction) {
         switch (direction) {
             case WEST -> {
                 int x = MathHelper.floor(playerBox.minX - WALL_CONTACT_EPSILON);
@@ -515,7 +508,7 @@ public final class CelestiumBootsManager {
                 int maxZ = MathHelper.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
                 for (int z = minZ; z <= maxZ; z++) {
                     BlockPos pos = new BlockPos(x, y, z);
-                    if (isClimbWall(world, pos)) {
+                    if (isWallSoundSurface(world, pos)) {
                         return pos;
                     }
                 }
@@ -526,7 +519,7 @@ public final class CelestiumBootsManager {
                 int maxZ = MathHelper.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
                 for (int z = minZ; z <= maxZ; z++) {
                     BlockPos pos = new BlockPos(x, y, z);
-                    if (isClimbWall(world, pos)) {
+                    if (isWallSoundSurface(world, pos)) {
                         return pos;
                     }
                 }
@@ -537,7 +530,7 @@ public final class CelestiumBootsManager {
                 int maxX = MathHelper.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
                 for (int x = minX; x <= maxX; x++) {
                     BlockPos pos = new BlockPos(x, y, z);
-                    if (isClimbWall(world, pos)) {
+                    if (isWallSoundSurface(world, pos)) {
                         return pos;
                     }
                 }
@@ -548,7 +541,7 @@ public final class CelestiumBootsManager {
                 int maxX = MathHelper.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
                 for (int x = minX; x <= maxX; x++) {
                     BlockPos pos = new BlockPos(x, y, z);
-                    if (isClimbWall(world, pos)) {
+                    if (isWallSoundSurface(world, pos)) {
                         return pos;
                     }
                 }
@@ -561,6 +554,17 @@ public final class CelestiumBootsManager {
         return null;
     }
 
+    private static boolean isWallSoundSurface(World world, BlockPos pos) {
+        return isClimbWall(world, pos) || isTallFenceOrWall(world, pos);
+    }
+
+    private static void resetWallClimbSoundState(PlayerState state) {
+        state.lastWallClimbSoundPos = null;
+    }
+
+    public record WallClimbSoundTransition(boolean shouldPlaySound, BlockPos trackedSoundPos) {
+    }
+
     private static final class PlayerState {
         private boolean sneakKeyHeld;
         private boolean forwardKeyHeld;
@@ -569,6 +573,6 @@ public final class CelestiumBootsManager {
         private boolean rightKeyHeld;
         private boolean wallClimbing;
         private Direction wallDirection;
-        private long lastWallClimbSoundTick = Long.MIN_VALUE;
+        private BlockPos lastWallClimbSoundPos;
     }
 }

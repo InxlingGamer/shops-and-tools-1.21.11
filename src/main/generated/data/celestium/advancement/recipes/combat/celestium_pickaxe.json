@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "shopsandtools:celestium_spear"
+        "recipe": "celestium:celestium_pickaxe"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -26,7 +26,7 @@
   ],
   "rewards": {
     "recipes": [
-      "shopsandtools:celestium_spear"
+      "celestium:celestium_pickaxe"
     ]
   }
 }

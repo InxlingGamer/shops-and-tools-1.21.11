@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_celestium": {
+    "has_celestium_upgrade_template": {
       "conditions": {
         "items": [
           {
-            "items": "shopsandtools:celestium"
+            "items": "shopsandtools:celestium_upgrade_template"
           }
         ]
       },
@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "shopsandtools:celestium_block"
+        "recipe": "celestium:celestium_helmet"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -21,12 +21,12 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_celestium"
+      "has_celestium_upgrade_template"
     ]
   ],
   "rewards": {
     "recipes": [
-      "shopsandtools:celestium_block"
+      "celestium:celestium_helmet"
     ]
   }
 }

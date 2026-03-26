@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "shopsandtools:celestium_chestplate"
+        "recipe": "celestium:celestium_axe"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -26,7 +26,7 @@
   ],
   "rewards": {
     "recipes": [
-      "shopsandtools:celestium_chestplate"
+      "celestium:celestium_axe"
     ]
   }
 }

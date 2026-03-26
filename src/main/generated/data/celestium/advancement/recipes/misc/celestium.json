@@ -1,11 +1,11 @@
 {
   "parent": "minecraft:recipes/root",
   "criteria": {
-    "has_celestium_upgrade_template": {
+    "has_nether_star": {
       "conditions": {
         "items": [
           {
-            "items": "shopsandtools:celestium_upgrade_template"
+            "items": "minecraft:nether_star"
           }
         ]
       },
@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "shopsandtools:celestium_leggings"
+        "recipe": "celestium:celestium"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -21,12 +21,12 @@
   "requirements": [
     [
       "has_the_recipe",
-      "has_celestium_upgrade_template"
+      "has_nether_star"
     ]
   ],
   "rewards": {
     "recipes": [
-      "shopsandtools:celestium_leggings"
+      "celestium:celestium"
     ]
   }
 }

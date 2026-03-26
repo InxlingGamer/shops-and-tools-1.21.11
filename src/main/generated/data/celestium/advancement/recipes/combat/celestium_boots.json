@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "shopsandtools:celestium_helmet"
+        "recipe": "celestium:celestium_boots"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -26,7 +26,7 @@
   ],
   "rewards": {
     "recipes": [
-      "shopsandtools:celestium_helmet"
+      "celestium:celestium_boots"
     ]
   }
 }

@@ -67,7 +67,13 @@ public final class CelestiumPickaxeManager {
     }
 
     public static void beginMiningSelection(ServerPlayerEntity player, BlockPos pos, Direction face) {
-        if (!isHoldingCelestiumPickaxe(player) || !isValidMiningTarget(player, pos)) {
+        if (!isHoldingCelestiumPickaxe(player)
+                || !CelestiumPickaxeHelper.isAreaMiningCenterEligible(
+                        player,
+                        player.getEntityWorld(),
+                        pos,
+                        player.interactionManager.getGameMode()
+                )) {
             clearMiningSelection(player);
             return;
         }
@@ -101,13 +107,16 @@ public final class CelestiumPickaxeManager {
         }
 
         PlayerState state = STATES.get(player.getUuid());
-        if (state == null || state.miningCenter == null || state.miningFace == null || !state.miningCenter.equals(centerPos)) {
+        if (state == null
+                || state.miningCenter == null
+                || state.miningFace == null
+                || !CelestiumPickaxeHelper.shouldProcessStoredAreaBreak(isAreaMiningEnabled(player), state.miningCenter.equals(centerPos))) {
             return;
         }
 
         AREA_BREAK_IN_PROGRESS.set(true);
         try {
-            for (BlockPos targetPos : getAreaMiningTargets(player, centerPos)) {
+            for (BlockPos targetPos : shopsandtools$getStoredAreaMiningTargets(player, centerPos, state.miningFace)) {
                 if (targetPos.equals(centerPos)) {
                     continue;
                 }
@@ -156,7 +165,15 @@ public final class CelestiumPickaxeManager {
     }
 
     private static PlayerState getActiveMiningState(ServerPlayerEntity player, BlockPos centerPos) {
-        if (!isAreaMiningEnabled(player)) {
+        if (!CelestiumPickaxeHelper.shouldApplyAreaMining(
+                isAreaMiningEnabled(player),
+                CelestiumPickaxeHelper.isAreaMiningCenterEligible(
+                        player,
+                        player.getEntityWorld(),
+                        centerPos,
+                        player.interactionManager.getGameMode()
+                )
+        )) {
             return null;
         }
 
@@ -166,6 +183,18 @@ public final class CelestiumPickaxeManager {
         }
 
         return state;
+    }
+
+    private static List<BlockPos> shopsandtools$getStoredAreaMiningTargets(ServerPlayerEntity player, BlockPos centerPos, Direction face) {
+        return CelestiumPickaxeHelper.getMiningPlane(centerPos, face).stream()
+                .filter(pos -> CelestiumPickaxeHelper.getMiningDelta(
+                        player,
+                        player.getEntityWorld(),
+                        pos,
+                        player.interactionManager.getGameMode()
+                ) > 0.0F)
+                .map(BlockPos::toImmutable)
+                .toList();
     }
 
     private static final class PlayerState {

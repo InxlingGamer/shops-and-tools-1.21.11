@@ -94,18 +94,30 @@ public final class CelestiumPickaxeClient {
     }
 
     public static float getAreaMiningDelta(MinecraftClient client, BlockPos pos, float fallbackDelta) {
-        if (breakingFace == null || breakingCenter == null || !breakingCenter.equals(pos)) {
+        boolean centerEligible = shopsandtools$isAreaMiningCenterEligible(client, pos);
+        if (!CelestiumPickaxeHelper.shouldDeferBreakPrediction(
+                shopsandtools$canUseAreaMining(client),
+                breakingFace != null && breakingCenter != null && breakingCenter.equals(pos),
+                centerEligible
+        )) {
             return fallbackDelta;
         }
 
         float areaMiningDelta = shopsandtools$getAreaMiningTargets(client, pos, breakingFace).effectiveBreakingDelta();
-        return areaMiningDelta > 0.0F ? areaMiningDelta : fallbackDelta;
+        return CelestiumPickaxeHelper.resolveAreaMiningDelta(
+                shopsandtools$canUseAreaMining(client),
+                centerEligible,
+                areaMiningDelta,
+                fallbackDelta
+        );
     }
 
     public static boolean shouldDeferBreakPrediction(MinecraftClient client, BlockPos pos) {
-        return shopsandtools$canUseAreaMining(client)
-                && breakingCenter != null
-                && breakingCenter.equals(pos);
+        return CelestiumPickaxeHelper.shouldDeferBreakPrediction(
+                shopsandtools$canUseAreaMining(client),
+                breakingCenter != null && breakingCenter.equals(pos) && breakingFace != null,
+                shopsandtools$isAreaMiningCenterEligible(client, pos)
+        );
     }
 
     public static void playDeferredBreakSound(MinecraftClient client, BlockPos pos) {
@@ -153,7 +165,7 @@ public final class CelestiumPickaxeClient {
             return;
         }
 
-        if (!CelestiumPickaxeHelper.isValidMiningTarget(
+        if (!CelestiumPickaxeHelper.isAreaMiningCenterEligible(
                 client.player,
                 client.world,
                 hitResult.getBlockPos(),
@@ -253,6 +265,19 @@ public final class CelestiumPickaxeClient {
                 face,
                 client.interactionManager.getCurrentGameMode()
         );
+    }
+
+    private static boolean shopsandtools$isAreaMiningCenterEligible(MinecraftClient client, BlockPos pos) {
+        return shopsandtools$canUseAreaMining(client)
+                && client.player != null
+                && client.world != null
+                && client.interactionManager != null
+                && CelestiumPickaxeHelper.isAreaMiningCenterEligible(
+                        client.player,
+                        client.world,
+                        pos,
+                        client.interactionManager.getCurrentGameMode()
+                );
     }
 
     private static boolean shopsandtools$isShiftKey(int keyCode) {

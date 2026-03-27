@@ -113,14 +113,38 @@ public final class CelestiumPickaxeHelper {
             return false;
         }
 
-        return isValidMiningTarget(player, world, blockHitResult.getBlockPos(), gameMode);
+        return isAreaMiningCenterEligible(player, world, blockHitResult.getBlockPos(), gameMode);
     }
 
     public static boolean isValidMiningTarget(PlayerEntity player, World world, BlockPos pos, GameMode gameMode) {
+        return isAreaMiningCenterEligible(player, world, pos, gameMode);
+    }
+
+    public static boolean isAreaMiningCenterEligible(PlayerEntity player, World world, BlockPos pos, GameMode gameMode) {
         return getMiningDelta(player, world, pos, gameMode) > 0.0F;
     }
 
+    public static boolean shouldApplyAreaMining(boolean areaMiningEnabled, boolean centerEligible) {
+        return areaMiningEnabled && centerEligible;
+    }
+
+    public static boolean shouldDeferBreakPrediction(boolean areaMiningEnabled, boolean breakingSelectionMatches, boolean centerEligible) {
+        return shouldApplyAreaMining(areaMiningEnabled, centerEligible) && breakingSelectionMatches;
+    }
+
+    public static boolean shouldProcessStoredAreaBreak(boolean areaMiningEnabled, boolean breakingSelectionMatches) {
+        return areaMiningEnabled && breakingSelectionMatches;
+    }
+
+    public static float resolveAreaMiningDelta(boolean areaMiningEnabled, boolean centerEligible, float areaMiningDelta, float fallbackDelta) {
+        return shouldApplyAreaMining(areaMiningEnabled, centerEligible) && areaMiningDelta > 0.0F ? areaMiningDelta : fallbackDelta;
+    }
+
     public static AreaMiningTargets getAreaMiningTargets(PlayerEntity player, World world, BlockPos center, Direction face, GameMode gameMode) {
+        if (!isAreaMiningCenterEligible(player, world, center, gameMode)) {
+            return new AreaMiningTargets(List.of(), 0.0F);
+        }
+
         List<BlockPos> positions = new ArrayList<>(9);
         float effectiveBreakingDelta = Float.MAX_VALUE;
 

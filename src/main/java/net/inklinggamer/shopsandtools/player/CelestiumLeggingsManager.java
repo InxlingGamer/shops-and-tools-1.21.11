@@ -67,7 +67,9 @@ public final class CelestiumLeggingsManager {
     }
 
     public static boolean hasActiveFlightPermission(PlayerEntity player) {
-        if (!isCelestiumLeggingsEquipped(player) || !player.getAbilities().allowFlying) {
+        if (!isCelestiumLeggingsEquipped(player)
+                || !player.getAbilities().allowFlying
+                || hasVanillaFlightPermission(player)) {
             return false;
         }
 
@@ -93,12 +95,14 @@ public final class CelestiumLeggingsManager {
     }
 
     public static boolean handleFlightToggle(ServerPlayerEntity player, UpdatePlayerAbilitiesC2SPacket packet) {
-        if (!packet.isFlying() || !isCelestiumLeggingsEquipped(player)) {
-            return false;
-        }
-
         PlayerState state = STATES.get(player.getUuid());
-        if (state == null || !state.flightPermissionActive) {
+        if (!shouldInterceptFlightToggle(
+                packet.isFlying(),
+                player.isCreative(),
+                player.isSpectator(),
+                isCelestiumLeggingsEquipped(player),
+                state != null && state.flightPermissionActive
+        )) {
             return false;
         }
 
@@ -147,28 +151,40 @@ public final class CelestiumLeggingsManager {
     }
 
     private static void syncFlightPermission(ServerPlayerEntity player, PlayerState state) {
-        boolean shouldAllowFlight = isDoubleJumpMovementEligible(player);
+        boolean vanillaFlightPermission = hasVanillaFlightPermission(player);
+        if (shouldRestoreVanillaAllowFlying(vanillaFlightPermission, player.getAbilities().allowFlying)) {
+            player.getAbilities().allowFlying = true;
+            player.sendAbilitiesUpdate();
+        }
 
-        if (shouldAllowFlight && !state.flightPermissionActive) {
+        FlightPermissionSync sync = resolveFlightPermission(
+                state.flightPermissionActive,
+                vanillaFlightPermission,
+                shouldManageCelestiumFlight(vanillaFlightPermission, isDoubleJumpMovementEligible(player))
+        );
+
+        if (sync.shouldGrantPermission()) {
             player.getAbilities().allowFlying = true;
             state.flightPermissionActive = true;
             player.sendAbilitiesUpdate();
             return;
         }
 
-        if (!shouldAllowFlight && state.flightPermissionActive) {
-            clearFlightPermission(player, state);
+        if (sync.shouldRevokePermission()) {
+            clearFlightPermission(player, state, sync.shouldDisableFlightOnRevoke());
         }
     }
 
-    private static void clearFlightPermission(ServerPlayerEntity player, PlayerState state) {
+    private static void clearFlightPermission(ServerPlayerEntity player, PlayerState state, boolean disableFlight) {
         if (!state.flightPermissionActive) {
             return;
         }
 
         state.flightPermissionActive = false;
-        player.getAbilities().allowFlying = false;
-        cancelFlight(player);
+        if (disableFlight) {
+            player.getAbilities().allowFlying = false;
+            cancelFlight(player);
+        }
     }
 
     private static void cancelFlight(ServerPlayerEntity player) {
@@ -222,13 +238,68 @@ public final class CelestiumLeggingsManager {
         PlayerState state = STATES.remove(player.getUuid());
         if (state != null) {
             SyncCelestiumThrustCooldownPayload.send(player, 0);
-            clearFlightPermission(player, state);
+            clearFlightPermission(player, state, shouldDisableFlightOnPermissionClear(hasVanillaFlightPermission(player)));
         }
+
+        if (shouldRestoreVanillaAllowFlying(hasVanillaFlightPermission(player), player.getAbilities().allowFlying)) {
+            player.getAbilities().allowFlying = true;
+            player.sendAbilitiesUpdate();
+        }
+    }
+
+    static boolean hasVanillaFlightPermission(boolean creativeMode, boolean spectatorMode) {
+        return creativeMode || spectatorMode;
+    }
+
+    static boolean shouldManageCelestiumFlight(boolean vanillaFlightPermission, boolean movementEligible) {
+        return !vanillaFlightPermission && movementEligible;
+    }
+
+    static boolean shouldDisableFlightOnPermissionClear(boolean vanillaFlightPermission) {
+        return !vanillaFlightPermission;
+    }
+
+    static boolean shouldRestoreVanillaAllowFlying(boolean vanillaFlightPermission, boolean allowFlying) {
+        return vanillaFlightPermission && !allowFlying;
+    }
+
+    static boolean shouldInterceptFlightToggle(
+            boolean packetFlying,
+            boolean creativeMode,
+            boolean spectatorMode,
+            boolean leggingsEquipped,
+            boolean flightPermissionActive
+    ) {
+        return packetFlying
+                && leggingsEquipped
+                && flightPermissionActive
+                && !hasVanillaFlightPermission(creativeMode, spectatorMode);
+    }
+
+    static FlightPermissionSync resolveFlightPermission(
+            boolean flightPermissionActive,
+            boolean vanillaFlightPermission,
+            boolean celestiumFlightEligible
+    ) {
+        boolean shouldGrantPermission = celestiumFlightEligible && !flightPermissionActive;
+        boolean shouldRevokePermission = flightPermissionActive && !celestiumFlightEligible;
+        return new FlightPermissionSync(
+                shouldGrantPermission,
+                shouldRevokePermission,
+                shouldRevokePermission && shouldDisableFlightOnPermissionClear(vanillaFlightPermission)
+        );
+    }
+
+    private static boolean hasVanillaFlightPermission(PlayerEntity player) {
+        return hasVanillaFlightPermission(player.isCreative(), player.isSpectator());
     }
 
     private static final class PlayerState {
         private boolean doubleJumpUsed;
         private boolean flightPermissionActive;
         private long cooldownEndsAt;
+    }
+
+    record FlightPermissionSync(boolean shouldGrantPermission, boolean shouldRevokePermission, boolean shouldDisableFlightOnRevoke) {
     }
 }

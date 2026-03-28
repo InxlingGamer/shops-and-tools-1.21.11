@@ -29,13 +29,14 @@ public abstract class SmithingScreenHandlerMixin extends ScreenHandler {
     }
 
     @Inject(method = "updateResult", at = @At("RETURN"))
-    private void shopsandtools$upgradeCelestiumBootsToFeatherFallingFive(CallbackInfo ci) {
+    private void shopsandtools$postProcessCelestiumSmithingResult(CallbackInfo ci) {
         ItemStack result = this.getSlot(SmithingScreenHandler.OUTPUT_ID).getStack();
         if (result.isEmpty()) {
             return;
         }
 
-        // Vanilla smithing has already built the correct output, including trims.
+        // Vanilla smithing has already transferred the carried result components,
+        // so we only need to adjust the finished output stack here.
         ItemStack upgradedResult = CelestiumSmithingResultHelper.postProcess(result, this.world.getRegistryManager());
         if (ItemStack.areEqual(result, upgradedResult)) {
             return;

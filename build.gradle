@@ -188,6 +188,14 @@ tasks.register("runCelestiumTrimTagTests", JavaExec) {
 	dependsOn(tasks.named("testClasses"))
 }
 
+tasks.register("runCelestiumSmithingResultTests", JavaExec) {
+	group = "verification"
+	description = "Runs the self-contained Celestium smithing result tests."
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "net.inklinggamer.shopsandtools.item.CelestiumSmithingResultHelperTest"
+	dependsOn(tasks.named("testClasses"))
+}
+
 tasks.register("runCelestiumAdvancementTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium advancement helper tests."
@@ -218,6 +226,7 @@ tasks.named("test") {
 	dependsOn(tasks.named("runCelestiumMetadataTests"))
 	dependsOn(tasks.named("runCelestiumItemTests"))
 	dependsOn(tasks.named("runCelestiumTrimTagTests"))
+	dependsOn(tasks.named("runCelestiumSmithingResultTests"))
 	dependsOn(tasks.named("runCelestiumAdvancementTests"))
 	dependsOn(tasks.named("runWardenFeatureTests"))
 	failOnNoDiscoveredTests = false

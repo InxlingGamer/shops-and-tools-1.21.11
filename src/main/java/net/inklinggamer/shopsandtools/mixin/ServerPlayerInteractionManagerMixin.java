@@ -88,7 +88,13 @@ public abstract class ServerPlayerInteractionManagerMixin {
                 ? null
                 : this.shopsandtools$brokenBlockSnapshots.pop();
         if (cir.getReturnValueZ()) {
-            CelestiumPickaxeManager.onBlockBroken(this.player, (ServerPlayerInteractionManager) (Object) this, pos);
+            CelestiumPickaxeManager.onBlockBroken(
+                    this.player,
+                    (ServerPlayerInteractionManager) (Object) this,
+                    pos,
+                    snapshot != null && snapshot.pos().equals(pos) ? snapshot.state() : this.player.getEntityWorld().getBlockState(pos),
+                    snapshot != null && snapshot.pos().equals(pos) ? snapshot.tool() : this.player.getMainHandStack().copy()
+            );
             CelestiumShovelManager.onBlockBroken(
                     this.player,
                     (ServerPlayerInteractionManager) (Object) this,

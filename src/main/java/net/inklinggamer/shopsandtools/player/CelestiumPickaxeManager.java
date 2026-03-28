@@ -1,8 +1,11 @@
 package net.inklinggamer.shopsandtools.player;
 
 import net.inklinggamer.shopsandtools.item.CelestiumPickaxeHelper;
-import net.minecraft.item.ItemStack;
+import net.minecraft.block.BlockState;
+import net.minecraft.sound.BlockSoundGroup;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
@@ -11,8 +14,10 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class CelestiumPickaxeManager {
@@ -96,36 +101,58 @@ public final class CelestiumPickaxeManager {
         }
     }
 
-    public static void onBlockBroken(ServerPlayerEntity player, ServerPlayerInteractionManager interactionManager, BlockPos centerPos) {
+    public static void onBlockBroken(
+            ServerPlayerEntity player,
+            ServerPlayerInteractionManager interactionManager,
+            BlockPos centerPos,
+            BlockState centerState,
+            ItemStack breakingTool
+    ) {
         if (AREA_BREAK_IN_PROGRESS.get()) {
             return;
         }
 
-        if (!isAreaMiningEnabled(player)) {
-            clearMiningSelection(player);
-            return;
+        boolean areaMiningEnabled = isAreaMiningEnabled(player);
+        PlayerState state = STATES.get(player.getUuid());
+        boolean hasStoredAreaBreak = state != null
+                && state.miningCenter != null
+                && state.miningFace != null
+                && CelestiumPickaxeHelper.shouldProcessStoredAreaBreak(areaMiningEnabled, state.miningCenter.equals(centerPos));
+        List<BlockPos> areaTargets = hasStoredAreaBreak
+                ? shopsandtools$getStoredAreaMiningTargets(player, centerPos, state.miningFace)
+                : List.of();
+        Set<BlockPos> veinTargets = new LinkedHashSet<>();
+
+        if (CelestiumPickaxeHelper.shouldApplyVeinMining(player.isSneaking())) {
+            shopsandtools$collectVeinTargets(player, centerPos, centerState, veinTargets);
+            for (BlockPos targetPos : areaTargets) {
+                shopsandtools$collectVeinTargets(player, targetPos, player.getEntityWorld().getBlockState(targetPos), veinTargets);
+            }
         }
 
-        PlayerState state = STATES.get(player.getUuid());
-        if (state == null
-                || state.miningCenter == null
-                || state.miningFace == null
-                || !CelestiumPickaxeHelper.shouldProcessStoredAreaBreak(isAreaMiningEnabled(player), state.miningCenter.equals(centerPos))) {
+        List<BlockPos> secondaryTargets = CelestiumPickaxeHelper.combineSecondaryBreakTargets(centerPos, areaTargets, veinTargets);
+        boolean veinMiningActivated = !veinTargets.isEmpty();
+        if (secondaryTargets.isEmpty()) {
+            if (!areaMiningEnabled || hasStoredAreaBreak) {
+                clearMiningSelection(player);
+            }
             return;
         }
 
         AREA_BREAK_IN_PROGRESS.set(true);
         try {
-            for (BlockPos targetPos : shopsandtools$getStoredAreaMiningTargets(player, centerPos, state.miningFace)) {
-                if (targetPos.equals(centerPos)) {
-                    continue;
+            for (BlockPos targetPos : secondaryTargets) {
+                BlockState targetState = player.getEntityWorld().getBlockState(targetPos);
+                CelestiumPickaxeHelper.synchronizeEnchantAndModeComponents(player.getMainHandStack(), breakingTool);
+                if (interactionManager.tryBreakBlock(targetPos) && veinMiningActivated) {
+                    shopsandtools$playSecondaryBreakSound(player, targetPos, targetState);
                 }
-
-                interactionManager.tryBreakBlock(targetPos);
             }
         } finally {
             AREA_BREAK_IN_PROGRESS.set(false);
-            clearMiningSelection(player);
+            if (!areaMiningEnabled || hasStoredAreaBreak) {
+                clearMiningSelection(player);
+            }
         }
     }
 
@@ -195,6 +222,36 @@ public final class CelestiumPickaxeManager {
                 ) > 0.0F)
                 .map(BlockPos::toImmutable)
                 .toList();
+    }
+
+    private static void shopsandtools$collectVeinTargets(ServerPlayerEntity player, BlockPos centerPos, BlockState centerState, Set<BlockPos> veinTargets) {
+        veinTargets.addAll(CelestiumPickaxeHelper.getVeinMiningTargets(
+                player,
+                player.getEntityWorld(),
+                centerPos,
+                centerState,
+                player.interactionManager.getGameMode()
+        ));
+    }
+
+    private static void shopsandtools$playSecondaryBreakSound(ServerPlayerEntity player, BlockPos pos, BlockState state) {
+        if (state.isAir()) {
+            return;
+        }
+
+        BlockSoundGroup soundGroup = state.getSoundGroup();
+        if (soundGroup == null || soundGroup.getVolume() <= 0.0F) {
+            return;
+        }
+
+        player.getEntityWorld().playSound(
+                null,
+                pos,
+                soundGroup.getBreakSound(),
+                SoundCategory.BLOCKS,
+                soundGroup.getVolume(),
+                soundGroup.getPitch()
+        );
     }
 
     private static final class PlayerState {

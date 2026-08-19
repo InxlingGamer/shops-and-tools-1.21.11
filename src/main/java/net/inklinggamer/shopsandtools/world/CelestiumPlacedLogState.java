@@ -3,6 +3,7 @@ package net.inklinggamer.shopsandtools.world;
 import com.mojang.serialization.Codec;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -12,7 +13,7 @@ import java.util.List;
 import java.util.Set;
 
 public final class CelestiumPlacedLogState extends SavedData {
-    private static final String ID = ShopsAndTools.MOD_ID + "_placed_logs";
+    private static final Identifier ID = Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "placed_logs");
     private static final Codec<CelestiumPlacedLogState> CODEC = Codec.LONG.listOf().xmap(
             CelestiumPlacedLogState::fromEncodedPositions,
             state -> state.playerPlacedLogs.stream().toList()

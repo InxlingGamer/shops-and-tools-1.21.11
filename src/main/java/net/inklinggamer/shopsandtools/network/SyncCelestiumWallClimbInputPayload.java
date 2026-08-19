@@ -25,7 +25,7 @@ public record SyncCelestiumWallClimbInputPayload(boolean sneakHeld, boolean forw
     );
 
     public static void register() {
-        PayloadTypeRegistry.playC2S().register(ID, CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ID, CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ID, (payload, context) ->
                 context.server().execute(() ->
                         CelestiumBootsManager.setWallClimbInput(

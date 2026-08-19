@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "#": "shopsandtools:celestium"
   },
@@ -10,7 +9,6 @@
     "###"
   ],
   "result": {
-    "count": 1,
     "id": "shopsandtools:celestium_block"
   }
 }

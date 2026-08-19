@@ -19,7 +19,7 @@ public record ToggleCelestiumPickaxeAreaModePayload() implements CustomPacketPay
             StreamCodec.unit(new ToggleCelestiumPickaxeAreaModePayload());
 
     public static void register() {
-        PayloadTypeRegistry.playC2S().register(ID, CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ID, CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ID, (payload, context) ->
                 context.server().execute(() -> {
                     HitResult hitResult = CelestiumPickaxeManager.getCurrentTarget(context.player());
@@ -28,11 +28,11 @@ public record ToggleCelestiumPickaxeAreaModePayload() implements CustomPacketPay
                     }
 
                     boolean enabled = CelestiumPickaxeManager.toggleAreaMining(context.player());
-                    context.player().displayClientMessage(Component.translatable(
+                    context.player().sendOverlayMessage(Component.translatable(
                             enabled
                                     ? "message.shopsandtools.celestium_pickaxe_area_enabled"
                                     : "message.shopsandtools.celestium_pickaxe_area_disabled"
-                    ), true);
+                    ));
                 })
         );
     }

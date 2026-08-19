@@ -361,7 +361,7 @@ public final class CelestiumShovelManager {
         );
         BlockPos trialChamberPos = locatedTrialChamber == null ? null : locatedTrialChamber.getFirst();
         if (trialChamberPos == null) {
-            player.displayClientMessage(Component.translatable("message.shopsandtools.celestium_shovel_trial_chamber_not_found"), true);
+            player.sendOverlayMessage(Component.translatable("message.shopsandtools.celestium_shovel_trial_chamber_not_found"));
             return;
         }
 

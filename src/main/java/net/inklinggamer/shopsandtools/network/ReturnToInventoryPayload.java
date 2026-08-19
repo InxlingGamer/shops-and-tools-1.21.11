@@ -17,7 +17,7 @@ public record ReturnToInventoryPayload() implements CustomPacketPayload {
     public static final StreamCodec<FriendlyByteBuf, ReturnToInventoryPayload> CODEC = StreamCodec.unit(INSTANCE);
 
     public static void register() {
-        PayloadTypeRegistry.playC2S().register(ID, CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ID, CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ID, (payload, context) ->
                 context.server().execute(() -> {
                     ItemStack cursorStack = context.player().containerMenu.getCarried().copy();

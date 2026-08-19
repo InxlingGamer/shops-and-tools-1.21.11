@@ -1,6 +1,6 @@
 package net.inklinggamer.shopsandtools.client;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -19,7 +19,7 @@ public final class LeftHotbarStatusBarLayout {
     private LeftHotbarStatusBarLayout() {
     }
 
-    public static Layout resolve(GuiGraphics drawContext, Player player) {
+    public static Layout resolve(GuiGraphicsExtractor drawContext, Player player) {
         return resolve(
                 drawContext.guiWidth(),
                 drawContext.guiHeight(),

@@ -18,7 +18,7 @@ public record OpenCelestiumCraftingPayload() implements CustomPacketPayload {
     public static final StreamCodec<FriendlyByteBuf, OpenCelestiumCraftingPayload> CODEC = StreamCodec.unit(INSTANCE);
 
     public static void register() {
-        PayloadTypeRegistry.playC2S().register(ID, CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ID, CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ID, (payload, context) ->
                 context.server().execute(() -> {
                     if (!CelestiumLeggingsManager.isCelestiumLeggingsEquipped(context.player())) {

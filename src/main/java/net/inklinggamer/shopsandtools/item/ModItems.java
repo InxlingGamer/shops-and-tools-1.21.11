@@ -1,7 +1,7 @@
 package net.inklinggamer.shopsandtools.item;
 
 import java.util.function.Consumer;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Registry;
@@ -22,7 +22,6 @@ import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.enchantment.Enchantable;
 import net.minecraft.world.item.equipment.ArmorType;
 import net.minecraft.world.item.equipment.Equippable;
-import java.util.Optional;
 
 public class ModItems {
 
@@ -107,20 +106,13 @@ public class ModItems {
                 .durability(1632)
                 .component(DataComponents.GLIDER, Unit.INSTANCE);
 
-        Equippable chestplateEquippable = CELESTIUM_CHESTPLATE.components().get(DataComponents.EQUIPPABLE);
-        settings.component(DataComponents.EQUIPPABLE, new Equippable(
-                chestplateEquippable.slot(),
-                chestplateEquippable.equipSound(),
-                Optional.of(ModArmorMaterials.CELESTIUM_ELYTRA_ASSET),
-                chestplateEquippable.cameraOverlay(),
-                chestplateEquippable.allowedEntities(),
-                chestplateEquippable.dispensable(),
-                chestplateEquippable.swappable(),
-                chestplateEquippable.damageOnHurt(),
-                chestplateEquippable.equipOnInteract(),
-                chestplateEquippable.canBeSheared(),
-                chestplateEquippable.shearingSound()
-        ));
+        settings.component(
+                DataComponents.EQUIPPABLE,
+                Equippable.builder(ArmorType.CHESTPLATE.getSlot())
+                        .setEquipSound(ModArmorMaterials.CELESTIUM.equipSound())
+                        .setAsset(ModArmorMaterials.CELESTIUM_ELYTRA_ASSET)
+                        .build()
+        );
 
         return settings;
     }
@@ -131,13 +123,13 @@ public class ModItems {
     public static void registerModItems() {
         ShopsAndTools.LOGGER.info("Registering items for " + ShopsAndTools.MOD_ID);
 
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.INGREDIENTS).register(fabricItemGroupEntries -> {
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.INGREDIENTS).register(fabricItemGroupEntries -> {
             fabricItemGroupEntries.accept(CELESTIUM);
             fabricItemGroupEntries.accept(WARDEN_HEART);
             fabricItemGroupEntries.accept(CELESTIUM_UPGRADE_TEMPLATE);
         });
 
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.COMBAT).register(fabricItemGroupEntries -> {
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.COMBAT).register(fabricItemGroupEntries -> {
             fabricItemGroupEntries.accept(CELESTIUM_HELMET);
             fabricItemGroupEntries.accept(CELESTIUM_CHESTPLATE);
             fabricItemGroupEntries.accept(CELESTIUM_ELYTRA_CHESTPLATE);
@@ -148,14 +140,14 @@ public class ModItems {
             fabricItemGroupEntries.accept(CELESTIUM_HORSE_ARMOR);
         });
 
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(fabricItemGroupEntries -> {
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(fabricItemGroupEntries -> {
             fabricItemGroupEntries.accept(CELESTIUM_PICKAXE);
             fabricItemGroupEntries.accept(CELESTIUM_AXE);
             fabricItemGroupEntries.accept(CELESTIUM_SHOVEL);
             fabricItemGroupEntries.accept(CELESTIUM_HOE);
         });
 
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register(fabricItemGroupEntries -> {
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register(fabricItemGroupEntries -> {
             fabricItemGroupEntries.accept(SKULK_VENOM);
         });
     }

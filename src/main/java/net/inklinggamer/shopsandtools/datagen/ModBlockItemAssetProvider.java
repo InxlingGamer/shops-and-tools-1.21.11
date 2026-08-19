@@ -1,7 +1,7 @@
 package net.inklinggamer.shopsandtools.datagen;
 
 import com.google.gson.JsonObject;
-import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
@@ -14,9 +14,9 @@ public class ModBlockItemAssetProvider implements DataProvider {
             new BlockItemDefinition("celestium_block", "block/celestium_block")
     );
 
-    private final FabricDataOutput output;
+    private final FabricPackOutput output;
 
-    public ModBlockItemAssetProvider(FabricDataOutput output) {
+    public ModBlockItemAssetProvider(FabricPackOutput output) {
         this.output = output;
     }
 

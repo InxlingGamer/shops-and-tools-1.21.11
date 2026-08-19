@@ -3,7 +3,7 @@ package net.inklinggamer.shopsandtools.client;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -34,7 +34,7 @@ public final class CelestiumRageHud {
         }
     }
 
-    public static void renderNearHotbar(GuiGraphics drawContext, Player player) {
+    public static void renderNearHotbar(GuiGraphicsExtractor drawContext, Player player) {
         if (!isVisible(player)) {
             return;
         }
@@ -63,7 +63,7 @@ public final class CelestiumRageHud {
                 && (player.getMainHandItem().is(ModItems.CELESTIUM_SWORD) || player.getMainHandItem().is(ModItems.CELESTIUM_AXE));
     }
 
-    private static void renderMaxStackPulse(GuiGraphics drawContext, int x, int y, int progressWidth) {
+    private static void renderMaxStackPulse(GuiGraphicsExtractor drawContext, int x, int y, int progressWidth) {
         float cycle = (Util.getMillis() % MAX_STACK_PULSE_PERIOD_MS) / (float) MAX_STACK_PULSE_PERIOD_MS;
         float breathe = 0.5F + 0.5F * Mth.sin(cycle * (float) (Math.PI * 2.0D));
         int darkAlpha = Mth.clamp((int) Mth.lerp(breathe, 48.0F, 92.0F), 0, 255);

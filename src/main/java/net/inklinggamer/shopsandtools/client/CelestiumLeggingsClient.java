@@ -59,7 +59,7 @@ public final class CelestiumLeggingsClient {
                 .build();
 
         updateInventoryButton(client, inventoryScreen, button);
-        Screens.getButtons(screen).add(button);
+        Screens.getWidgets(screen).add(button);
         ScreenEvents.afterTick(screen).register(ignored -> updateInventoryButton(client, inventoryScreen, button));
     }
 
@@ -72,7 +72,7 @@ public final class CelestiumLeggingsClient {
                 .build();
 
         updateReturnButton(craftingScreen, button);
-        Screens.getButtons(screen).add(button);
+        Screens.getWidgets(screen).add(button);
         ScreenEvents.afterTick(screen).register(ignored -> updateReturnButton(craftingScreen, button));
     }
 
@@ -123,7 +123,7 @@ public final class CelestiumLeggingsClient {
 
         client.player.containerMenu = client.player.inventoryMenu;
         ReturnToInventoryPayload.send();
-        client.setScreen(new InventoryScreen(client.player));
+        client.gui.setScreen(new InventoryScreen(client.player));
         GLFW.glfwSetCursorPos(client.getWindow().handle(), cursorX, cursorY);
     }
 }

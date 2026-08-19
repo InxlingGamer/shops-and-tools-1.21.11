@@ -2,7 +2,7 @@ package net.inklinggamer.shopsandtools.datagen;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
@@ -23,9 +23,9 @@ public class ModHeldItemAssetProvider implements DataProvider {
             )
     );
 
-    private final FabricDataOutput output;
+    private final FabricPackOutput output;
 
-    public ModHeldItemAssetProvider(FabricDataOutput output) {
+    public ModHeldItemAssetProvider(FabricPackOutput output) {
         this.output = output;
     }
 

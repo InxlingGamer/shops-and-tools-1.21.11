@@ -2,7 +2,7 @@ package net.inklinggamer.shopsandtools.client;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -60,7 +60,7 @@ public final class CelestiumThrustCooldownHud {
         return true;
     }
 
-    public static void renderNearHotbar(GuiGraphics drawContext, Player player) {
+    public static void renderNearHotbar(GuiGraphicsExtractor drawContext, Player player) {
         if (!isActive() || player == null) {
             return;
         }
@@ -83,7 +83,7 @@ public final class CelestiumThrustCooldownHud {
         renderBar(drawContext, barX, barY, barWidth);
     }
 
-    private static void renderBar(GuiGraphics drawContext, int x, int y, int barWidth) {
+    private static void renderBar(GuiGraphicsExtractor drawContext, int x, int y, int barWidth) {
         drawContext.blitSprite(RENDER_PIPELINE, BACKGROUND_TEXTURE, x, y, barWidth, BAR_HEIGHT);
 
         int progressWidth = Mth.clamp((int) (getProgress() * barWidth), 0, barWidth);

@@ -2,7 +2,7 @@ package net.inklinggamer.shopsandtools.client;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.inklinggamer.shopsandtools.item.CelestiumShovelHelper;
 import net.inklinggamer.shopsandtools.mixin.client.ClientPlayerInteractionManagerAccessor;
 import net.inklinggamer.shopsandtools.network.ArmCelestiumShovelSlamPayload;
@@ -78,7 +78,7 @@ public final class CelestiumShovelClient {
         tickTrialChamberMarker(client);
     }
 
-    public static void render(WorldRenderContext context) {
+    public static void render(LevelRenderContext context) {
         CelestiumPickaxeOutlineRenderer.render(context, outlinePositions);
         CelestiumTrialChamberMarkerRenderer.render(context, trialChamberMarkerPos);
     }
@@ -298,7 +298,7 @@ public final class CelestiumShovelClient {
         }
 
         for (int index = 0; index < breakingAnimationPositions.size(); index++) {
-            client.levelRenderer.destroyBlockProgress(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), currentStage);
+            client.level.destroyBlockProgress(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), currentStage);
         }
     }
 
@@ -326,7 +326,7 @@ public final class CelestiumShovelClient {
 
     private static void clearBreakingAnimation(Minecraft client) {
         for (int index = 0; index < breakingAnimationPositions.size(); index++) {
-            client.levelRenderer.destroyBlockProgress(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), -1);
+            client.level.destroyBlockProgress(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), -1);
         }
         breakingAnimationPositions.clear();
         lastBreakingStage = -1;

@@ -1,7 +1,7 @@
 package net.inklinggamer.shopsandtools.datagen;
 
-import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
-import net.fabricmc.fabric.api.datagen.v1.provider.SimpleFabricLootTableProvider;
+import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
+import net.fabricmc.fabric.api.datagen.v1.provider.SimpleFabricLootTableSubProvider;
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
@@ -20,14 +20,14 @@ import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
-public class ModEntityLootProvider extends SimpleFabricLootTableProvider {
+public class ModEntityLootProvider extends SimpleFabricLootTableSubProvider {
     private static final float SKULK_VENOM_UNENCHANTED_CHANCE = 0.025F;
     private static final float SKULK_VENOM_LOOTING_ONE_CHANCE = 0.05F;
     private static final float SKULK_VENOM_PER_LEVEL_ABOVE_FIRST = 0.025F;
 
     private final CompletableFuture<HolderLookup.Provider> registryLookupFuture;
 
-    public ModEntityLootProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registryLookup) {
+    public ModEntityLootProvider(FabricPackOutput output, CompletableFuture<HolderLookup.Provider> registryLookup) {
         super(output, registryLookup, LootContextParamSets.ENTITY);
         this.registryLookupFuture = registryLookup;
     }

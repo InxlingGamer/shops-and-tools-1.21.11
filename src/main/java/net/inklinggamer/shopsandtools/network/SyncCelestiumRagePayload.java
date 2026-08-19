@@ -22,7 +22,7 @@ public record SyncCelestiumRagePayload(int stacks) implements CustomPacketPayloa
     );
 
     public static void register() {
-        PayloadTypeRegistry.playS2C().register(ID, CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ID, CODEC);
     }
 
     public static void registerClient() {

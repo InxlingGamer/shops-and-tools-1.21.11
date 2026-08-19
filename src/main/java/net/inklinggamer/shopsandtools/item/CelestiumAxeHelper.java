@@ -4,7 +4,8 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.tags.BlockTags;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
@@ -15,6 +16,8 @@ public final class CelestiumAxeHelper {
     public static final int EFFICIENCY_LEVEL = 10;
     public static final int UNBREAKING_LEVEL = 5;
     public static final int SHARPNESS_LEVEL = 10;
+    private static final TagKey<net.minecraft.world.level.block.Block> LOGS_THAT_BURN =
+            TagKey.create(Registries.BLOCK, Identifier.withDefaultNamespace("logs_that_burn"));
 
     private CelestiumAxeHelper() {
     }
@@ -41,7 +44,7 @@ public final class CelestiumAxeHelper {
     }
 
     public static boolean isEligibleWoodBlock(BlockState state) {
-        return state.is(BlockTags.LOGS_THAT_BURN);
+        return state.is(LOGS_THAT_BURN);
     }
 
     private static Holder<Enchantment> shopsandtools$getEnchantment(Registry<Enchantment> registry, net.minecraft.resources.ResourceKey<Enchantment> key) {

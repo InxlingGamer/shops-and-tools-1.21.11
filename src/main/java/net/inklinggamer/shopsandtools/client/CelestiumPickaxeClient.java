@@ -2,7 +2,7 @@ package net.inklinggamer.shopsandtools.client;
 
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenKeyboardEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.inklinggamer.shopsandtools.item.CelestiumPickaxeHelper;
 import net.inklinggamer.shopsandtools.mixin.client.ClientPlayerInteractionManagerAccessor;
 import net.inklinggamer.shopsandtools.mixin.client.HandledScreenAccessor;
@@ -56,7 +56,7 @@ public final class CelestiumPickaxeClient {
         updateBreakingAnimation(client);
     }
 
-    public static void render(WorldRenderContext context) {
+    public static void render(LevelRenderContext context) {
         CelestiumPickaxeOutlineRenderer.render(context, outlinePositions);
     }
 
@@ -231,7 +231,7 @@ public final class CelestiumPickaxeClient {
         }
 
         for (int index = 0; index < breakingAnimationPositions.size(); index++) {
-            client.levelRenderer.destroyBlockProgress(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), currentStage);
+            client.level.destroyBlockProgress(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), currentStage);
         }
     }
 
@@ -241,7 +241,7 @@ public final class CelestiumPickaxeClient {
 
     private static void clearBreakingAnimation(Minecraft client) {
         for (int index = 0; index < breakingAnimationPositions.size(); index++) {
-            client.levelRenderer.destroyBlockProgress(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), -1);
+            client.level.destroyBlockProgress(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), -1);
         }
         breakingAnimationPositions.clear();
         lastBreakingStage = -1;

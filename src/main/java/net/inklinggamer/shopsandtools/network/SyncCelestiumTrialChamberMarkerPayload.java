@@ -29,7 +29,7 @@ public record SyncCelestiumTrialChamberMarkerPayload(BlockPos pos, Identifier di
     );
 
     public static void register() {
-        PayloadTypeRegistry.playS2C().register(ID, CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ID, CODEC);
     }
 
     public static void registerClient() {

@@ -1,6 +1,6 @@
 package net.inklinggamer.shopsandtools.block;
 
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.item.CelestiumBlockItem;
 import net.minecraft.core.Registry;
@@ -55,7 +55,7 @@ public class ModBlocks {
     public static void registerModBlocks() {
         ShopsAndTools.LOGGER.info("Registering Mod Blocks for " + ShopsAndTools.MOD_ID);
 
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.BUILDING_BLOCKS).register(fabricItemGroupEntries -> {
+        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.BUILDING_BLOCKS).register(fabricItemGroupEntries -> {
             fabricItemGroupEntries.accept(ModBlocks.CELESTIUM_BLOCK);
         });
     }

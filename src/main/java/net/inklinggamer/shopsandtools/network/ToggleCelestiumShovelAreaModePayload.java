@@ -19,7 +19,7 @@ public record ToggleCelestiumShovelAreaModePayload() implements CustomPacketPayl
             StreamCodec.unit(new ToggleCelestiumShovelAreaModePayload());
 
     public static void register() {
-        PayloadTypeRegistry.playC2S().register(ID, CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ID, CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ID, (payload, context) ->
                 context.server().execute(() -> {
                     HitResult hitResult = CelestiumShovelManager.getCurrentTarget(context.player());
@@ -28,11 +28,11 @@ public record ToggleCelestiumShovelAreaModePayload() implements CustomPacketPayl
                     }
 
                     boolean enabled = CelestiumShovelManager.toggleAreaMining(context.player());
-                    context.player().displayClientMessage(Component.translatable(
+                    context.player().sendOverlayMessage(Component.translatable(
                             enabled
                                     ? "message.shopsandtools.celestium_shovel_area_enabled"
                                     : "message.shopsandtools.celestium_shovel_area_disabled"
-                    ), true);
+                    ));
                 })
         );
     }

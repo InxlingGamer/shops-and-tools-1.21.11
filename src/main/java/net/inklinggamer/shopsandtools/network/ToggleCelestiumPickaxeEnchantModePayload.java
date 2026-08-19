@@ -24,7 +24,7 @@ public record ToggleCelestiumPickaxeEnchantModePayload(int slotId) implements Cu
     );
 
     public static void register() {
-        PayloadTypeRegistry.playC2S().register(ID, CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ID, CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ID, (payload, context) ->
                 context.server().execute(() -> {
                     AbstractContainerMenu handler = context.player().containerMenu;
@@ -40,11 +40,11 @@ public record ToggleCelestiumPickaxeEnchantModePayload(int slotId) implements Cu
                     boolean silkModeEnabled = CelestiumPickaxeManager.toggleEnchantMode(slot.getItem(), context.player());
                     slot.setChanged();
                     handler.broadcastChanges();
-                    context.player().displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                    context.player().sendOverlayMessage(net.minecraft.network.chat.Component.translatable(
                             silkModeEnabled
                                     ? "message.shopsandtools.celestium_pickaxe_mode_silk_touch"
                                     : "message.shopsandtools.celestium_pickaxe_mode_fortune"
-                    ), true);
+                    ));
                 })
         );
     }

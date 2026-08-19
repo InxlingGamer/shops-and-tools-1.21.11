@@ -1,7 +1,7 @@
 package net.inklinggamer.shopsandtools.client.xray;
 
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -46,7 +46,7 @@ public final class CelestiumXrayController {
     }
 
     public static void initialize() {
-        KeyBindingHelper.registerKeyBinding(TOGGLE_KEY);
+        KeyMappingHelper.registerKeyMapping(TOGGLE_KEY);
     }
 
     public static void tick(Minecraft client) {
@@ -67,7 +67,7 @@ public final class CelestiumXrayController {
         }
     }
 
-    public static void render(WorldRenderContext context) {
+    public static void render(LevelRenderContext context) {
         if (!isActive()) {
             return;
         }
@@ -158,8 +158,8 @@ public final class CelestiumXrayController {
 
                 for (int z = origin.getZ() - SCAN_RADIUS; z <= origin.getZ() + SCAN_RADIUS; z++) {
                     BlockPos pos = new BlockPos(x, y, z);
-                    ChunkPos chunkPos = new ChunkPos(pos);
-                    if (!world.hasChunk(chunkPos.x, chunkPos.z)) {
+                    ChunkPos chunkPos = new ChunkPos(pos.getX() >> 4, pos.getZ() >> 4);
+                    if (!world.hasChunk(chunkPos.x(), chunkPos.z())) {
                         continue;
                     }
 
@@ -182,7 +182,7 @@ public final class CelestiumXrayController {
 
     private static void sendActionBar(Minecraft client, String translationKey) {
         if (client.player != null) {
-            client.player.displayClientMessage(Component.translatable(translationKey), true);
+            client.player.sendOverlayMessage(Component.translatable(translationKey));
         }
     }
 

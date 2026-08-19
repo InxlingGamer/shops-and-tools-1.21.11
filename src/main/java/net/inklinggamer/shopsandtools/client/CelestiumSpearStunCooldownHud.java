@@ -3,7 +3,7 @@ package net.inklinggamer.shopsandtools.client;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
@@ -50,7 +50,7 @@ public final class CelestiumSpearStunCooldownHud {
         return true;
     }
 
-    public static void renderNearHotbar(GuiGraphics drawContext, Player player) {
+    public static void renderNearHotbar(GuiGraphicsExtractor drawContext, Player player) {
         if (!isVisible(player)) {
             return;
         }

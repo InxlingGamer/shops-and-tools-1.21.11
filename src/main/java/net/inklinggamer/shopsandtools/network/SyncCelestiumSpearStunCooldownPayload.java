@@ -22,7 +22,7 @@ public record SyncCelestiumSpearStunCooldownPayload(int remainingTicks) implemen
     );
 
     public static void register() {
-        PayloadTypeRegistry.playS2C().register(ID, CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(ID, CODEC);
     }
 
     public static void registerClient() {

@@ -85,7 +85,7 @@ public final class CelestiumFroglightIrisCompat {
             }
 
             if ((blockMappingUpdated || packItemMappingUpdated) && client.levelRenderer != null) {
-                client.levelRenderer.allChanged();
+                client.levelExtractor.allChanged();
             }
 
             if (!mappingApplied && (blockMappingUpdated || heldMappingUpdated || packItemMappingUpdated)) {

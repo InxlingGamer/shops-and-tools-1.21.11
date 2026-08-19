@@ -1,6 +1,6 @@
 package net.inklinggamer.shopsandtools.client;
 
-import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.inklinggamer.shopsandtools.item.CelestiumHoeHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -23,7 +23,7 @@ public final class CelestiumHoeClient {
         updateOutline(client);
     }
 
-    public static void render(WorldRenderContext context) {
+    public static void render(LevelRenderContext context) {
         CelestiumPickaxeOutlineRenderer.render(context, outlinePositions);
     }
 

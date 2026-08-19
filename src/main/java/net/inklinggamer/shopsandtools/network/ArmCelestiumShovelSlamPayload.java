@@ -17,7 +17,7 @@ public record ArmCelestiumShovelSlamPayload() implements CustomPacketPayload {
             StreamCodec.unit(new ArmCelestiumShovelSlamPayload());
 
     public static void register() {
-        PayloadTypeRegistry.playC2S().register(ID, CODEC);
+        PayloadTypeRegistry.serverboundPlay().register(ID, CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ID, (payload, context) ->
                 context.server().execute(() -> CelestiumShovelManager.armSlam(context.player()))
         );

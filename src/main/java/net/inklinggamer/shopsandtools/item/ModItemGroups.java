@@ -1,6 +1,6 @@
 package net.inklinggamer.shopsandtools.item;
 
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
+import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 
 public class ModItemGroups {

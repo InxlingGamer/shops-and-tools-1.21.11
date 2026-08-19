@@ -1,76 +1,83 @@
 package net.inklinggamer.shopsandtools.datagen;
 
-import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
-import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
+import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
+import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagsProvider;
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.inklinggamer.shopsandtools.item.ModToolMaterials;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.ItemTags;
+import net.minecraft.world.item.Item;
 import java.util.concurrent.CompletableFuture;
 
-public class ModItemTagProvider extends FabricTagProvider.ItemTagProvider {
-    public ModItemTagProvider(FabricDataOutput output, CompletableFuture<HolderLookup.Provider> registriesFuture) {
+public class ModItemTagProvider extends FabricTagsProvider.ItemTagsProvider {
+    public ModItemTagProvider(FabricPackOutput output, CompletableFuture<HolderLookup.Provider> registriesFuture) {
         super(output, registriesFuture);
     }
 
     @Override
     protected void addTags(HolderLookup.Provider wrapperLookup) {
         // Tool / weapon type tags
-        valueLookupBuilder(ItemTags.SWORDS).add(ModItems.CELESTIUM_SWORD);
-        valueLookupBuilder(ItemTags.PICKAXES).add(ModItems.CELESTIUM_PICKAXE);
-        valueLookupBuilder(ItemTags.AXES).add(ModItems.CELESTIUM_AXE);
-        valueLookupBuilder(ItemTags.SHOVELS).add(ModItems.CELESTIUM_SHOVEL);
-        valueLookupBuilder(ItemTags.HOES).add(ModItems.CELESTIUM_HOE);
-        valueLookupBuilder(ItemTags.SPEARS).add(ModItems.CELESTIUM_SPEAR);
+        builder(ItemTags.SWORDS).add(itemKey(ModItems.CELESTIUM_SWORD));
+        builder(ItemTags.PICKAXES).add(itemKey(ModItems.CELESTIUM_PICKAXE));
+        builder(ItemTags.AXES).add(itemKey(ModItems.CELESTIUM_AXE));
+        builder(ItemTags.SHOVELS).add(itemKey(ModItems.CELESTIUM_SHOVEL));
+        builder(ItemTags.HOES).add(itemKey(ModItems.CELESTIUM_HOE));
+        builder(ItemTags.SPEARS).add(itemKey(ModItems.CELESTIUM_SPEAR));
 
         // Armor tags
-        valueLookupBuilder(ItemTags.ARMOR_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS);
+        builder(ItemTags.ARMOR_ENCHANTABLE)
+                .add(itemKey(ModItems.CELESTIUM_HELMET), itemKey(ModItems.CELESTIUM_CHESTPLATE), itemKey(ModItems.CELESTIUM_ELYTRA_CHESTPLATE), itemKey(ModItems.CELESTIUM_LEGGINGS), itemKey(ModItems.CELESTIUM_BOOTS));
 
-        valueLookupBuilder(ItemTags.EQUIPPABLE_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS, ModItems.CELESTIUM_HORSE_ARMOR);
+        builder(ItemTags.EQUIPPABLE_ENCHANTABLE)
+                .add(itemKey(ModItems.CELESTIUM_HELMET), itemKey(ModItems.CELESTIUM_CHESTPLATE), itemKey(ModItems.CELESTIUM_ELYTRA_CHESTPLATE), itemKey(ModItems.CELESTIUM_LEGGINGS), itemKey(ModItems.CELESTIUM_BOOTS), itemKey(ModItems.CELESTIUM_HORSE_ARMOR));
 
-        valueLookupBuilder(ItemTags.HEAD_ARMOR_ENCHANTABLE).add(ModItems.CELESTIUM_HELMET);
-        valueLookupBuilder(ItemTags.CHEST_ARMOR_ENCHANTABLE).add(ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE);
-        valueLookupBuilder(ItemTags.LEG_ARMOR_ENCHANTABLE).add(ModItems.CELESTIUM_LEGGINGS);
-        valueLookupBuilder(ItemTags.FOOT_ARMOR_ENCHANTABLE).add(ModItems.CELESTIUM_BOOTS);
+        builder(ItemTags.HEAD_ARMOR_ENCHANTABLE).add(itemKey(ModItems.CELESTIUM_HELMET));
+        builder(ItemTags.CHEST_ARMOR_ENCHANTABLE).add(itemKey(ModItems.CELESTIUM_CHESTPLATE), itemKey(ModItems.CELESTIUM_ELYTRA_CHESTPLATE));
+        builder(ItemTags.LEG_ARMOR_ENCHANTABLE).add(itemKey(ModItems.CELESTIUM_LEGGINGS));
+        builder(ItemTags.FOOT_ARMOR_ENCHANTABLE).add(itemKey(ModItems.CELESTIUM_BOOTS));
 
         // Weapon enchant tags
-        valueLookupBuilder(ItemTags.WEAPON_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_SWORD, ModItems.CELESTIUM_AXE, ModItems.CELESTIUM_SPEAR);
+        builder(ItemTags.WEAPON_ENCHANTABLE)
+                .add(itemKey(ModItems.CELESTIUM_SWORD), itemKey(ModItems.CELESTIUM_AXE), itemKey(ModItems.CELESTIUM_SPEAR));
 
-        valueLookupBuilder(ItemTags.MELEE_WEAPON_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_SWORD, ModItems.CELESTIUM_AXE, ModItems.CELESTIUM_SPEAR);
+        builder(ItemTags.MELEE_WEAPON_ENCHANTABLE)
+                .add(itemKey(ModItems.CELESTIUM_SWORD), itemKey(ModItems.CELESTIUM_AXE), itemKey(ModItems.CELESTIUM_SPEAR));
 
-        valueLookupBuilder(ItemTags.SHARP_WEAPON_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_SWORD, ModItems.CELESTIUM_AXE);
+        builder(ItemTags.SHARP_WEAPON_ENCHANTABLE)
+                .add(itemKey(ModItems.CELESTIUM_SWORD), itemKey(ModItems.CELESTIUM_AXE));
 
-        valueLookupBuilder(ItemTags.SWEEPING_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_SWORD);
+        builder(ItemTags.SWEEPING_ENCHANTABLE)
+                .add(itemKey(ModItems.CELESTIUM_SWORD));
 
-        valueLookupBuilder(ItemTags.TRIDENT_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_SPEAR);
+        builder(ItemTags.TRIDENT_ENCHANTABLE)
+                .add(itemKey(ModItems.CELESTIUM_SPEAR));
 
-        valueLookupBuilder(ItemTags.LUNGE_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_SPEAR);
+        builder(ItemTags.LUNGE_ENCHANTABLE)
+                .add(itemKey(ModItems.CELESTIUM_SPEAR));
 
         // Mining enchant tags
-        valueLookupBuilder(ItemTags.MINING_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_PICKAXE, ModItems.CELESTIUM_AXE, ModItems.CELESTIUM_SHOVEL, ModItems.CELESTIUM_HOE);
+        builder(ItemTags.MINING_ENCHANTABLE)
+                .add(itemKey(ModItems.CELESTIUM_PICKAXE), itemKey(ModItems.CELESTIUM_AXE), itemKey(ModItems.CELESTIUM_SHOVEL), itemKey(ModItems.CELESTIUM_HOE));
 
-        valueLookupBuilder(ItemTags.MINING_LOOT_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_PICKAXE, ModItems.CELESTIUM_AXE, ModItems.CELESTIUM_SHOVEL, ModItems.CELESTIUM_HOE);
+        builder(ItemTags.MINING_LOOT_ENCHANTABLE)
+                .add(itemKey(ModItems.CELESTIUM_PICKAXE), itemKey(ModItems.CELESTIUM_AXE), itemKey(ModItems.CELESTIUM_SHOVEL), itemKey(ModItems.CELESTIUM_HOE));
 
         // General durability / mending / vanishing style tags
-        valueLookupBuilder(ItemTags.DURABILITY_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS)
-                .add(ModItems.CELESTIUM_SWORD, ModItems.CELESTIUM_PICKAXE, ModItems.CELESTIUM_AXE, ModItems.CELESTIUM_SHOVEL, ModItems.CELESTIUM_HOE, ModItems.CELESTIUM_SPEAR, ModItems.CELESTIUM_HORSE_ARMOR);
+        builder(ItemTags.DURABILITY_ENCHANTABLE)
+                .add(itemKey(ModItems.CELESTIUM_HELMET), itemKey(ModItems.CELESTIUM_CHESTPLATE), itemKey(ModItems.CELESTIUM_ELYTRA_CHESTPLATE), itemKey(ModItems.CELESTIUM_LEGGINGS), itemKey(ModItems.CELESTIUM_BOOTS))
+                .add(itemKey(ModItems.CELESTIUM_SWORD), itemKey(ModItems.CELESTIUM_PICKAXE), itemKey(ModItems.CELESTIUM_AXE), itemKey(ModItems.CELESTIUM_SHOVEL), itemKey(ModItems.CELESTIUM_HOE), itemKey(ModItems.CELESTIUM_SPEAR), itemKey(ModItems.CELESTIUM_HORSE_ARMOR));
 
-        valueLookupBuilder(ItemTags.VANISHING_ENCHANTABLE)
-                .add(ModItems.CELESTIUM_HELMET, ModItems.CELESTIUM_CHESTPLATE, ModItems.CELESTIUM_ELYTRA_CHESTPLATE, ModItems.CELESTIUM_LEGGINGS, ModItems.CELESTIUM_BOOTS)
-                .add(ModItems.CELESTIUM_SWORD, ModItems.CELESTIUM_PICKAXE, ModItems.CELESTIUM_AXE, ModItems.CELESTIUM_SHOVEL, ModItems.CELESTIUM_HOE, ModItems.CELESTIUM_SPEAR, ModItems.CELESTIUM_HORSE_ARMOR);
+        builder(ItemTags.VANISHING_ENCHANTABLE)
+                .add(itemKey(ModItems.CELESTIUM_HELMET), itemKey(ModItems.CELESTIUM_CHESTPLATE), itemKey(ModItems.CELESTIUM_ELYTRA_CHESTPLATE), itemKey(ModItems.CELESTIUM_LEGGINGS), itemKey(ModItems.CELESTIUM_BOOTS))
+                .add(itemKey(ModItems.CELESTIUM_SWORD), itemKey(ModItems.CELESTIUM_PICKAXE), itemKey(ModItems.CELESTIUM_AXE), itemKey(ModItems.CELESTIUM_SHOVEL), itemKey(ModItems.CELESTIUM_HOE), itemKey(ModItems.CELESTIUM_SPEAR), itemKey(ModItems.CELESTIUM_HORSE_ARMOR));
 
         // Repair tag
-        valueLookupBuilder(ModToolMaterials.CELESTIUM_REPAIR).add(ModItems.CELESTIUM);
+        builder(ModToolMaterials.CELESTIUM_REPAIR).add(itemKey(ModItems.CELESTIUM));
+    }
+
+    private static ResourceKey<Item> itemKey(Item item) {
+        return BuiltInRegistries.ITEM.getResourceKey(item).orElseThrow();
     }
 }

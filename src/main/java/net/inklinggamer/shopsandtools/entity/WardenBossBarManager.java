@@ -112,7 +112,7 @@ public final class WardenBossBarManager {
         private int deathGraceTicksRemaining;
 
         private TrackedWarden(Warden warden, ServerLevel world) {
-            this.bossBar = new ServerBossEvent(warden.getDisplayName(), BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.PROGRESS);
+            this.bossBar = new ServerBossEvent(warden.getUUID(), warden.getDisplayName(), BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.PROGRESS);
             this.warden = warden;
             this.world = world;
             this.name = warden.getDisplayName();

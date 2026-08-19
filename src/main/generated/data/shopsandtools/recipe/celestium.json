@@ -1,6 +1,5 @@
 {
   "type": "minecraft:crafting_shaped",
-  "category": "misc",
   "key": {
     "#": "minecraft:amethyst_shard",
     "B": "minecraft:blaze_powder",
@@ -15,7 +14,6 @@
     "#H#"
   ],
   "result": {
-    "count": 1,
     "id": "shopsandtools:celestium"
   }
 }

@@ -52,7 +52,7 @@ public abstract class ServerPlayerInteractionManagerMixin {
             method = "handleBlockBreakAction",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/world/level/block/state/BlockState;calcBlockBreakingDelta(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)F"
+                    target = "Lnet/minecraft/world/level/block/state/BlockState;getDestroyProgress(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)F"
             )
     )
     private float shopsandtools$useSlowestAreaMiningDelta(BlockState state, Player player, BlockGetter world, BlockPos pos) {
@@ -65,7 +65,7 @@ public abstract class ServerPlayerInteractionManagerMixin {
             method = "incrementDestroyProgress",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/world/level/block/state/BlockState;calcBlockBreakingDelta(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)F"
+                    target = "Lnet/minecraft/world/level/block/state/BlockState;getDestroyProgress(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)F"
             )
     )
     private float shopsandtools$useSlowestAreaMiningDeltaWhileContinuing(BlockState state, Player player, BlockGetter world, BlockPos pos) {

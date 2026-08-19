@@ -110,6 +110,7 @@ public abstract class LivingEntityMixin {
         Object self = this;
         if (cir.getReturnValueZ()
                 && self instanceof PlayerEntity player
+                && !player.getEntityWorld().isClient()
                 && CelestiumBootsManager.shouldWallClimb(player)) {
             cir.setReturnValue(false);
         }

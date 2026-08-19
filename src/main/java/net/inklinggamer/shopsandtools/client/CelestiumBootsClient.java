@@ -6,9 +6,11 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumWallClimbInputPayload;
 import net.inklinggamer.shopsandtools.player.CelestiumBootsManager;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 
 public final class CelestiumBootsClient {
     private static final float WALL_CLIMB_SOUND_VOLUME_MULTIPLIER = 1.15F;
@@ -20,7 +22,9 @@ public final class CelestiumBootsClient {
     private static boolean observedRightKeyHeld;
     private static boolean observedBootsEquipped;
     private static boolean pendingSync = true;
-    private static Direction lastWallClimbDirection;
+    private static boolean wallClimbActive;
+    private static Direction syncedWallClimbDirection;
+    private static Vec3d syncedWallClimbVelocity = Vec3d.ZERO;
     private static BlockPos lastWallClimbSoundPos;
 
     private CelestiumBootsClient() {
@@ -67,49 +71,48 @@ public final class CelestiumBootsClient {
             pendingSync = false;
         }
 
-        Direction wallDirection = resolveWallClimbDirection(client, bootsEquipped, sneakKeyHeld);
-        applyLocalWallClimbMovement(client, wallDirection);
-        tickWallClimbSound(client, wallDirection, forwardKeyHeld, backwardKeyHeld, leftKeyHeld, rightKeyHeld);
-    }
-
-    private static Direction resolveWallClimbDirection(MinecraftClient client, boolean bootsEquipped, boolean sneakKeyHeld) {
-        if (!bootsEquipped || !sneakKeyHeld) {
+        if (!bootsEquipped) {
             resetWallClimbState();
-            return null;
         }
 
-        Direction wallDirection = CelestiumBootsManager.resolveWallClimbDirection(
-                client.player,
-                lastWallClimbDirection,
-                lastWallClimbDirection != null
-        );
-        if (wallDirection == null) {
-            resetWallClimbState();
-            return null;
-        }
-
-        lastWallClimbDirection = wallDirection;
-        return wallDirection;
+        applyLocalWallClimbMovement(client);
+        tickWallClimbSound(client, forwardKeyHeld, backwardKeyHeld, leftKeyHeld, rightKeyHeld);
     }
 
-    private static void applyLocalWallClimbMovement(MinecraftClient client, Direction wallDirection) {
-        if (wallDirection == null) {
+    public static void syncWallClimbState(boolean active, Direction wallDirection, Vec3d velocity) {
+        if (!active || wallDirection == null) {
+            resetWallClimbState();
             return;
         }
 
-        client.player.setVelocity(CelestiumBootsManager.getWallClimbVelocity(client.player, wallDirection));
+        wallClimbActive = true;
+        syncedWallClimbDirection = wallDirection;
+        syncedWallClimbVelocity = velocity;
+    }
+
+    public static boolean shouldUseSyncedWallClimb(PlayerEntity player) {
+        MinecraftClient client = MinecraftClient.getInstance();
+        return client.player == player && wallClimbActive && syncedWallClimbDirection != null;
+    }
+
+    private static void applyLocalWallClimbMovement(MinecraftClient client) {
+        if (!wallClimbActive || syncedWallClimbDirection == null) {
+            return;
+        }
+
+        client.player.setVelocity(syncedWallClimbVelocity);
         client.player.fallDistance = 0.0F;
     }
 
     private static void tickWallClimbSound(
             MinecraftClient client,
-            Direction wallDirection,
             boolean forwardKeyHeld,
             boolean backwardKeyHeld,
             boolean leftKeyHeld,
             boolean rightKeyHeld
     ) {
-        if (wallDirection == null) {
+        if (!wallClimbActive || syncedWallClimbDirection == null) {
+            clearWallClimbSoundProgress();
             return;
         }
 
@@ -118,7 +121,7 @@ public final class CelestiumBootsClient {
             return;
         }
 
-        BlockPos soundPos = CelestiumBootsManager.resolveWallClimbSoundPos(client.player, wallDirection);
+        BlockPos soundPos = CelestiumBootsManager.resolveWallClimbSoundPos(client.player, syncedWallClimbDirection);
         CelestiumBootsManager.WallClimbSoundTransition transition =
                 CelestiumBootsManager.evaluateWallClimbSoundTransition(lastWallClimbSoundPos, soundPos);
         lastWallClimbSoundPos = transition.trackedSoundPos();
@@ -161,7 +164,9 @@ public final class CelestiumBootsClient {
     }
 
     private static void resetWallClimbState() {
-        lastWallClimbDirection = null;
+        wallClimbActive = false;
+        syncedWallClimbDirection = null;
+        syncedWallClimbVelocity = Vec3d.ZERO;
         clearWallClimbSoundProgress();
     }
 }

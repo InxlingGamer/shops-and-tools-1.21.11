@@ -21,6 +21,7 @@ import net.inklinggamer.shopsandtools.network.SyncCelestiumRagePayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumSpearStunCooldownPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumTrialChamberMarkerPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumThrustCooldownPayload;
+import net.inklinggamer.shopsandtools.network.SyncCelestiumWallClimbStatePayload;
 
 public class ShopsAndToolsClient implements ClientModInitializer {
     @Override
@@ -40,6 +41,7 @@ public class ShopsAndToolsClient implements ClientModInitializer {
         SyncCelestiumSpearStunCooldownPayload.registerClient();
         SyncCelestiumTrialChamberMarkerPayload.registerClient();
         SyncCelestiumThrustCooldownPayload.registerClient();
+        SyncCelestiumWallClimbStatePayload.registerClient();
         CelestiumXrayController.initialize();
         ClientTickEvents.END_CLIENT_TICK.register(CelestiumRageHud::tick);
         ClientTickEvents.END_CLIENT_TICK.register(CelestiumSpearStunCooldownHud::tick);

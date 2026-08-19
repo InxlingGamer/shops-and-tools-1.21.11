@@ -19,6 +19,7 @@ import net.inklinggamer.shopsandtools.network.SyncCelestiumRagePayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumSpearStunCooldownPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumTrialChamberMarkerPayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumWallClimbInputPayload;
+import net.inklinggamer.shopsandtools.network.SyncCelestiumWallClimbStatePayload;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumThrustCooldownPayload;
 import net.inklinggamer.shopsandtools.network.ToggleCelestiumPickaxeAreaModePayload;
 import net.inklinggamer.shopsandtools.network.ToggleCelestiumPickaxeEnchantModePayload;
@@ -50,6 +51,7 @@ public class ShopsAndTools implements ModInitializer {
 		OpenCelestiumCraftingPayload.register();
 		ReturnToInventoryPayload.register();
 		SyncCelestiumWallClimbInputPayload.register();
+		SyncCelestiumWallClimbStatePayload.register();
 		SyncCelestiumSpearStunCooldownPayload.register();
 		SyncCelestiumThrustCooldownPayload.register();
 		SyncCelestiumRagePayload.register();

@@ -134,7 +134,7 @@ tasks.register("runCelestiumHorseArmorTests", JavaExec) {
 
 tasks.register("runCelestiumBootsTests", JavaExec) {
 	group = "verification"
-	description = "Runs the self-contained Celestium boots wall-climb sound tests."
+	description = "Runs the self-contained Celestium boots wall-climb movement and sound tests."
 	classpath = sourceSets.test.runtimeClasspath
 	mainClass = "net.inklinggamer.shopsandtools.player.CelestiumBootsManagerTest"
 	dependsOn(tasks.named("testClasses"))

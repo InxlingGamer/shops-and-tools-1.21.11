@@ -2,6 +2,7 @@ package net.inklinggamer.shopsandtools.player;
 
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.inklinggamer.shopsandtools.mixin.EntityInvoker;
+import net.inklinggamer.shopsandtools.network.SyncCelestiumWallClimbStatePayload;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
@@ -54,23 +55,37 @@ public final class CelestiumBootsManager {
     }
 
     public static void tickPlayer(ServerPlayerEntity player) {
+        if (!player.isAlive()) {
+            resetPlayerState(player);
+            return;
+        }
+
         if (!isCelestiumBootsEquipped(player)) {
-            STATES.remove(player.getUuid());
+            resetPlayerState(player);
             return;
         }
 
         PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
-        Direction wallDirection = resolveWallDirection(player, state.wallDirection, state.wallClimbing);
-        boolean attached = wallDirection != null;
-        state.wallClimbing = attached;
-        state.wallDirection = wallDirection;
+        AuthoritativeWallClimbMotion motion = resolveAuthoritativeWallClimbMotion(
+                state.wallClimbing,
+                state.wallDirection,
+                state.wallStrafeBasis,
+                resolveWallDirection(player, state.wallDirection, state.wallClimbing),
+                player.getYaw(),
+                getVerticalWallInput(player),
+                getSidewaysInput(player)
+        );
+        state.wallClimbing = motion.active();
+        state.wallDirection = motion.wallDirection();
+        state.wallStrafeBasis = motion.wallStrafeBasis();
+        syncWallClimbState(player, state, motion);
 
-        if (!attached) {
+        if (!motion.active()) {
             resetWallClimbSoundState(state);
             return;
         }
 
-        applyWallMovement(player, wallDirection);
+        applyWallMovement(player, motion.velocity());
         playWallClimbSound(player, state);
     }
 
@@ -89,21 +104,22 @@ public final class CelestiumBootsManager {
         if (!sneakHeld) {
             state.wallClimbing = false;
             state.wallDirection = null;
+            state.wallStrafeBasis = null;
             resetWallClimbSoundState(state);
         }
     }
 
     public static boolean shouldWallClimb(PlayerEntity player) {
+        if (!(player instanceof ServerPlayerEntity serverPlayer)) {
+            return false;
+        }
+
+        PlayerState state = STATES.get(serverPlayer.getUuid());
         Direction preferredDirection = null;
         boolean continuingWallClimb = false;
-        if (player instanceof ServerPlayerEntity serverPlayer) {
-            PlayerState state = STATES.get(serverPlayer.getUuid());
-            if (state != null) {
-                continuingWallClimb = state.wallClimbing;
-                preferredDirection = state.wallDirection;
-            }
-        } else {
-            continuingWallClimb = isSneakKeyHeld(player) && !player.isOnGround();
+        if (state != null) {
+            continuingWallClimb = state.wallClimbing;
+            preferredDirection = state.wallDirection;
         }
 
         return resolveWallClimbDirection(player, preferredDirection, continuingWallClimb) != null;
@@ -117,11 +133,30 @@ public final class CelestiumBootsManager {
         return wallDirection == null ? null : resolveWallSoundPos(player, wallDirection);
     }
 
-    public static Vec3d getWallClimbVelocity(PlayerEntity player, Direction wallDirection) {
-        Vec3d wallNormal = new Vec3d(wallDirection.getOffsetX(), 0.0D, wallDirection.getOffsetZ());
-        double verticalSpeed = getVerticalWallInput(player) * WALL_CLIMB_SPEED;
-        Vec3d strafeVelocity = getWallStrafeVelocity(player, wallNormal);
-        return strafeVelocity.add(wallNormal.multiply(WALL_STICK_SPEED)).add(0.0D, verticalSpeed, 0.0D);
+    static AuthoritativeWallClimbMotion resolveAuthoritativeWallClimbMotion(
+            boolean wasActive,
+            Direction previousWallDirection,
+            Vec3d previousWallStrafeBasis,
+            Direction currentWallDirection,
+            float attachmentYaw,
+            int verticalInput,
+            int sidewaysInput
+    ) {
+        if (currentWallDirection == null) {
+            return AuthoritativeWallClimbMotion.inactive();
+        }
+
+        Vec3d wallStrafeBasis = previousWallStrafeBasis;
+        if (!wasActive || previousWallDirection != currentWallDirection || wallStrafeBasis == null) {
+            wallStrafeBasis = resolveWallStrafeBasis(currentWallDirection, attachmentYaw);
+        }
+
+        return new AuthoritativeWallClimbMotion(
+                true,
+                currentWallDirection,
+                wallStrafeBasis,
+                getWallClimbVelocity(currentWallDirection, wallStrafeBasis, verticalInput, sidewaysInput)
+        );
     }
 
     public static WallClimbSoundTransition evaluateWallClimbSoundTransition(BlockPos previousSoundPos, BlockPos currentSoundPos) {
@@ -417,8 +452,27 @@ public final class CelestiumBootsManager {
                 && collisionShape.getMax(Direction.Axis.Y) > 1.0D + WALL_CONTACT_EPSILON;
     }
 
-    private static void applyWallMovement(ServerPlayerEntity player, Direction wallDirection) {
-        player.setVelocity(getWallClimbVelocity(player, wallDirection));
+    static Vec3d resolveWallStrafeBasis(Direction wallDirection, float yawDegrees) {
+        Vec3d wallNormal = getWallNormal(wallDirection);
+        Vec3d wallTangent = new Vec3d(-wallNormal.z, 0.0D, wallNormal.x);
+        if (wallTangent.dotProduct(getCameraRightVector(yawDegrees)) < 0.0D) {
+            wallTangent = wallTangent.negate();
+        }
+
+        return wallTangent;
+    }
+
+    static Vec3d getWallClimbVelocity(Direction wallDirection, Vec3d wallStrafeBasis, int verticalInput, int sidewaysInput) {
+        Vec3d strafeVelocity = sidewaysInput == 0 || wallStrafeBasis == null
+                ? Vec3d.ZERO
+                : wallStrafeBasis.multiply(sidewaysInput * WALL_STRAFE_SPEED);
+        return strafeVelocity
+                .add(getWallNormal(wallDirection).multiply(WALL_STICK_SPEED))
+                .add(0.0D, verticalInput * WALL_CLIMB_SPEED, 0.0D);
+    }
+
+    private static void applyWallMovement(ServerPlayerEntity player, Vec3d wallVelocity) {
+        player.setVelocity(wallVelocity);
         player.fallDistance = 0.0D;
         ((EntityInvoker) player).shopsandtools$invokeScheduleVelocityUpdate();
     }
@@ -469,24 +523,13 @@ public final class CelestiumBootsManager {
         return player.isOnGround() ? null : findWallSoundSurface(world, playerBox, feetY - 1, wallDirection);
     }
 
-    private static Vec3d getWallStrafeVelocity(PlayerEntity player, Vec3d wallNormal) {
-        int sidewaysInput = getSidewaysInput(player);
-        if (sidewaysInput == 0) {
-            return Vec3d.ZERO;
-        }
-
-        Vec3d wallTangent = new Vec3d(-wallNormal.z, 0.0D, wallNormal.x);
-        Vec3d cameraRight = getCameraRightVector(player);
-        if (wallTangent.dotProduct(cameraRight) < 0.0D) {
-            wallTangent = wallTangent.negate();
-        }
-
-        return wallTangent.multiply(sidewaysInput * WALL_STRAFE_SPEED);
+    private static Vec3d getCameraRightVector(float yawDegrees) {
+        float yawRadians = yawDegrees * (float) (Math.PI / 180.0);
+        return new Vec3d(-Math.cos(yawRadians), 0.0D, -Math.sin(yawRadians));
     }
 
-    private static Vec3d getCameraRightVector(PlayerEntity player) {
-        float yawRadians = player.getYaw() * (float) (Math.PI / 180.0);
-        return new Vec3d(-Math.cos(yawRadians), 0.0D, -Math.sin(yawRadians));
+    private static Vec3d getWallNormal(Direction wallDirection) {
+        return new Vec3d(wallDirection.getOffsetX(), 0.0D, wallDirection.getOffsetZ());
     }
 
     private static Vec3d getHorizontalClimbLookVector(PlayerEntity player) {
@@ -558,11 +601,48 @@ public final class CelestiumBootsManager {
         return isClimbWall(world, pos) || isTallFenceOrWall(world, pos);
     }
 
+    private static void resetPlayerState(ServerPlayerEntity player) {
+        PlayerState state = STATES.remove(player.getUuid());
+        if (state != null) {
+            syncWallClimbState(player, state, AuthoritativeWallClimbMotion.inactive());
+        }
+    }
+
+    private static void syncWallClimbState(ServerPlayerEntity player, PlayerState state, AuthoritativeWallClimbMotion motion) {
+        Vec3d velocity = motion.active() ? motion.velocity() : Vec3d.ZERO;
+        if (!shouldSyncWallClimbState(state, motion.active(), motion.wallDirection(), velocity)) {
+            return;
+        }
+
+        SyncCelestiumWallClimbStatePayload.send(player, motion.active(), motion.wallDirection(), velocity);
+        state.lastSyncedWallClimbActive = motion.active();
+        state.lastSyncedWallDirection = motion.wallDirection();
+        state.lastSyncedWallVelocity = velocity;
+    }
+
+    private static boolean shouldSyncWallClimbState(PlayerState state, boolean active, Direction wallDirection, Vec3d velocity) {
+        return state.lastSyncedWallClimbActive != active
+                || state.lastSyncedWallDirection != wallDirection
+                || !hasSameVelocity(state.lastSyncedWallVelocity, velocity);
+    }
+
+    private static boolean hasSameVelocity(Vec3d previousVelocity, Vec3d velocity) {
+        return Math.abs(previousVelocity.x - velocity.x) <= 1.0E-7D
+                && Math.abs(previousVelocity.y - velocity.y) <= 1.0E-7D
+                && Math.abs(previousVelocity.z - velocity.z) <= 1.0E-7D;
+    }
+
     private static void resetWallClimbSoundState(PlayerState state) {
         state.lastWallClimbSoundPos = null;
     }
 
     public record WallClimbSoundTransition(boolean shouldPlaySound, BlockPos trackedSoundPos) {
+    }
+
+    static record AuthoritativeWallClimbMotion(boolean active, Direction wallDirection, Vec3d wallStrafeBasis, Vec3d velocity) {
+        private static AuthoritativeWallClimbMotion inactive() {
+            return new AuthoritativeWallClimbMotion(false, null, null, Vec3d.ZERO);
+        }
     }
 
     private static final class PlayerState {
@@ -573,6 +653,10 @@ public final class CelestiumBootsManager {
         private boolean rightKeyHeld;
         private boolean wallClimbing;
         private Direction wallDirection;
+        private Vec3d wallStrafeBasis;
         private BlockPos lastWallClimbSoundPos;
+        private boolean lastSyncedWallClimbActive;
+        private Direction lastSyncedWallDirection;
+        private Vec3d lastSyncedWallVelocity = Vec3d.ZERO;
     }
 }

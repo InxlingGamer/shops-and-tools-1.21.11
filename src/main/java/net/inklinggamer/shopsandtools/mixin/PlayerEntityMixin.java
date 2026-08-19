@@ -37,7 +37,10 @@ public abstract class PlayerEntityMixin {
 
     @Inject(method = "isClimbing", at = @At("RETURN"), cancellable = true)
     private void shopsandtools$allowWallClimbing(CallbackInfoReturnable<Boolean> cir) {
-        if (!cir.getReturnValueZ() && CelestiumBootsManager.shouldWallClimb((PlayerEntity) (Object) this)) {
+        PlayerEntity player = (PlayerEntity) (Object) this;
+        if (!player.getEntityWorld().isClient()
+                && !cir.getReturnValueZ()
+                && CelestiumBootsManager.shouldWallClimb(player)) {
             cir.setReturnValue(true);
         }
     }

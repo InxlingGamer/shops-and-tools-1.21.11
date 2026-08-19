@@ -1,10 +1,10 @@
 package net.inklinggamer.shopsandtools.advancement;
 
 import net.inklinggamer.shopsandtools.ShopsAndTools;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 public final class CelestiumAdvancementHelper {
     public static final String CELESTIUM_HELMET_ID = ShopsAndTools.MOD_ID + ":celestium_helmet";
@@ -16,12 +16,12 @@ public final class CelestiumAdvancementHelper {
     private CelestiumAdvancementHelper() {
     }
 
-    public static boolean isFullyAscended(PlayerEntity player) {
+    public static boolean isFullyAscended(Player player) {
         return isFullyAscended(
-                getItemId(player.getEquippedStack(EquipmentSlot.HEAD)),
-                getItemId(player.getEquippedStack(EquipmentSlot.CHEST)),
-                getItemId(player.getEquippedStack(EquipmentSlot.LEGS)),
-                getItemId(player.getEquippedStack(EquipmentSlot.FEET))
+                getItemId(player.getItemBySlot(EquipmentSlot.HEAD)),
+                getItemId(player.getItemBySlot(EquipmentSlot.CHEST)),
+                getItemId(player.getItemBySlot(EquipmentSlot.LEGS)),
+                getItemId(player.getItemBySlot(EquipmentSlot.FEET))
         );
     }
 
@@ -37,6 +37,6 @@ public final class CelestiumAdvancementHelper {
     }
 
     private static String getItemId(ItemStack stack) {
-        return Registries.ITEM.getId(stack.getItem()).toString();
+        return BuiltInRegistries.ITEM.getKey(stack.getItem()).toString();
     }
 }

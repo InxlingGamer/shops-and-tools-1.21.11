@@ -4,9 +4,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
+import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
-import net.minecraft.data.DataWriter;
-
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -31,12 +30,12 @@ public class ModHeldItemAssetProvider implements DataProvider {
     }
 
     @Override
-    public CompletableFuture<?> run(DataWriter writer) {
+    public CompletableFuture<?> run(CachedOutput writer) {
         CompletableFuture<?>[] futures = IN_HAND_ITEMS.stream()
                 .flatMap(definition -> List.of(
-                        DataProvider.writeToPath(writer, createSimpleModel(definition.baseModelParent(), definition.baseTexture()), getModelPath(definition.itemName())),
-                        DataProvider.writeToPath(writer, createSimpleModel(definition.inHandModelParent(), definition.inHandTexture()), getModelPath(definition.inHandModelName())),
-                        DataProvider.writeToPath(writer, createDisplayContextItemAsset(definition), getItemPath(definition.itemName()))
+                        DataProvider.saveStable(writer, createSimpleModel(definition.baseModelParent(), definition.baseTexture()), getModelPath(definition.itemName())),
+                        DataProvider.saveStable(writer, createSimpleModel(definition.inHandModelParent(), definition.inHandTexture()), getModelPath(definition.inHandModelName())),
+                        DataProvider.saveStable(writer, createDisplayContextItemAsset(definition), getItemPath(definition.itemName()))
                 ).stream())
                 .toArray(CompletableFuture[]::new);
         return CompletableFuture.allOf(futures);
@@ -93,7 +92,7 @@ public class ModHeldItemAssetProvider implements DataProvider {
     }
 
     private Path getModelPath(String fileName) {
-        return output.getPath()
+        return output.getOutputFolder()
                 .resolve("assets")
                 .resolve(ShopsAndTools.MOD_ID)
                 .resolve("models")
@@ -102,7 +101,7 @@ public class ModHeldItemAssetProvider implements DataProvider {
     }
 
     private Path getItemPath(String fileName) {
-        return output.getPath()
+        return output.getOutputFolder()
                 .resolve("assets")
                 .resolve(ShopsAndTools.MOD_ID)
                 .resolve("items")

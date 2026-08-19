@@ -3,22 +3,21 @@ package net.inklinggamer.shopsandtools.player;
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.inklinggamer.shopsandtools.mixin.EntityInvoker;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumThrustCooldownPayload;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.packet.c2s.play.UpdatePlayerAbilitiesC2SPacket;
-import net.minecraft.particle.ParticleTypes;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.network.protocol.game.ServerboundPlayerAbilitiesPacket;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.math.Vec3d;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -38,10 +37,10 @@ public final class CelestiumLeggingsManager {
     }
 
     public static void tickServer(MinecraftServer server) {
-        STATES.entrySet().removeIf(entry -> server.getPlayerManager().getPlayer(entry.getKey()) == null);
+        STATES.entrySet().removeIf(entry -> server.getPlayerList().getPlayer(entry.getKey()) == null);
     }
 
-    public static void tickPlayer(ServerPlayerEntity player) {
+    public static void tickPlayer(ServerPlayer player) {
         if (!player.isAlive()) {
             resetPlayerState(player);
             return;
@@ -54,27 +53,27 @@ public final class CelestiumLeggingsManager {
 
         applyDolphinsGrace(player);
 
-        PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
-        if (player.isOnGround()) {
+        PlayerState state = STATES.computeIfAbsent(player.getUUID(), uuid -> new PlayerState());
+        if (player.onGround()) {
             state.doubleJumpUsed = false;
         }
 
         syncFlightPermission(player, state);
     }
 
-    public static boolean isCelestiumLeggingsEquipped(PlayerEntity player) {
-        return player.getEquippedStack(EquipmentSlot.LEGS).isOf(ModItems.CELESTIUM_LEGGINGS);
+    public static boolean isCelestiumLeggingsEquipped(Player player) {
+        return player.getItemBySlot(EquipmentSlot.LEGS).is(ModItems.CELESTIUM_LEGGINGS);
     }
 
-    public static boolean hasActiveFlightPermission(PlayerEntity player) {
+    public static boolean hasActiveFlightPermission(Player player) {
         if (!isCelestiumLeggingsEquipped(player)
-                || !player.getAbilities().allowFlying
+                || !player.getAbilities().mayfly
                 || hasVanillaFlightPermission(player)) {
             return false;
         }
 
-        if (player instanceof ServerPlayerEntity serverPlayer) {
-            PlayerState state = STATES.get(serverPlayer.getUuid());
+        if (player instanceof ServerPlayer serverPlayer) {
+            PlayerState state = STATES.get(serverPlayer.getUUID());
             return state != null && state.flightPermissionActive;
         }
 
@@ -82,20 +81,20 @@ public final class CelestiumLeggingsManager {
     }
 
     public static void onPlayerDamaged(LivingEntity victim, DamageSource source) {
-        if (!(victim instanceof PlayerEntity player) || !isCelestiumLeggingsEquipped(player)) {
+        if (!(victim instanceof Player player) || !isCelestiumLeggingsEquipped(player)) {
             return;
         }
 
-        Entity attackerEntity = source.getAttacker();
+        Entity attackerEntity = source.getEntity();
         if (!(attackerEntity instanceof LivingEntity attacker) || attacker == victim) {
             return;
         }
 
-        attacker.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, WITHER_DURATION_TICKS, 1));
+        attacker.addEffect(new MobEffectInstance(MobEffects.WITHER, WITHER_DURATION_TICKS, 1));
     }
 
-    public static boolean handleFlightToggle(ServerPlayerEntity player, UpdatePlayerAbilitiesC2SPacket packet) {
-        PlayerState state = STATES.get(player.getUuid());
+    public static boolean handleFlightToggle(ServerPlayer player, ServerboundPlayerAbilitiesPacket packet) {
+        PlayerState state = STATES.get(player.getUUID());
         if (!shouldInterceptFlightToggle(
                 packet.isFlying(),
                 player.isCreative(),
@@ -106,8 +105,8 @@ public final class CelestiumLeggingsManager {
             return false;
         }
 
-        ServerWorld world = player.getEntityWorld();
-        long worldTime = world.getTime();
+        ServerLevel world = player.level();
+        long worldTime = world.getGameTime();
         cancelFlight(player);
 
         if (state.cooldownEndsAt > worldTime) {
@@ -118,7 +117,7 @@ public final class CelestiumLeggingsManager {
             return true;
         }
 
-        if (player.isOnGround()) {
+        if (player.onGround()) {
             return true;
         }
 
@@ -133,28 +132,28 @@ public final class CelestiumLeggingsManager {
         return true;
     }
 
-    private static void applyDolphinsGrace(ServerPlayerEntity player) {
-        StatusEffectInstance current = player.getStatusEffect(StatusEffects.DOLPHINS_GRACE);
+    private static void applyDolphinsGrace(ServerPlayer player) {
+        MobEffectInstance current = player.getEffect(MobEffects.DOLPHINS_GRACE);
         if (current == null || current.getAmplifier() != 0 || current.getDuration() <= DOLPHINS_GRACE_REFRESH_THRESHOLD_TICKS) {
-            player.addStatusEffect(new StatusEffectInstance(StatusEffects.DOLPHINS_GRACE, DOLPHINS_GRACE_DURATION_TICKS, 0, false, false, false));
+            player.addEffect(new MobEffectInstance(MobEffects.DOLPHINS_GRACE, DOLPHINS_GRACE_DURATION_TICKS, 0, false, false, false));
         }
     }
 
-    private static boolean isDoubleJumpMovementEligible(PlayerEntity player) {
+    private static boolean isDoubleJumpMovementEligible(Player player) {
         return !player.isCreative()
                 && !player.isSpectator()
-                && !player.hasVehicle()
+                && !player.isPassenger()
                 && !player.isSwimming()
-                && !player.isTouchingWater()
-                && !player.isClimbing()
-                && !player.isGliding();
+                && !player.isInWater()
+                && !player.onClimbable()
+                && !player.isFallFlying();
     }
 
-    private static void syncFlightPermission(ServerPlayerEntity player, PlayerState state) {
+    private static void syncFlightPermission(ServerPlayer player, PlayerState state) {
         boolean vanillaFlightPermission = hasVanillaFlightPermission(player);
-        if (shouldRestoreVanillaAllowFlying(vanillaFlightPermission, player.getAbilities().allowFlying)) {
-            player.getAbilities().allowFlying = true;
-            player.sendAbilitiesUpdate();
+        if (shouldRestoreVanillaAllowFlying(vanillaFlightPermission, player.getAbilities().mayfly)) {
+            player.getAbilities().mayfly = true;
+            player.onUpdateAbilities();
         }
 
         FlightPermissionSync sync = resolveFlightPermission(
@@ -164,9 +163,9 @@ public final class CelestiumLeggingsManager {
         );
 
         if (sync.shouldGrantPermission()) {
-            player.getAbilities().allowFlying = true;
+            player.getAbilities().mayfly = true;
             state.flightPermissionActive = true;
-            player.sendAbilitiesUpdate();
+            player.onUpdateAbilities();
             return;
         }
 
@@ -175,40 +174,40 @@ public final class CelestiumLeggingsManager {
         }
     }
 
-    private static void clearFlightPermission(ServerPlayerEntity player, PlayerState state, boolean disableFlight) {
+    private static void clearFlightPermission(ServerPlayer player, PlayerState state, boolean disableFlight) {
         if (!state.flightPermissionActive) {
             return;
         }
 
         state.flightPermissionActive = false;
         if (disableFlight) {
-            player.getAbilities().allowFlying = false;
+            player.getAbilities().mayfly = false;
             cancelFlight(player);
         }
     }
 
-    private static void cancelFlight(ServerPlayerEntity player) {
+    private static void cancelFlight(ServerPlayer player) {
         player.getAbilities().flying = false;
-        player.sendAbilitiesUpdate();
+        player.onUpdateAbilities();
     }
 
-    private static void launchPlayer(ServerPlayerEntity player, ServerWorld world) {
-        Vec3d launchVelocity = new Vec3d(0.0D, THRUST_VERTICAL_STRENGTH, 0.0D);
-        Vec3d horizontalVelocity = new Vec3d(player.getVelocity().x, 0.0D, player.getVelocity().z);
+    private static void launchPlayer(ServerPlayer player, ServerLevel world) {
+        Vec3 launchVelocity = new Vec3(0.0D, THRUST_VERTICAL_STRENGTH, 0.0D);
+        Vec3 horizontalVelocity = new Vec3(player.getDeltaMovement().x, 0.0D, player.getDeltaMovement().z);
 
-        if (horizontalVelocity.lengthSquared() >= STATIONARY_HORIZONTAL_SPEED_SQUARED_THRESHOLD) {
-            Vec3d look = player.getRotationVector();
-            Vec3d horizontal = new Vec3d(look.x, 0.0D, look.z);
+        if (horizontalVelocity.lengthSqr() >= STATIONARY_HORIZONTAL_SPEED_SQUARED_THRESHOLD) {
+            Vec3 look = player.getLookAngle();
+            Vec3 horizontal = new Vec3(look.x, 0.0D, look.z);
 
-            if (horizontal.lengthSquared() < 1.0E-4D) {
-                double yawRadians = Math.toRadians(player.getYaw());
-                horizontal = new Vec3d(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
+            if (horizontal.lengthSqr() < 1.0E-4D) {
+                double yawRadians = Math.toRadians(player.getYRot());
+                horizontal = new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
             }
 
-            launchVelocity = horizontal.normalize().multiply(THRUST_HORIZONTAL_STRENGTH).add(0.0D, THRUST_VERTICAL_STRENGTH, 0.0D);
+            launchVelocity = horizontal.normalize().scale(THRUST_HORIZONTAL_STRENGTH).add(0.0D, THRUST_VERTICAL_STRENGTH, 0.0D);
         }
 
-        player.setVelocity(launchVelocity);
+        player.setDeltaMovement(launchVelocity);
         ((EntityInvoker) player).shopsandtools$invokeScheduleVelocityUpdate();
 
         world.playSound(
@@ -216,12 +215,12 @@ public final class CelestiumLeggingsManager {
                 player.getX(),
                 player.getY(),
                 player.getZ(),
-                SoundEvents.ITEM_FIRECHARGE_USE,
-                SoundCategory.PLAYERS,
+                SoundEvents.FIRECHARGE_USE,
+                SoundSource.PLAYERS,
                 1.0F,
                 1.0F
         );
-        world.spawnParticles(
+        world.sendParticles(
                 ParticleTypes.FLAME,
                 player.getX(),
                 player.getY() + 0.1D,
@@ -234,16 +233,16 @@ public final class CelestiumLeggingsManager {
         );
     }
 
-    private static void resetPlayerState(ServerPlayerEntity player) {
-        PlayerState state = STATES.remove(player.getUuid());
+    private static void resetPlayerState(ServerPlayer player) {
+        PlayerState state = STATES.remove(player.getUUID());
         if (state != null) {
             SyncCelestiumThrustCooldownPayload.send(player, 0);
             clearFlightPermission(player, state, shouldDisableFlightOnPermissionClear(hasVanillaFlightPermission(player)));
         }
 
-        if (shouldRestoreVanillaAllowFlying(hasVanillaFlightPermission(player), player.getAbilities().allowFlying)) {
-            player.getAbilities().allowFlying = true;
-            player.sendAbilitiesUpdate();
+        if (shouldRestoreVanillaAllowFlying(hasVanillaFlightPermission(player), player.getAbilities().mayfly)) {
+            player.getAbilities().mayfly = true;
+            player.onUpdateAbilities();
         }
     }
 
@@ -290,7 +289,7 @@ public final class CelestiumLeggingsManager {
         );
     }
 
-    private static boolean hasVanillaFlightPermission(PlayerEntity player) {
+    private static boolean hasVanillaFlightPermission(Player player) {
         return hasVanillaFlightPermission(player.isCreative(), player.isSpectator());
     }
 

@@ -5,18 +5,18 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.client.CelestiumThrustCooldownHud;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 
-public record SyncCelestiumThrustCooldownPayload(int remainingTicks) implements CustomPayload {
-    public static final CustomPayload.Id<SyncCelestiumThrustCooldownPayload> ID =
-            new CustomPayload.Id<>(Identifier.of(ShopsAndTools.MOD_ID, "sync_celestium_thrust_cooldown"));
-    public static final PacketCodec<PacketByteBuf, SyncCelestiumThrustCooldownPayload> CODEC = PacketCodec.tuple(
-            PacketCodecs.INTEGER,
+public record SyncCelestiumThrustCooldownPayload(int remainingTicks) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<SyncCelestiumThrustCooldownPayload> ID =
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "sync_celestium_thrust_cooldown"));
+    public static final StreamCodec<FriendlyByteBuf, SyncCelestiumThrustCooldownPayload> CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT,
             SyncCelestiumThrustCooldownPayload::remainingTicks,
             SyncCelestiumThrustCooldownPayload::new
     );
@@ -31,12 +31,12 @@ public record SyncCelestiumThrustCooldownPayload(int remainingTicks) implements 
         );
     }
 
-    public static void send(ServerPlayerEntity player, int remainingTicks) {
+    public static void send(ServerPlayer player, int remainingTicks) {
         ServerPlayNetworking.send(player, new SyncCelestiumThrustCooldownPayload(remainingTicks));
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

@@ -1,15 +1,15 @@
 package net.inklinggamer.shopsandtools.item;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.block.state.BlockState;
 
 public final class CelestiumAxeHelper {
     public static final int EFFICIENCY_LEVEL = 10;
@@ -20,20 +20,20 @@ public final class CelestiumAxeHelper {
     }
 
     public static boolean isCelestiumAxe(ItemStack stack) {
-        return stack.isOf(ModItems.CELESTIUM_AXE);
+        return stack.is(ModItems.CELESTIUM_AXE);
     }
 
-    public static void initializeSmithingResult(ItemStack stack, DynamicRegistryManager registryManager) {
+    public static void initializeSmithingResult(ItemStack stack, RegistryAccess registryManager) {
         if (!isCelestiumAxe(stack)) {
             return;
         }
 
-        Registry<Enchantment> enchantmentRegistry = registryManager.getOrThrow(RegistryKeys.ENCHANTMENT);
-        RegistryEntry<Enchantment> efficiency = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.EFFICIENCY);
-        RegistryEntry<Enchantment> unbreaking = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.UNBREAKING);
-        RegistryEntry<Enchantment> sharpness = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.SHARPNESS);
+        Registry<Enchantment> enchantmentRegistry = registryManager.lookupOrThrow(Registries.ENCHANTMENT);
+        Holder<Enchantment> efficiency = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.EFFICIENCY);
+        Holder<Enchantment> unbreaking = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.UNBREAKING);
+        Holder<Enchantment> sharpness = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.SHARPNESS);
 
-        EnchantmentHelper.apply(stack, builder -> {
+        EnchantmentHelper.updateEnchantments(stack, builder -> {
             builder.set(efficiency, EFFICIENCY_LEVEL);
             builder.set(unbreaking, UNBREAKING_LEVEL);
             builder.set(sharpness, SHARPNESS_LEVEL);
@@ -41,11 +41,11 @@ public final class CelestiumAxeHelper {
     }
 
     public static boolean isEligibleWoodBlock(BlockState state) {
-        return state.isIn(BlockTags.LOGS_THAT_BURN);
+        return state.is(BlockTags.LOGS_THAT_BURN);
     }
 
-    private static RegistryEntry<Enchantment> shopsandtools$getEnchantment(Registry<Enchantment> registry, net.minecraft.registry.RegistryKey<Enchantment> key) {
+    private static Holder<Enchantment> shopsandtools$getEnchantment(Registry<Enchantment> registry, net.minecraft.resources.ResourceKey<Enchantment> key) {
         Enchantment enchantment = registry.getValueOrThrow(key);
-        return registry.getEntry(enchantment);
+        return registry.wrapAsHolder(enchantment);
     }
 }

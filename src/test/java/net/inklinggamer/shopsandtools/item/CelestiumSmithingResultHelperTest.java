@@ -51,7 +51,7 @@ public final class CelestiumSmithingResultHelperTest {
         assertContains(
                 "Celestium smithing should remove the trim component from wearable armor results",
                 helperSource,
-                "stack.remove(DataComponentTypes.TRIM);"
+                "stack.remove(DataComponents.TRIM);"
         );
 
         for (String armorReference : WEARABLE_CELESTIUM_ARMOR_REFERENCES) {
@@ -65,8 +65,8 @@ public final class CelestiumSmithingResultHelperTest {
 
     private static void assertSpecialSmithingEnchantmentsRemain(String helperSource) {
         int trimRemovalIndex = helperSource.indexOf("removeArmorTrimIfPresent(upgradedResult);");
-        int bootsIndex = helperSource.indexOf("if (result.isOf(ModItems.CELESTIUM_BOOTS))");
-        int swordIndex = helperSource.indexOf("if (result.isOf(ModItems.CELESTIUM_SWORD))");
+        int bootsIndex = helperSource.indexOf("if (result.is(ModItems.CELESTIUM_BOOTS))");
+        int swordIndex = helperSource.indexOf("if (result.is(ModItems.CELESTIUM_SWORD))");
 
         assertTrue(
                 "Trim cleanup should happen before celestium boots receive Feather Falling V",
@@ -105,7 +105,7 @@ public final class CelestiumSmithingResultHelperTest {
         assertContains(
                 "The smithing screen mixin should still delegate to the celestium smithing result helper",
                 smithingMixinSource,
-                "CelestiumSmithingResultHelper.postProcess(result, this.world.getRegistryManager())"
+                "CelestiumSmithingResultHelper.postProcess(result, this.level.registryAccess())"
         );
         assertContains(
                 "The smithing result helper should still know how to post-process celestium smithing outputs",

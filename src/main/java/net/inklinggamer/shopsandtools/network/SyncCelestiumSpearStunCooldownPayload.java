@@ -5,18 +5,18 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.client.CelestiumSpearStunCooldownHud;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 
-public record SyncCelestiumSpearStunCooldownPayload(int remainingTicks) implements CustomPayload {
-    public static final CustomPayload.Id<SyncCelestiumSpearStunCooldownPayload> ID =
-            new CustomPayload.Id<>(Identifier.of(ShopsAndTools.MOD_ID, "sync_celestium_spear_stun_cooldown"));
-    public static final PacketCodec<PacketByteBuf, SyncCelestiumSpearStunCooldownPayload> CODEC = PacketCodec.tuple(
-            PacketCodecs.INTEGER,
+public record SyncCelestiumSpearStunCooldownPayload(int remainingTicks) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<SyncCelestiumSpearStunCooldownPayload> ID =
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "sync_celestium_spear_stun_cooldown"));
+    public static final StreamCodec<FriendlyByteBuf, SyncCelestiumSpearStunCooldownPayload> CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT,
             SyncCelestiumSpearStunCooldownPayload::remainingTicks,
             SyncCelestiumSpearStunCooldownPayload::new
     );
@@ -31,12 +31,12 @@ public record SyncCelestiumSpearStunCooldownPayload(int remainingTicks) implemen
         );
     }
 
-    public static void send(ServerPlayerEntity player, int remainingTicks) {
+    public static void send(ServerPlayer player, int remainingTicks) {
         ServerPlayNetworking.send(player, new SyncCelestiumSpearStunCooldownPayload(remainingTicks));
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

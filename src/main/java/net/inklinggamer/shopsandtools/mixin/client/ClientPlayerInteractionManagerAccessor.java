@@ -1,18 +1,18 @@
 package net.inklinggamer.shopsandtools.mixin.client;
 
-import net.minecraft.client.network.ClientPlayerInteractionManager;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
+import net.minecraft.core.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-@Mixin(ClientPlayerInteractionManager.class)
+@Mixin(MultiPlayerGameMode.class)
 public interface ClientPlayerInteractionManagerAccessor {
-    @Accessor("currentBreakingPos")
+    @Accessor("destroyBlockPos")
     BlockPos shopsandtools$getCurrentBreakingPos();
 
-    @Accessor("currentBreakingProgress")
+    @Accessor("destroyProgress")
     float shopsandtools$getCurrentBreakingProgress();
 
-    @Accessor("breakingBlock")
+    @Accessor("isDestroying")
     boolean shopsandtools$isBreakingBlock();
 }

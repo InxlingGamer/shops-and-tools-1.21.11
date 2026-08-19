@@ -2,13 +2,12 @@ package net.inklinggamer.shopsandtools.player;
 
 import net.inklinggamer.shopsandtools.item.CelestiumSpearHelper;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumSpearStunCooldownPayload;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -29,7 +28,7 @@ public final class CelestiumSpearManager {
     }
 
     public static void tickServer(MinecraftServer server) {
-        int serverTicks = server.getTicks();
+        int serverTicks = server.getTickCount();
         Iterator<Map.Entry<UUID, Integer>> iterator = STUNNED_MOBS.entrySet().iterator();
         while (iterator.hasNext()) {
             if (iterator.next().getValue() <= serverTicks) {
@@ -37,83 +36,83 @@ public final class CelestiumSpearManager {
             }
         }
 
-        STATES.entrySet().removeIf(entry -> server.getPlayerManager().getPlayer(entry.getKey()) == null);
+        STATES.entrySet().removeIf(entry -> server.getPlayerList().getPlayer(entry.getKey()) == null);
     }
 
-    public static void tickPlayer(ServerPlayerEntity player) {
+    public static void tickPlayer(ServerPlayer player) {
         if (!player.isAlive()) {
             resetPlayerState(player);
             return;
         }
 
-        expireStunCooldown(player, player.getEntityWorld().getTime());
+        expireStunCooldown(player, player.level().getGameTime());
         if (!CelestiumSpearHelper.isCelestiumSpearHeld(player)) {
             return;
         }
 
-        StatusEffectInstance currentSpeed = player.getStatusEffect(StatusEffects.SPEED);
+        MobEffectInstance currentSpeed = player.getEffect(MobEffects.SPEED);
         if (currentSpeed == null || currentSpeed.getAmplifier() != 0 || currentSpeed.getDuration() <= SPEED_REFRESH_THRESHOLD_TICKS) {
-            player.addStatusEffect(new StatusEffectInstance(StatusEffects.SPEED, SPEED_DURATION_TICKS, 0, false, false, false));
+            player.addEffect(new MobEffectInstance(MobEffects.SPEED, SPEED_DURATION_TICKS, 0, false, false, false));
         }
     }
 
-    public static void onDirectSpearDamage(ServerPlayerEntity attacker, LivingEntity target, float damageDealt) {
+    public static void onDirectSpearDamage(ServerPlayer attacker, LivingEntity target, float damageDealt) {
         if (!CelestiumSpearHelper.isCelestiumSpearEquipped(attacker) || damageDealt <= 0.0F) {
             return;
         }
 
-        target.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, WITHER_DURATION_TICKS, WITHER_AMPLIFIER, false, true, true));
+        target.addEffect(new MobEffectInstance(MobEffects.WITHER, WITHER_DURATION_TICKS, WITHER_AMPLIFIER, false, true, true));
 
-        if (!(target instanceof MobEntity mob)) {
+        if (!(target instanceof Mob mob)) {
             return;
         }
 
-        long worldTime = attacker.getEntityWorld().getTime();
+        long worldTime = attacker.level().getGameTime();
         if (hasActiveStunCooldown(attacker, worldTime)) {
             return;
         }
 
-        STUNNED_MOBS.put(mob.getUuid(), attacker.getEntityWorld().getServer().getTicks() + STUN_DURATION_TICKS);
+        STUNNED_MOBS.put(mob.getUUID(), attacker.level().getServer().getTickCount() + STUN_DURATION_TICKS);
         startStunCooldown(attacker, worldTime);
     }
 
-    public static boolean isStunned(MobEntity mob) {
-        Integer expiresAt = STUNNED_MOBS.get(mob.getUuid());
+    public static boolean isStunned(Mob mob) {
+        Integer expiresAt = STUNNED_MOBS.get(mob.getUUID());
         if (expiresAt == null) {
             return false;
         }
 
-        int currentTicks = mob.getEntityWorld() instanceof net.minecraft.server.world.ServerWorld serverWorld
-                ? serverWorld.getServer().getTicks()
+        int currentTicks = mob.level() instanceof net.minecraft.server.level.ServerLevel serverWorld
+                ? serverWorld.getServer().getTickCount()
                 : Integer.MAX_VALUE;
         if (expiresAt <= currentTicks) {
-            STUNNED_MOBS.remove(mob.getUuid());
+            STUNNED_MOBS.remove(mob.getUUID());
             return false;
         }
 
         return true;
     }
 
-    private static boolean hasActiveStunCooldown(ServerPlayerEntity player, long worldTime) {
-        PlayerState state = STATES.get(player.getUuid());
+    private static boolean hasActiveStunCooldown(ServerPlayer player, long worldTime) {
+        PlayerState state = STATES.get(player.getUUID());
         return state != null && state.cooldownEndsAt > worldTime;
     }
 
-    private static void startStunCooldown(ServerPlayerEntity player, long worldTime) {
-        PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
+    private static void startStunCooldown(ServerPlayer player, long worldTime) {
+        PlayerState state = STATES.computeIfAbsent(player.getUUID(), uuid -> new PlayerState());
         state.cooldownEndsAt = worldTime + STUN_COOLDOWN_TICKS;
         SyncCelestiumSpearStunCooldownPayload.send(player, STUN_COOLDOWN_TICKS);
     }
 
-    private static void expireStunCooldown(ServerPlayerEntity player, long worldTime) {
-        PlayerState state = STATES.get(player.getUuid());
+    private static void expireStunCooldown(ServerPlayer player, long worldTime) {
+        PlayerState state = STATES.get(player.getUUID());
         if (state != null && state.cooldownEndsAt <= worldTime) {
-            STATES.remove(player.getUuid());
+            STATES.remove(player.getUUID());
         }
     }
 
-    private static void resetPlayerState(ServerPlayerEntity player) {
-        if (STATES.remove(player.getUuid()) != null) {
+    private static void resetPlayerState(ServerPlayer player) {
+        if (STATES.remove(player.getUUID()) != null) {
             SyncCelestiumSpearStunCooldownPayload.send(player, 0);
         }
     }

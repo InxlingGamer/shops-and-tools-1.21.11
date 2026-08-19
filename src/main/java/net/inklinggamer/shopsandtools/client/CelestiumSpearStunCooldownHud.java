@@ -2,17 +2,17 @@ package net.inklinggamer.shopsandtools.client;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.inklinggamer.shopsandtools.item.ModItems;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.entity.player.Player;
 
 public final class CelestiumSpearStunCooldownHud {
-    private static final Identifier BACKGROUND_TEXTURE = Identifier.ofVanilla("boss_bar/white_background");
-    private static final Identifier PROGRESS_TEXTURE = Identifier.ofVanilla("boss_bar/white_progress");
+    private static final Identifier BACKGROUND_TEXTURE = Identifier.withDefaultNamespace("boss_bar/white_background");
+    private static final Identifier PROGRESS_TEXTURE = Identifier.withDefaultNamespace("boss_bar/white_progress");
     private static final RenderPipeline RENDER_PIPELINE = RenderPipelines.GUI_TEXTURED;
 
     private static long cooldownStartedAtMs;
@@ -27,12 +27,12 @@ public final class CelestiumSpearStunCooldownHud {
             return;
         }
 
-        cooldownStartedAtMs = Util.getMeasuringTimeMs();
+        cooldownStartedAtMs = Util.getMillis();
         cooldownDurationMs = remainingTicks * 50L;
     }
 
-    public static void tick(MinecraftClient client) {
-        if (client.player == null || client.world == null) {
+    public static void tick(Minecraft client) {
+        if (client.player == null || client.level == null) {
             clear();
         }
     }
@@ -42,7 +42,7 @@ public final class CelestiumSpearStunCooldownHud {
             return false;
         }
 
-        if (Util.getMeasuringTimeMs() >= cooldownStartedAtMs + cooldownDurationMs) {
+        if (Util.getMillis() >= cooldownStartedAtMs + cooldownDurationMs) {
             clear();
             return false;
         }
@@ -50,24 +50,24 @@ public final class CelestiumSpearStunCooldownHud {
         return true;
     }
 
-    public static void renderNearHotbar(DrawContext drawContext, PlayerEntity player) {
+    public static void renderNearHotbar(GuiGraphics drawContext, Player player) {
         if (!isVisible(player)) {
             return;
         }
 
         LeftHotbarStatusBarLayout.Layout layout = LeftHotbarStatusBarLayout.resolve(drawContext, player);
-        drawContext.drawGuiTexture(RENDER_PIPELINE, BACKGROUND_TEXTURE, layout.x(), layout.y(), layout.width(), LeftHotbarStatusBarLayout.BAR_HEIGHT);
+        drawContext.blitSprite(RENDER_PIPELINE, BACKGROUND_TEXTURE, layout.x(), layout.y(), layout.width(), LeftHotbarStatusBarLayout.BAR_HEIGHT);
 
-        int progressWidth = MathHelper.clamp((int) (getProgress() * layout.width()), 0, layout.width());
+        int progressWidth = Mth.clamp((int) (getProgress() * layout.width()), 0, layout.width());
         if (progressWidth > 0) {
-            drawContext.drawGuiTexture(RENDER_PIPELINE, PROGRESS_TEXTURE, layout.x(), layout.y(), progressWidth, LeftHotbarStatusBarLayout.BAR_HEIGHT);
+            drawContext.blitSprite(RENDER_PIPELINE, PROGRESS_TEXTURE, layout.x(), layout.y(), progressWidth, LeftHotbarStatusBarLayout.BAR_HEIGHT);
         }
     }
 
-    private static boolean isVisible(PlayerEntity player) {
+    private static boolean isVisible(Player player) {
         return player != null
                 && isActive()
-                && player.getMainHandStack().isOf(ModItems.CELESTIUM_SPEAR);
+                && player.getMainHandItem().is(ModItems.CELESTIUM_SPEAR);
     }
 
     private static float getProgress() {
@@ -75,8 +75,8 @@ public final class CelestiumSpearStunCooldownHud {
             return 1.0F;
         }
 
-        long elapsedMs = Util.getMeasuringTimeMs() - cooldownStartedAtMs;
-        return MathHelper.clamp((float) elapsedMs / (float) cooldownDurationMs, 0.0F, 1.0F);
+        long elapsedMs = Util.getMillis() - cooldownStartedAtMs;
+        return Mth.clamp((float) elapsedMs / (float) cooldownDurationMs, 0.0F, 1.0F);
     }
 
     private static void clear() {

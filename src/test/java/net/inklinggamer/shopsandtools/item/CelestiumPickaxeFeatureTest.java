@@ -1,6 +1,6 @@
 package net.inklinggamer.shopsandtools.item;
 
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -150,7 +150,7 @@ public final class CelestiumPickaxeFeatureTest {
     }
 
     private static void assertVeinNeighborConnectivityIncludesDiagonals() {
-        List<BlockPos> neighbors = CelestiumPickaxeHelper.getVeinMiningNeighbors(BlockPos.ORIGIN);
+        List<BlockPos> neighbors = CelestiumPickaxeHelper.getVeinMiningNeighbors(BlockPos.ZERO);
 
         assertEquals(
                 "Vein mining should inspect all 26 neighboring blocks around the current ore",
@@ -167,12 +167,12 @@ public final class CelestiumPickaxeFeatureTest {
         );
         assertFalse(
                 "The current block itself should not be treated as its own neighbor",
-                neighbors.contains(BlockPos.ORIGIN)
+                neighbors.contains(BlockPos.ZERO)
         );
     }
 
     private static void assertCombinedBreakTargetsDeduplicateAreaAndVeinResults() {
-        BlockPos center = BlockPos.ORIGIN;
+        BlockPos center = BlockPos.ZERO;
         List<BlockPos> areaTargets = List.of(
                 new BlockPos(1, 0, 0),
                 new BlockPos(2, 0, 0)
@@ -216,12 +216,12 @@ public final class CelestiumPickaxeFeatureTest {
         assertContains(
                 "The pickaxe helper should be able to copy the captured enchantment and mode components back onto the live held pickaxe before secondary breaks",
                 helperSource,
-                "targetStack.copy(DataComponentTypes.ENCHANTMENTS, sourceStack);"
+                "targetStack.copyFrom(DataComponents.ENCHANTMENTS, sourceStack);"
         );
         assertContains(
                 "The pickaxe helper should also restore the custom mode state from the captured tool snapshot before secondary breaks",
                 helperSource,
-                "targetStack.copy(DataComponentTypes.CUSTOM_DATA, sourceStack);"
+                "targetStack.copyFrom(DataComponents.CUSTOM_DATA, sourceStack);"
         );
         assertContains(
                 "The pickaxe manager should accept the broken center state so the original ore can still seed vein mining after the world turns it to air",
@@ -246,12 +246,12 @@ public final class CelestiumPickaxeFeatureTest {
         assertContains(
                 "The pickaxe manager should skip vein target collection while the player is sneaking",
                 managerSource,
-                "shouldApplyVeinMining(player.isSneaking())"
+                "shouldApplyVeinMining(player.isShiftKeyDown())"
         );
         assertContains(
                 "The pickaxe manager should play each extra block's break sound when a vein-mined batch fires",
                 managerSource,
-                "if (interactionManager.tryBreakBlock(targetPos) && veinMiningActivated) {"
+                "if (interactionManager.destroyBlock(targetPos) && veinMiningActivated) {"
         );
         assertContains(
                 "Vein-mined secondary breaks should use the broken block's own sound group",
@@ -261,12 +261,12 @@ public final class CelestiumPickaxeFeatureTest {
         assertContains(
                 "The server interaction mixin should pass the captured pre-break block state into the pickaxe manager",
                 interactionMixinSource,
-                "snapshot != null && snapshot.pos().equals(pos) ? snapshot.state() : this.player.getEntityWorld().getBlockState(pos),"
+                "snapshot != null && snapshot.pos().equals(pos) ? snapshot.state() : this.player.level().getBlockState(pos),"
         );
         assertContains(
                 "The server interaction mixin should also pass the captured pre-break tool snapshot into the pickaxe manager",
                 interactionMixinSource,
-                "snapshot != null && snapshot.pos().equals(pos) ? snapshot.tool() : this.player.getMainHandStack().copy()"
+                "snapshot != null && snapshot.pos().equals(pos) ? snapshot.tool() : this.player.getMainHandItem().copy()"
         );
     }
 

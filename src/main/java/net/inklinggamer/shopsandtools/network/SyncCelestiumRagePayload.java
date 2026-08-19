@@ -5,18 +5,18 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.client.CelestiumRageHud;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 
-public record SyncCelestiumRagePayload(int stacks) implements CustomPayload {
-    public static final CustomPayload.Id<SyncCelestiumRagePayload> ID =
-            new CustomPayload.Id<>(Identifier.of(ShopsAndTools.MOD_ID, "sync_celestium_rage"));
-    public static final PacketCodec<PacketByteBuf, SyncCelestiumRagePayload> CODEC = PacketCodec.tuple(
-            PacketCodecs.INTEGER,
+public record SyncCelestiumRagePayload(int stacks) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<SyncCelestiumRagePayload> ID =
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "sync_celestium_rage"));
+    public static final StreamCodec<FriendlyByteBuf, SyncCelestiumRagePayload> CODEC = StreamCodec.composite(
+            ByteBufCodecs.INT,
             SyncCelestiumRagePayload::stacks,
             SyncCelestiumRagePayload::new
     );
@@ -31,12 +31,12 @@ public record SyncCelestiumRagePayload(int stacks) implements CustomPayload {
         );
     }
 
-    public static void send(ServerPlayerEntity player, int stacks) {
+    public static void send(ServerPlayer player, int stacks) {
         ServerPlayNetworking.send(player, new SyncCelestiumRagePayload(stacks));
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

@@ -1,46 +1,45 @@
 package net.inklinggamer.shopsandtools.item;
 
 import net.inklinggamer.shopsandtools.player.CelestiumHoeManager;
-import net.minecraft.component.type.TooltipDisplayComponent;
-import net.minecraft.item.HoeItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
-
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.HoeItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.component.TooltipDisplay;
+import net.minecraft.world.item.context.UseOnContext;
 import java.util.function.Consumer;
 
 public class CelestiumHoeItem extends HoeItem {
-    public CelestiumHoeItem(Settings settings) {
+    public CelestiumHoeItem(Properties settings) {
         super(ModToolMaterials.CELESTIUM, -4.0F, 0.0F, settings);
     }
 
     @Override
-    public ActionResult useOnBlock(ItemUsageContext context) {
-        if (context.getPlayer() == null || !CelestiumHoeHelper.isSupportedMatureCrop(context.getWorld().getBlockState(context.getBlockPos()))) {
-            return super.useOnBlock(context);
+    public InteractionResult useOn(UseOnContext context) {
+        if (context.getPlayer() == null || !CelestiumHoeHelper.isSupportedMatureCrop(context.getLevel().getBlockState(context.getClickedPos()))) {
+            return super.useOn(context);
         }
 
-        if (context.getWorld().isClient()) {
-            return ActionResult.SUCCESS;
+        if (context.getLevel().isClientSide()) {
+            return InteractionResult.SUCCESS;
         }
 
         boolean harvested = CelestiumHoeManager.harvestAndReplant(
-                (ServerWorld) context.getWorld(),
+                (ServerLevel) context.getLevel(),
                 context.getPlayer(),
-                context.getStack(),
-                context.getBlockPos()
+                context.getItemInHand(),
+                context.getClickedPos()
         );
-        return harvested ? ActionResult.SUCCESS : ActionResult.PASS;
+        return harvested ? InteractionResult.SUCCESS : InteractionResult.PASS;
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, Item.TooltipContext context, TooltipDisplayComponent displayComponent, Consumer<Text> textConsumer, TooltipType type) {
-        textConsumer.accept(Text.translatable("tooltip.shopsandtools.celestium_hoe_harvest").formatted(Formatting.GREEN));
-        textConsumer.accept(Text.translatable("tooltip.shopsandtools.celestium_hoe_growth_aura").formatted(Formatting.AQUA));
+    public void appendHoverText(ItemStack stack, Item.TooltipContext context, TooltipDisplay displayComponent, Consumer<Component> textConsumer, TooltipFlag type) {
+        textConsumer.accept(Component.translatable("tooltip.shopsandtools.celestium_hoe_harvest").withStyle(ChatFormatting.GREEN));
+        textConsumer.accept(Component.translatable("tooltip.shopsandtools.celestium_hoe_growth_aura").withStyle(ChatFormatting.AQUA));
     }
 }

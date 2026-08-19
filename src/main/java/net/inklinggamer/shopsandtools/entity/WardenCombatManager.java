@@ -1,17 +1,17 @@
 package net.inklinggamer.shopsandtools.entity;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.mob.WardenEntity;
-import net.minecraft.entity.projectile.ProjectileEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.network.packet.s2c.play.PlaySoundS2CPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
+import net.minecraft.network.protocol.game.ClientboundSoundPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.warden.Warden;
+import net.minecraft.world.entity.projectile.Projectile;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 public final class WardenCombatManager {
     private static final float PROJECTILE_IMMUNITY_HEALTH_RATIO = 0.70F;
@@ -26,8 +26,8 @@ public final class WardenCombatManager {
         ServerLivingEntityEvents.ALLOW_DAMAGE.register(WardenCombatManager::allowWardenDamage);
     }
 
-    public static void onResolvedMaceHit(ServerPlayerEntity player, ItemStack weaponStack, boolean wardenTarget, float damageDealt) {
-        if (!wardenTarget || damageDealt <= 0.0F || weaponStack.isEmpty() || !weaponStack.isOf(Items.MACE) || !weaponStack.isDamageable()) {
+    public static void onResolvedMaceHit(ServerPlayer player, ItemStack weaponStack, boolean wardenTarget, float damageDealt) {
+        if (!wardenTarget || damageDealt <= 0.0F || weaponStack.isEmpty() || !weaponStack.is(Items.MACE) || !weaponStack.isDamageableItem()) {
             return;
         }
 
@@ -36,14 +36,14 @@ public final class WardenCombatManager {
             return;
         }
 
-        DirectDurabilityResult result = resolveDirectDurabilityPenalty(weaponStack.getDamage(), weaponStack.getMaxDamage(), extraDurability);
+        DirectDurabilityResult result = resolveDirectDurabilityPenalty(weaponStack.getDamageValue(), weaponStack.getMaxDamage(), extraDurability);
         if (result.breaksItem()) {
-            player.equipStack(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
-            player.sendEquipmentBreakStatus(weaponStack.getItem(), EquipmentSlot.MAINHAND);
+            player.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+            player.onEquippedItemBroken(weaponStack.getItem(), EquipmentSlot.MAINHAND);
             return;
         }
 
-        weaponStack.setDamage(result.resultingDamage());
+        weaponStack.setDamageValue(result.resultingDamage());
     }
 
     static int calculateExtraMaceDurability(float damageDealt) {
@@ -75,15 +75,15 @@ public final class WardenCombatManager {
     }
 
     private static boolean allowWardenDamage(LivingEntity entity, DamageSource source, float amount) {
-        if (!(entity instanceof WardenEntity warden)
-                || !shouldBlockProjectileDamage(warden.getHealth(), warden.getMaxHealth(), amount, source.getSource() instanceof ProjectileEntity)) {
+        if (!(entity instanceof Warden warden)
+                || !shouldBlockProjectileDamage(warden.getHealth(), warden.getMaxHealth(), amount, source.getDirectEntity() instanceof Projectile)) {
             return true;
         }
 
-        if (source.getAttacker() instanceof ServerPlayerEntity player) {
-            player.networkHandler.sendPacket(new PlaySoundS2CPacket(
-                    SoundEvents.ITEM_SHIELD_BLOCK,
-                    SoundCategory.PLAYERS,
+        if (source.getEntity() instanceof ServerPlayer player) {
+            player.connection.send(new ClientboundSoundPacket(
+                    SoundEvents.SHIELD_BLOCK,
+                    SoundSource.PLAYERS,
                     player.getX(),
                     player.getY(),
                     player.getZ(),

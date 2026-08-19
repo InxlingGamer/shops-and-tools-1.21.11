@@ -1,20 +1,19 @@
 package net.inklinggamer.shopsandtools.player;
 
 import net.inklinggamer.shopsandtools.item.CelestiumHoeHelper;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.WorldEvents;
-
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.LevelEvent;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,32 +27,32 @@ public final class CelestiumHoeManager {
     }
 
     public static void tickServer(MinecraftServer server) {
-        ACTIVE_HOLDERS.entrySet().removeIf(entry -> server.getPlayerManager().getPlayer(entry.getKey()) == null);
+        ACTIVE_HOLDERS.entrySet().removeIf(entry -> server.getPlayerList().getPlayer(entry.getKey()) == null);
     }
 
-    public static void tickPlayer(ServerPlayerEntity player) {
+    public static void tickPlayer(ServerPlayer player) {
         if (!player.isAlive() || player.isSpectator() || !isCelestiumHoeHeldForAura(player)) {
-            ACTIVE_HOLDERS.remove(player.getUuid());
+            ACTIVE_HOLDERS.remove(player.getUUID());
             return;
         }
 
-        ACTIVE_HOLDERS.put(player.getUuid(), new ActiveHolder(player.getEntityWorld().getRegistryKey(), player.getX(), player.getZ()));
+        ACTIVE_HOLDERS.put(player.getUUID(), new ActiveHolder(player.level().dimension(), player.getX(), player.getZ()));
     }
 
-    public static boolean isCelestiumHoeHeldForAura(PlayerEntity player) {
-        return CelestiumHoeHelper.isCelestiumHoe(player.getMainHandStack())
-                || CelestiumHoeHelper.isCelestiumHoe(player.getOffHandStack());
+    public static boolean isCelestiumHoeHeldForAura(Player player) {
+        return CelestiumHoeHelper.isCelestiumHoe(player.getMainHandItem())
+                || CelestiumHoeHelper.isCelestiumHoe(player.getOffhandItem());
     }
 
-    public static boolean shouldApplyGrowthBoost(ServerWorld world, BlockPos pos, BlockState state) {
+    public static boolean shouldApplyGrowthBoost(ServerLevel world, BlockPos pos, BlockState state) {
         return CelestiumHoeHelper.isGrowthBoostedCrop(state) && isCropGrowthBoosted(world, pos);
     }
 
-    public static boolean isCropGrowthBoosted(ServerWorld world, BlockPos pos) {
-        return anyHolderBoostsCrop(world.getRegistryKey(), pos, ACTIVE_HOLDERS.values());
+    public static boolean isCropGrowthBoosted(ServerLevel world, BlockPos pos) {
+        return anyHolderBoostsCrop(world.dimension(), pos, ACTIVE_HOLDERS.values());
     }
 
-    static boolean anyHolderBoostsCrop(net.minecraft.registry.RegistryKey<net.minecraft.world.World> worldKey, BlockPos pos, Iterable<ActiveHolder> holders) {
+    static boolean anyHolderBoostsCrop(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> worldKey, BlockPos pos, Iterable<ActiveHolder> holders) {
         for (ActiveHolder holder : holders) {
             if (holder.worldKey().equals(worldKey) && isWithinGrowthAura(holder.x(), holder.z(), pos)) {
                 return true;
@@ -68,7 +67,7 @@ public final class CelestiumHoeManager {
                 && Math.abs((pos.getZ() + 0.5D) - playerZ) <= CelestiumHoeHelper.GROWTH_BOOST_RADIUS;
     }
 
-    public static boolean harvestAndReplant(ServerWorld world, PlayerEntity player, ItemStack tool, BlockPos centerPos) {
+    public static boolean harvestAndReplant(ServerLevel world, Player player, ItemStack tool, BlockPos centerPos) {
         List<BlockPos> targets = CelestiumHoeHelper.getHarvestTargets(centerPos, world::getBlockState);
         if (targets.isEmpty()) {
             return false;
@@ -92,29 +91,29 @@ public final class CelestiumHoeManager {
         return harvestedAny;
     }
 
-    private static void harvestCrop(ServerWorld world, PlayerEntity player, ItemStack tool, BlockPos pos, BlockState state) {
+    private static void harvestCrop(ServerLevel world, Player player, ItemStack tool, BlockPos pos, BlockState state) {
         List<ItemStack> drops = List.of();
         if (!player.isCreative()) {
             BlockEntity blockEntity = world.getBlockEntity(pos);
-            drops = new ArrayList<>(Block.getDroppedStacks(state, world, pos, blockEntity, player, tool));
+            drops = new ArrayList<>(Block.getDrops(state, world, pos, blockEntity, player, tool));
             CelestiumHoeHelper.consumeReplantItem(drops, CelestiumHoeHelper.getReplantCostItem(state));
         }
 
-        world.syncWorldEvent(WorldEvents.BLOCK_BROKEN, pos, Block.getRawIdFromState(state));
-        world.setBlockState(pos, CelestiumHoeHelper.getReplantState(state), Block.NOTIFY_ALL);
-        world.playSound(null, pos, SoundEvents.BLOCK_CROP_BREAK, SoundCategory.BLOCKS, 1.0F, 1.0F);
+        world.levelEvent(LevelEvent.PARTICLES_DESTROY_BLOCK, pos, Block.getId(state));
+        world.setBlock(pos, CelestiumHoeHelper.getReplantState(state), Block.UPDATE_ALL);
+        world.playSound(null, pos, SoundEvents.CROP_BREAK, SoundSource.BLOCKS, 1.0F, 1.0F);
 
         for (ItemStack drop : drops) {
             if (!drop.isEmpty()) {
-                Block.dropStack(world, pos, drop);
+                Block.popResource(world, pos, drop);
             }
         }
 
         if (!player.isCreative()) {
-            tool.damage(1, player, EquipmentSlot.MAINHAND);
+            tool.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
         }
     }
 
-    record ActiveHolder(net.minecraft.registry.RegistryKey<net.minecraft.world.World> worldKey, double x, double z) {
+    record ActiveHolder(net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> worldKey, double x, double z) {
     }
 }

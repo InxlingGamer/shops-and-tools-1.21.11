@@ -5,18 +5,18 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.player.CelestiumShovelManager;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.HitResult;
 
-public record ToggleCelestiumShovelAreaModePayload() implements CustomPayload {
-    public static final Id<ToggleCelestiumShovelAreaModePayload> ID =
-            new Id<>(Identifier.of(ShopsAndTools.MOD_ID, "toggle_celestium_shovel_area_mode"));
-    public static final PacketCodec<RegistryByteBuf, ToggleCelestiumShovelAreaModePayload> CODEC =
-            PacketCodec.unit(new ToggleCelestiumShovelAreaModePayload());
+public record ToggleCelestiumShovelAreaModePayload() implements CustomPacketPayload {
+    public static final Type<ToggleCelestiumShovelAreaModePayload> ID =
+            new Type<>(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "toggle_celestium_shovel_area_mode"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, ToggleCelestiumShovelAreaModePayload> CODEC =
+            StreamCodec.unit(new ToggleCelestiumShovelAreaModePayload());
 
     public static void register() {
         PayloadTypeRegistry.playC2S().register(ID, CODEC);
@@ -28,7 +28,7 @@ public record ToggleCelestiumShovelAreaModePayload() implements CustomPayload {
                     }
 
                     boolean enabled = CelestiumShovelManager.toggleAreaMining(context.player());
-                    context.player().sendMessage(Text.translatable(
+                    context.player().displayClientMessage(Component.translatable(
                             enabled
                                     ? "message.shopsandtools.celestium_shovel_area_enabled"
                                     : "message.shopsandtools.celestium_shovel_area_disabled"
@@ -42,7 +42,7 @@ public record ToggleCelestiumShovelAreaModePayload() implements CustomPayload {
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

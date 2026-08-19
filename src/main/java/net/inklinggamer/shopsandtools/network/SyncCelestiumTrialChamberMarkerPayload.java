@@ -5,17 +5,17 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.client.CelestiumShovelClient;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 
-public record SyncCelestiumTrialChamberMarkerPayload(BlockPos pos, Identifier dimensionId, int durationTicks) implements CustomPayload {
-    public static final Id<SyncCelestiumTrialChamberMarkerPayload> ID =
-            new Id<>(Identifier.of(ShopsAndTools.MOD_ID, "sync_celestium_trial_chamber_marker"));
-    public static final PacketCodec<PacketByteBuf, SyncCelestiumTrialChamberMarkerPayload> CODEC = PacketCodec.of(
+public record SyncCelestiumTrialChamberMarkerPayload(BlockPos pos, Identifier dimensionId, int durationTicks) implements CustomPacketPayload {
+    public static final Type<SyncCelestiumTrialChamberMarkerPayload> ID =
+            new Type<>(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "sync_celestium_trial_chamber_marker"));
+    public static final StreamCodec<FriendlyByteBuf, SyncCelestiumTrialChamberMarkerPayload> CODEC = StreamCodec.ofMember(
             (payload, buf) -> {
                 buf.writeBlockPos(payload.pos());
                 buf.writeIdentifier(payload.dimensionId());
@@ -39,12 +39,12 @@ public record SyncCelestiumTrialChamberMarkerPayload(BlockPos pos, Identifier di
         );
     }
 
-    public static void send(ServerPlayerEntity player, BlockPos pos, Identifier dimensionId, int durationTicks) {
+    public static void send(ServerPlayer player, BlockPos pos, Identifier dimensionId, int durationTicks) {
         ServerPlayNetworking.send(player, new SyncCelestiumTrialChamberMarkerPayload(pos, dimensionId, durationTicks));
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

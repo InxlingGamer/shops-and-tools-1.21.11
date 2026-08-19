@@ -1,19 +1,19 @@
 package net.inklinggamer.shopsandtools.mixin.client;
 
 import net.inklinggamer.shopsandtools.client.CelestiumBootsClient;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(net.minecraft.entity.LivingEntity.class)
+@Mixin(net.minecraft.world.entity.LivingEntity.class)
 public abstract class LivingEntityClientMixin {
-    @Inject(method = "isHoldingOntoLadder", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "isSuppressingSlidingDownLadder", at = @At("RETURN"), cancellable = true)
     private void shopsandtools$allowSyncedLocalWallClimbDescent(CallbackInfoReturnable<Boolean> cir) {
         Object self = this;
         if (cir.getReturnValueZ()
-                && self instanceof PlayerEntity player
+                && self instanceof Player player
                 && CelestiumBootsClient.shouldUseSyncedWallClimb(player)) {
             cir.setReturnValue(false);
         }

@@ -1,15 +1,15 @@
 package net.inklinggamer.shopsandtools.client;
 
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Arm;
-import net.minecraft.util.Identifier;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import net.minecraft.util.Util;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 public final class CelestiumThrustCooldownHud {
     private static final int DEFAULT_BAR_WIDTH = 74;
@@ -21,8 +21,8 @@ public final class CelestiumThrustCooldownHud {
     private static final int BAR_GAP = 4;
     private static final int LEFT_SCREEN_MARGIN = 2;
     private static final int VERTICAL_ALIGNMENT_OFFSET = 8;
-    private static final Identifier BACKGROUND_TEXTURE = Identifier.ofVanilla("boss_bar/pink_background");
-    private static final Identifier PROGRESS_TEXTURE = Identifier.ofVanilla("boss_bar/pink_progress");
+    private static final Identifier BACKGROUND_TEXTURE = Identifier.withDefaultNamespace("boss_bar/pink_background");
+    private static final Identifier PROGRESS_TEXTURE = Identifier.withDefaultNamespace("boss_bar/pink_progress");
     private static final RenderPipeline RENDER_PIPELINE = RenderPipelines.GUI_TEXTURED;
 
     private static long cooldownStartedAtMs;
@@ -37,12 +37,12 @@ public final class CelestiumThrustCooldownHud {
             return;
         }
 
-        cooldownStartedAtMs = Util.getMeasuringTimeMs();
+        cooldownStartedAtMs = Util.getMillis();
         cooldownDurationMs = remainingTicks * 50L;
     }
 
-    public static void tick(MinecraftClient client) {
-        if (client.player == null || client.world == null) {
+    public static void tick(Minecraft client) {
+        if (client.player == null || client.level == null) {
             clear();
         }
     }
@@ -52,7 +52,7 @@ public final class CelestiumThrustCooldownHud {
             return false;
         }
 
-        if (Util.getMeasuringTimeMs() >= cooldownStartedAtMs + cooldownDurationMs) {
+        if (Util.getMillis() >= cooldownStartedAtMs + cooldownDurationMs) {
             clear();
             return false;
         }
@@ -60,19 +60,19 @@ public final class CelestiumThrustCooldownHud {
         return true;
     }
 
-    public static void renderNearHotbar(DrawContext drawContext, PlayerEntity player) {
+    public static void renderNearHotbar(GuiGraphics drawContext, Player player) {
         if (!isActive() || player == null) {
             return;
         }
 
-        int centerX = drawContext.getScaledWindowWidth() / 2;
-        int hotbarY = drawContext.getScaledWindowHeight() - HOTBAR_HEIGHT;
+        int centerX = drawContext.guiWidth() / 2;
+        int hotbarY = drawContext.guiHeight() - HOTBAR_HEIGHT;
         int barY = hotbarY + VERTICAL_ALIGNMENT_OFFSET;
         int barWidth = DEFAULT_BAR_WIDTH;
         int barX = centerX - HOTBAR_HALF_WIDTH - BAR_GAP - barWidth;
 
-        ItemStack offhandStack = player.getOffHandStack();
-        boolean leftOffhandVisible = !offhandStack.isEmpty() && player.getMainArm().getOpposite() == Arm.LEFT;
+        ItemStack offhandStack = player.getOffhandItem();
+        boolean leftOffhandVisible = !offhandStack.isEmpty() && player.getMainArm().getOpposite() == HumanoidArm.LEFT;
         if (leftOffhandVisible) {
             barWidth = OFFHAND_BAR_WIDTH;
             int leftOffhandSlotX = centerX - HOTBAR_HALF_WIDTH - OFFHAND_SLOT_WIDTH;
@@ -83,12 +83,12 @@ public final class CelestiumThrustCooldownHud {
         renderBar(drawContext, barX, barY, barWidth);
     }
 
-    private static void renderBar(DrawContext drawContext, int x, int y, int barWidth) {
-        drawContext.drawGuiTexture(RENDER_PIPELINE, BACKGROUND_TEXTURE, x, y, barWidth, BAR_HEIGHT);
+    private static void renderBar(GuiGraphics drawContext, int x, int y, int barWidth) {
+        drawContext.blitSprite(RENDER_PIPELINE, BACKGROUND_TEXTURE, x, y, barWidth, BAR_HEIGHT);
 
-        int progressWidth = MathHelper.clamp((int) (getProgress() * barWidth), 0, barWidth);
+        int progressWidth = Mth.clamp((int) (getProgress() * barWidth), 0, barWidth);
         if (progressWidth > 0) {
-            drawContext.drawGuiTexture(RENDER_PIPELINE, PROGRESS_TEXTURE, x, y, progressWidth, BAR_HEIGHT);
+            drawContext.blitSprite(RENDER_PIPELINE, PROGRESS_TEXTURE, x, y, progressWidth, BAR_HEIGHT);
         }
     }
 
@@ -97,8 +97,8 @@ public final class CelestiumThrustCooldownHud {
             return 1.0F;
         }
 
-        long elapsedMs = Util.getMeasuringTimeMs() - cooldownStartedAtMs;
-        return MathHelper.clamp((float) elapsedMs / (float) cooldownDurationMs, 0.0F, 1.0F);
+        long elapsedMs = Util.getMillis() - cooldownStartedAtMs;
+        return Mth.clamp((float) elapsedMs / (float) cooldownDurationMs, 0.0F, 1.0F);
     }
 
     private static void clear() {

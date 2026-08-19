@@ -1,18 +1,17 @@
 package net.inklinggamer.shopsandtools.player;
 
 import net.inklinggamer.shopsandtools.item.CelestiumPickaxeHelper;
-import net.minecraft.block.BlockState;
-import net.minecraft.sound.BlockSoundGroup;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.network.ServerPlayerInteractionManager;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerPlayerGameMode;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.HitResult;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -29,67 +28,67 @@ public final class CelestiumPickaxeManager {
     }
 
     public static void tickServer(MinecraftServer server) {
-        STATES.entrySet().removeIf(entry -> server.getPlayerManager().getPlayer(entry.getKey()) == null || entry.getValue().canDiscard());
+        STATES.entrySet().removeIf(entry -> server.getPlayerList().getPlayer(entry.getKey()) == null || entry.getValue().canDiscard());
     }
 
-    public static boolean isHoldingCelestiumPickaxe(ServerPlayerEntity player) {
-        return CelestiumPickaxeHelper.isCelestiumPickaxe(player.getMainHandStack());
+    public static boolean isHoldingCelestiumPickaxe(ServerPlayer player) {
+        return CelestiumPickaxeHelper.isCelestiumPickaxe(player.getMainHandItem());
     }
 
-    public static boolean isCelestiumPickaxeHeldForXp(PlayerEntity player) {
-        return CelestiumPickaxeHelper.isCelestiumPickaxe(player.getMainHandStack())
-                || CelestiumPickaxeHelper.isCelestiumPickaxe(player.getOffHandStack());
+    public static boolean isCelestiumPickaxeHeldForXp(Player player) {
+        return CelestiumPickaxeHelper.isCelestiumPickaxe(player.getMainHandItem())
+                || CelestiumPickaxeHelper.isCelestiumPickaxe(player.getOffhandItem());
     }
 
-    public static boolean isAreaMiningEnabled(ServerPlayerEntity player) {
-        return CelestiumPickaxeHelper.isAreaMiningEnabled(player.getMainHandStack());
+    public static boolean isAreaMiningEnabled(ServerPlayer player) {
+        return CelestiumPickaxeHelper.isAreaMiningEnabled(player.getMainHandItem());
     }
 
-    public static HitResult getCurrentTarget(ServerPlayerEntity player) {
-        return player.raycast(player.getBlockInteractionRange(), 1.0F, false);
+    public static HitResult getCurrentTarget(ServerPlayer player) {
+        return player.pick(player.blockInteractionRange(), 1.0F, false);
     }
 
-    public static boolean canToggleAreaMining(ServerPlayerEntity player, HitResult hitResult) {
+    public static boolean canToggleAreaMining(ServerPlayer player, HitResult hitResult) {
         return CelestiumPickaxeHelper.canToggleAreaMining(
                 player,
-                player.getEntityWorld(),
+                player.level(),
                 hitResult,
-                player.interactionManager.getGameMode()
+                player.gameMode.getGameModeForPlayer()
         );
     }
 
-    public static boolean isValidMiningTarget(ServerPlayerEntity player, BlockPos pos) {
+    public static boolean isValidMiningTarget(ServerPlayer player, BlockPos pos) {
         return CelestiumPickaxeHelper.isValidMiningTarget(
                 player,
-                player.getEntityWorld(),
+                player.level(),
                 pos,
-                player.interactionManager.getGameMode()
+                player.gameMode.getGameModeForPlayer()
         );
     }
 
-    public static boolean toggleAreaMining(ServerPlayerEntity player) {
-        return CelestiumPickaxeHelper.toggleAreaMining(player.getMainHandStack());
+    public static boolean toggleAreaMining(ServerPlayer player) {
+        return CelestiumPickaxeHelper.toggleAreaMining(player.getMainHandItem());
     }
 
-    public static void beginMiningSelection(ServerPlayerEntity player, BlockPos pos, Direction face) {
+    public static void beginMiningSelection(ServerPlayer player, BlockPos pos, Direction face) {
         if (!isHoldingCelestiumPickaxe(player)
                 || !CelestiumPickaxeHelper.isAreaMiningCenterEligible(
                         player,
-                        player.getEntityWorld(),
+                        player.level(),
                         pos,
-                        player.interactionManager.getGameMode()
+                        player.gameMode.getGameModeForPlayer()
                 )) {
             clearMiningSelection(player);
             return;
         }
 
-        PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
-        state.miningCenter = pos.toImmutable();
+        PlayerState state = STATES.computeIfAbsent(player.getUUID(), uuid -> new PlayerState());
+        state.miningCenter = pos.immutable();
         state.miningFace = face;
     }
 
-    public static void clearMiningSelection(ServerPlayerEntity player) {
-        PlayerState state = STATES.get(player.getUuid());
+    public static void clearMiningSelection(ServerPlayer player) {
+        PlayerState state = STATES.get(player.getUUID());
         if (state == null) {
             return;
         }
@@ -97,13 +96,13 @@ public final class CelestiumPickaxeManager {
         state.miningCenter = null;
         state.miningFace = null;
         if (state.canDiscard()) {
-            STATES.remove(player.getUuid());
+            STATES.remove(player.getUUID());
         }
     }
 
     public static void onBlockBroken(
-            ServerPlayerEntity player,
-            ServerPlayerInteractionManager interactionManager,
+            ServerPlayer player,
+            ServerPlayerGameMode interactionManager,
             BlockPos centerPos,
             BlockState centerState,
             ItemStack breakingTool
@@ -113,7 +112,7 @@ public final class CelestiumPickaxeManager {
         }
 
         boolean areaMiningEnabled = isAreaMiningEnabled(player);
-        PlayerState state = STATES.get(player.getUuid());
+        PlayerState state = STATES.get(player.getUUID());
         boolean hasStoredAreaBreak = state != null
                 && state.miningCenter != null
                 && state.miningFace != null
@@ -123,10 +122,10 @@ public final class CelestiumPickaxeManager {
                 : List.of();
         Set<BlockPos> veinTargets = new LinkedHashSet<>();
 
-        if (CelestiumPickaxeHelper.shouldApplyVeinMining(player.isSneaking())) {
+        if (CelestiumPickaxeHelper.shouldApplyVeinMining(player.isShiftKeyDown())) {
             shopsandtools$collectVeinTargets(player, centerPos, centerState, veinTargets);
             for (BlockPos targetPos : areaTargets) {
-                shopsandtools$collectVeinTargets(player, targetPos, player.getEntityWorld().getBlockState(targetPos), veinTargets);
+                shopsandtools$collectVeinTargets(player, targetPos, player.level().getBlockState(targetPos), veinTargets);
             }
         }
 
@@ -142,9 +141,9 @@ public final class CelestiumPickaxeManager {
         AREA_BREAK_IN_PROGRESS.set(true);
         try {
             for (BlockPos targetPos : secondaryTargets) {
-                BlockState targetState = player.getEntityWorld().getBlockState(targetPos);
-                CelestiumPickaxeHelper.synchronizeEnchantAndModeComponents(player.getMainHandStack(), breakingTool);
-                if (interactionManager.tryBreakBlock(targetPos) && veinMiningActivated) {
+                BlockState targetState = player.level().getBlockState(targetPos);
+                CelestiumPickaxeHelper.synchronizeEnchantAndModeComponents(player.getMainHandItem(), breakingTool);
+                if (interactionManager.destroyBlock(targetPos) && veinMiningActivated) {
                     shopsandtools$playSecondaryBreakSound(player, targetPos, targetState);
                 }
             }
@@ -156,11 +155,11 @@ public final class CelestiumPickaxeManager {
         }
     }
 
-    public static boolean toggleEnchantMode(ItemStack stack, ServerPlayerEntity player) {
-        return CelestiumPickaxeHelper.toggleEnchantMode(stack, player.getRegistryManager());
+    public static boolean toggleEnchantMode(ItemStack stack, ServerPlayer player) {
+        return CelestiumPickaxeHelper.toggleEnchantMode(stack, player.registryAccess());
     }
 
-    public static float getAreaMiningDelta(ServerPlayerEntity player, BlockPos centerPos, float fallbackDelta) {
+    public static float getAreaMiningDelta(ServerPlayer player, BlockPos centerPos, float fallbackDelta) {
         PlayerState state = getActiveMiningState(player, centerPos);
         if (state == null) {
             return fallbackDelta;
@@ -168,15 +167,15 @@ public final class CelestiumPickaxeManager {
 
         float areaMiningDelta = CelestiumPickaxeHelper.getAreaMiningTargets(
                 player,
-                player.getEntityWorld(),
+                player.level(),
                 centerPos,
                 state.miningFace,
-                player.interactionManager.getGameMode()
+                player.gameMode.getGameModeForPlayer()
         ).effectiveBreakingDelta();
         return areaMiningDelta > 0.0F ? areaMiningDelta : fallbackDelta;
     }
 
-    public static List<BlockPos> getAreaMiningTargets(ServerPlayerEntity player, BlockPos centerPos) {
+    public static List<BlockPos> getAreaMiningTargets(ServerPlayer player, BlockPos centerPos) {
         PlayerState state = getActiveMiningState(player, centerPos);
         if (state == null) {
             return List.of();
@@ -184,27 +183,27 @@ public final class CelestiumPickaxeManager {
 
         return CelestiumPickaxeHelper.getAreaMiningTargets(
                 player,
-                player.getEntityWorld(),
+                player.level(),
                 centerPos,
                 state.miningFace,
-                player.interactionManager.getGameMode()
+                player.gameMode.getGameModeForPlayer()
         ).positions();
     }
 
-    private static PlayerState getActiveMiningState(ServerPlayerEntity player, BlockPos centerPos) {
+    private static PlayerState getActiveMiningState(ServerPlayer player, BlockPos centerPos) {
         if (!CelestiumPickaxeHelper.shouldApplyAreaMining(
                 isAreaMiningEnabled(player),
                 CelestiumPickaxeHelper.isAreaMiningCenterEligible(
                         player,
-                        player.getEntityWorld(),
+                        player.level(),
                         centerPos,
-                        player.interactionManager.getGameMode()
+                        player.gameMode.getGameModeForPlayer()
                 )
         )) {
             return null;
         }
 
-        PlayerState state = STATES.get(player.getUuid());
+        PlayerState state = STATES.get(player.getUUID());
         if (state == null || state.miningCenter == null || state.miningFace == null || !state.miningCenter.equals(centerPos)) {
             return null;
         }
@@ -212,43 +211,43 @@ public final class CelestiumPickaxeManager {
         return state;
     }
 
-    private static List<BlockPos> shopsandtools$getStoredAreaMiningTargets(ServerPlayerEntity player, BlockPos centerPos, Direction face) {
+    private static List<BlockPos> shopsandtools$getStoredAreaMiningTargets(ServerPlayer player, BlockPos centerPos, Direction face) {
         return CelestiumPickaxeHelper.getMiningPlane(centerPos, face).stream()
                 .filter(pos -> CelestiumPickaxeHelper.getMiningDelta(
                         player,
-                        player.getEntityWorld(),
+                        player.level(),
                         pos,
-                        player.interactionManager.getGameMode()
+                        player.gameMode.getGameModeForPlayer()
                 ) > 0.0F)
-                .map(BlockPos::toImmutable)
+                .map(BlockPos::immutable)
                 .toList();
     }
 
-    private static void shopsandtools$collectVeinTargets(ServerPlayerEntity player, BlockPos centerPos, BlockState centerState, Set<BlockPos> veinTargets) {
+    private static void shopsandtools$collectVeinTargets(ServerPlayer player, BlockPos centerPos, BlockState centerState, Set<BlockPos> veinTargets) {
         veinTargets.addAll(CelestiumPickaxeHelper.getVeinMiningTargets(
                 player,
-                player.getEntityWorld(),
+                player.level(),
                 centerPos,
                 centerState,
-                player.interactionManager.getGameMode()
+                player.gameMode.getGameModeForPlayer()
         ));
     }
 
-    private static void shopsandtools$playSecondaryBreakSound(ServerPlayerEntity player, BlockPos pos, BlockState state) {
+    private static void shopsandtools$playSecondaryBreakSound(ServerPlayer player, BlockPos pos, BlockState state) {
         if (state.isAir()) {
             return;
         }
 
-        BlockSoundGroup soundGroup = state.getSoundGroup();
+        SoundType soundGroup = state.getSoundType();
         if (soundGroup == null || soundGroup.getVolume() <= 0.0F) {
             return;
         }
 
-        player.getEntityWorld().playSound(
+        player.level().playSound(
                 null,
                 pos,
                 soundGroup.getBreakSound(),
-                SoundCategory.BLOCKS,
+                SoundSource.BLOCKS,
                 soundGroup.getVolume(),
                 soundGroup.getPitch()
         );

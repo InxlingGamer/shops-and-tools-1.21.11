@@ -1,8 +1,8 @@
 package net.inklinggamer.shopsandtools.advancement;
 
 import net.inklinggamer.shopsandtools.ShopsAndTools;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
 
 public final class ModAdvancementActions {
     public static final Identifier PLAYER_JOINED = action("player_joined");
@@ -14,31 +14,31 @@ public final class ModAdvancementActions {
     private ModAdvancementActions() {
     }
 
-    public static void triggerPlayerJoined(ServerPlayerEntity player) {
+    public static void triggerPlayerJoined(ServerPlayer player) {
         trigger(player, PLAYER_JOINED);
     }
 
-    public static void triggerAStrangeEnergy(ServerPlayerEntity player) {
+    public static void triggerAStrangeEnergy(ServerPlayer player) {
         trigger(player, A_STRANGE_ENERGY);
     }
 
-    public static void triggerFullyAscended(ServerPlayerEntity player) {
+    public static void triggerFullyAscended(ServerPlayer player) {
         trigger(player, FULLY_ASCENDED);
     }
 
-    public static void triggerTouchGrass(ServerPlayerEntity player) {
+    public static void triggerTouchGrass(ServerPlayer player) {
         trigger(player, TOUCH_GRASS);
     }
 
-    public static void triggerBoundToTheSky(ServerPlayerEntity player) {
+    public static void triggerBoundToTheSky(ServerPlayer player) {
         trigger(player, BOUND_TO_THE_SKY);
     }
 
-    private static void trigger(ServerPlayerEntity player, Identifier action) {
+    private static void trigger(ServerPlayer player, Identifier action) {
         ModAdvancementCriteria.triggerAction(player, action);
     }
 
     private static Identifier action(String path) {
-        return Identifier.of(ShopsAndTools.MOD_ID, path);
+        return Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, path);
     }
 }

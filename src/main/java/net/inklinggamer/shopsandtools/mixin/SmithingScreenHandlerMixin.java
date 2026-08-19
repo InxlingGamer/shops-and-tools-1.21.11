@@ -3,13 +3,13 @@ package net.inklinggamer.shopsandtools.mixin;
 import net.inklinggamer.shopsandtools.advancement.ModAdvancementActions;
 import net.inklinggamer.shopsandtools.item.CelestiumSmithingResultHelper;
 import net.inklinggamer.shopsandtools.item.ModItems;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.screen.SmithingScreenHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.world.World;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.SmithingMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,36 +18,36 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(SmithingScreenHandler.class)
-public abstract class SmithingScreenHandlerMixin extends ScreenHandler {
+@Mixin(SmithingMenu.class)
+public abstract class SmithingScreenHandlerMixin extends AbstractContainerMenu {
     @Shadow
     @Final
-    private World world;
+    private Level level;
 
-    protected SmithingScreenHandlerMixin(@Nullable ScreenHandlerType<?> type, int syncId) {
+    protected SmithingScreenHandlerMixin(@Nullable MenuType<?> type, int syncId) {
         super(type, syncId);
     }
 
-    @Inject(method = "updateResult", at = @At("RETURN"))
+    @Inject(method = "createResult", at = @At("RETURN"))
     private void shopsandtools$postProcessCelestiumSmithingResult(CallbackInfo ci) {
-        ItemStack result = this.getSlot(SmithingScreenHandler.OUTPUT_ID).getStack();
+        ItemStack result = this.getSlot(SmithingMenu.RESULT_SLOT).getItem();
         if (result.isEmpty()) {
             return;
         }
 
         // Vanilla smithing has already transferred the carried result components,
         // so we only need to adjust the finished output stack here.
-        ItemStack upgradedResult = CelestiumSmithingResultHelper.postProcess(result, this.world.getRegistryManager());
-        if (ItemStack.areEqual(result, upgradedResult)) {
+        ItemStack upgradedResult = CelestiumSmithingResultHelper.postProcess(result, this.level.registryAccess());
+        if (ItemStack.matches(result, upgradedResult)) {
             return;
         }
 
-        this.getSlot(SmithingScreenHandler.OUTPUT_ID).setStackNoCallbacks(upgradedResult);
+        this.getSlot(SmithingMenu.RESULT_SLOT).set(upgradedResult);
     }
 
-    @Inject(method = "onTakeOutput", at = @At("TAIL"))
-    private void shopsandtools$triggerTouchGrass(PlayerEntity player, ItemStack stack, CallbackInfo ci) {
-        if (stack.isOf(ModItems.CELESTIUM_HOE) && player instanceof ServerPlayerEntity serverPlayer) {
+    @Inject(method = "onTake", at = @At("TAIL"))
+    private void shopsandtools$triggerTouchGrass(Player player, ItemStack stack, CallbackInfo ci) {
+        if (stack.is(ModItems.CELESTIUM_HOE) && player instanceof ServerPlayer serverPlayer) {
             ModAdvancementActions.triggerTouchGrass(serverPlayer);
         }
     }

@@ -6,14 +6,14 @@ import net.inklinggamer.shopsandtools.mixin.client.HandledScreenAccessor;
 import net.inklinggamer.shopsandtools.network.OpenCelestiumCraftingPayload;
 import net.inklinggamer.shopsandtools.network.ReturnToInventoryPayload;
 import net.inklinggamer.shopsandtools.player.CelestiumLeggingsManager;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.CraftingScreen;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.CraftingScreen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 import org.lwjgl.glfw.GLFW;
 
 public final class CelestiumLeggingsClient {
@@ -34,7 +34,7 @@ public final class CelestiumLeggingsClient {
         ScreenEvents.AFTER_INIT.register(CelestiumLeggingsClient::onAfterInit);
     }
 
-    private static void onAfterInit(MinecraftClient client, Screen screen, int scaledWidth, int scaledHeight) {
+    private static void onAfterInit(Minecraft client, Screen screen, int scaledWidth, int scaledHeight) {
         if (!(screen instanceof CraftingScreen)) {
             expectingPortableCraftingScreen = false;
         }
@@ -50,12 +50,12 @@ public final class CelestiumLeggingsClient {
         }
     }
 
-    private static void addInventoryCraftingButton(MinecraftClient client, Screen screen, InventoryScreen inventoryScreen) {
-        ButtonWidget button = ButtonWidget.builder(
-                        Text.translatable("button.shopsandtools.celestium_portable_crafting"),
+    private static void addInventoryCraftingButton(Minecraft client, Screen screen, InventoryScreen inventoryScreen) {
+        Button button = Button.builder(
+                        Component.translatable("button.shopsandtools.celestium_portable_crafting"),
                         ignored -> openPortableCrafting()
                 )
-                .dimensions(0, 0, INVENTORY_BUTTON_WIDTH, INVENTORY_BUTTON_HEIGHT)
+                .bounds(0, 0, INVENTORY_BUTTON_WIDTH, INVENTORY_BUTTON_HEIGHT)
                 .build();
 
         updateInventoryButton(client, inventoryScreen, button);
@@ -63,12 +63,12 @@ public final class CelestiumLeggingsClient {
         ScreenEvents.afterTick(screen).register(ignored -> updateInventoryButton(client, inventoryScreen, button));
     }
 
-    private static void addReturnButton(MinecraftClient client, Screen screen, CraftingScreen craftingScreen) {
-        ButtonWidget button = ButtonWidget.builder(
-                        Text.translatable("button.shopsandtools.celestium_return_to_inventory"),
+    private static void addReturnButton(Minecraft client, Screen screen, CraftingScreen craftingScreen) {
+        Button button = Button.builder(
+                        Component.translatable("button.shopsandtools.celestium_return_to_inventory"),
                         ignored -> returnToInventory(client)
                 )
-                .dimensions(0, 0, RETURN_BUTTON_WIDTH, RETURN_BUTTON_HEIGHT)
+                .bounds(0, 0, RETURN_BUTTON_WIDTH, RETURN_BUTTON_HEIGHT)
                 .build();
 
         updateReturnButton(craftingScreen, button);
@@ -76,7 +76,7 @@ public final class CelestiumLeggingsClient {
         ScreenEvents.afterTick(screen).register(ignored -> updateReturnButton(craftingScreen, button));
     }
 
-    private static void updateInventoryButton(MinecraftClient client, InventoryScreen inventoryScreen, ClickableWidget button) {
+    private static void updateInventoryButton(Minecraft client, InventoryScreen inventoryScreen, AbstractWidget button) {
         positionInventoryButton(inventoryScreen, button);
 
         boolean wearingLeggings = client.player != null && CelestiumLeggingsManager.isCelestiumLeggingsEquipped(client.player);
@@ -84,17 +84,17 @@ public final class CelestiumLeggingsClient {
         button.active = wearingLeggings;
     }
 
-    private static void updateReturnButton(CraftingScreen craftingScreen, ClickableWidget button) {
+    private static void updateReturnButton(CraftingScreen craftingScreen, AbstractWidget button) {
         positionReturnButton(craftingScreen, button);
     }
 
-    private static void positionInventoryButton(InventoryScreen inventoryScreen, ClickableWidget button) {
+    private static void positionInventoryButton(InventoryScreen inventoryScreen, AbstractWidget button) {
         HandledScreenAccessor accessor = (HandledScreenAccessor) inventoryScreen;
         button.setX(accessor.shopsandtools$getX() + INVENTORY_BUTTON_OFFSET_X);
         button.setY(accessor.shopsandtools$getY() + INVENTORY_BUTTON_OFFSET_Y);
     }
 
-    private static void positionReturnButton(CraftingScreen craftingScreen, ClickableWidget button) {
+    private static void positionReturnButton(CraftingScreen craftingScreen, AbstractWidget button) {
         HandledScreenAccessor accessor = (HandledScreenAccessor) craftingScreen;
         button.setX(accessor.shopsandtools$getX() + RETURN_BUTTON_OFFSET_X);
         button.setY(accessor.shopsandtools$getY() + RETURN_BUTTON_OFFSET_Y);
@@ -105,25 +105,25 @@ public final class CelestiumLeggingsClient {
         OpenCelestiumCraftingPayload.send();
     }
 
-    private static void returnToInventory(MinecraftClient client) {
+    private static void returnToInventory(Minecraft client) {
         if (client.player == null) {
             return;
         }
 
         expectingPortableCraftingScreen = false;
-        double cursorX = client.mouse.getX();
-        double cursorY = client.mouse.getY();
-        ItemStack cursorStack = client.player.currentScreenHandler.getCursorStack().copy();
+        double cursorX = client.mouseHandler.xpos();
+        double cursorY = client.mouseHandler.ypos();
+        ItemStack cursorStack = client.player.containerMenu.getCarried().copy();
         if (!cursorStack.isEmpty()) {
-            client.player.currentScreenHandler.setCursorStack(ItemStack.EMPTY);
-            client.player.playerScreenHandler.setCursorStack(cursorStack);
-            client.player.currentScreenHandler.sendContentUpdates();
-            client.player.playerScreenHandler.sendContentUpdates();
+            client.player.containerMenu.setCarried(ItemStack.EMPTY);
+            client.player.inventoryMenu.setCarried(cursorStack);
+            client.player.containerMenu.broadcastChanges();
+            client.player.inventoryMenu.broadcastChanges();
         }
 
-        client.player.currentScreenHandler = client.player.playerScreenHandler;
+        client.player.containerMenu = client.player.inventoryMenu;
         ReturnToInventoryPayload.send();
         client.setScreen(new InventoryScreen(client.player));
-        GLFW.glfwSetCursorPos(client.getWindow().getHandle(), cursorX, cursorY);
+        GLFW.glfwSetCursorPos(client.getWindow().handle(), cursorX, cursorY);
     }
 }

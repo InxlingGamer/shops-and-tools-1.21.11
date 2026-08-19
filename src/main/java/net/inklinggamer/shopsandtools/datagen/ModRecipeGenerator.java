@@ -3,177 +3,181 @@ package net.inklinggamer.shopsandtools.datagen;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.block.ModBlocks;
 import net.inklinggamer.shopsandtools.item.ModItems;
-import net.minecraft.data.recipe.*;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
-import net.minecraft.recipe.Ingredient;
-import net.minecraft.recipe.book.RecipeCategory;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.data.recipes.RecipeOutput;
+import net.minecraft.data.recipes.RecipeProvider;
+import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.data.recipes.ShapelessRecipeBuilder;
+import net.minecraft.data.recipes.SmithingTransformRecipeBuilder;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
 
-public class ModRecipeGenerator extends RecipeGenerator {
+public class ModRecipeGenerator extends RecipeProvider {
 
     // Store these locally so we can safely use them in the generate() method
-    private final RegistryWrapper.WrapperLookup wrapperLookup;
-    private final RecipeExporter recipeExporter;
+    private final HolderLookup.Provider wrapperLookup;
+    private final RecipeOutput recipeExporter;
 
-    public ModRecipeGenerator(RegistryWrapper.WrapperLookup registries, RecipeExporter exporter) {
+    public ModRecipeGenerator(HolderLookup.Provider registries, RecipeOutput exporter) {
         super(registries, exporter);
         this.wrapperLookup = registries;
         this.recipeExporter = exporter;
     }
 
     @Override
-    public void generate() {
-        RegistryWrapper.Impl<Item> itemLookup = this.wrapperLookup.getOrThrow(RegistryKeys.ITEM);
+    public void buildRecipes() {
+        HolderLookup.RegistryLookup<Item> itemLookup = this.wrapperLookup.lookupOrThrow(Registries.ITEM);
 
-        ShapedRecipeJsonBuilder.create(itemLookup, RecipeCategory.MISC, ModItems.CELESTIUM, 1)
+        ShapedRecipeBuilder.shaped(itemLookup, RecipeCategory.MISC, ModItems.CELESTIUM, 1)
                 .pattern("#N#")
                 .pattern("DBE")
                 .pattern("#H#")
-                .input('#', Items.AMETHYST_SHARD)
-                .input('N', Items.NETHER_STAR)
-                .input('D', Items.DRAGON_BREATH)
-                .input('B', Items.BLAZE_POWDER)
-                .input('E', ModItems.WARDEN_HEART)
-                .input('H', Items.HEAVY_CORE)
-                .criterion(hasItem(Items.NETHER_STAR), conditionsFromItem(Items.NETHER_STAR))
+                .define('#', Items.AMETHYST_SHARD)
+                .define('N', Items.NETHER_STAR)
+                .define('D', Items.DRAGON_BREATH)
+                .define('B', Items.BLAZE_POWDER)
+                .define('E', ModItems.WARDEN_HEART)
+                .define('H', Items.HEAVY_CORE)
+                .unlockedBy(getHasName(Items.NETHER_STAR), has(Items.NETHER_STAR))
 
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium")));
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium")));
 
-        ShapedRecipeJsonBuilder.create(itemLookup, RecipeCategory.MISC, ModBlocks.CELESTIUM_BLOCK, 1)
+        ShapedRecipeBuilder.shaped(itemLookup, RecipeCategory.MISC, ModBlocks.CELESTIUM_BLOCK, 1)
                 .pattern("###")
                 .pattern("###")
                 .pattern("###")
-                .input('#', ModItems.CELESTIUM)
-                .criterion(hasItem(ModItems.CELESTIUM), conditionsFromItem(ModItems.CELESTIUM))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_block")));
+                .define('#', ModItems.CELESTIUM)
+                .unlockedBy(getHasName(ModItems.CELESTIUM), has(ModItems.CELESTIUM))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_block")));
 
-        ShapelessRecipeJsonBuilder.create(itemLookup, RecipeCategory.MISC, ModItems.CELESTIUM, 9)
-                .input(ModBlocks.CELESTIUM_BLOCK)
-                .criterion(hasItem(ModBlocks.CELESTIUM_BLOCK), conditionsFromItem(ModBlocks.CELESTIUM_BLOCK))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_from_block")));
+        ShapelessRecipeBuilder.shapeless(itemLookup, RecipeCategory.MISC, ModItems.CELESTIUM, 9)
+                .requires(ModBlocks.CELESTIUM_BLOCK)
+                .unlockedBy(getHasName(ModBlocks.CELESTIUM_BLOCK), has(ModBlocks.CELESTIUM_BLOCK))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_from_block")));
 
-        ShapedRecipeJsonBuilder.create(itemLookup, RecipeCategory.MISC, ModItems.CELESTIUM_UPGRADE_TEMPLATE, 2)
+        ShapedRecipeBuilder.shaped(itemLookup, RecipeCategory.MISC, ModItems.CELESTIUM_UPGRADE_TEMPLATE, 2)
                 .pattern("#d#")
                 .pattern("#e#")
                 .pattern("###")
-                .input('#', Items.NETHERITE_INGOT)
-                .input('d', ModItems.CELESTIUM_UPGRADE_TEMPLATE)
-                .input('e', Items.AMETHYST_BLOCK)
-                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_upgrade_template_duplication")));
+                .define('#', Items.NETHERITE_INGOT)
+                .define('d', ModItems.CELESTIUM_UPGRADE_TEMPLATE)
+                .define('e', Items.AMETHYST_BLOCK)
+                .unlockedBy(getHasName(ModItems.CELESTIUM_UPGRADE_TEMPLATE), has(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_upgrade_template_duplication")));
 
-        ShapedRecipeJsonBuilder.create(itemLookup, RecipeCategory.MISC, ModItems.CELESTIUM_UPGRADE_TEMPLATE, 1)
+        ShapedRecipeBuilder.shaped(itemLookup, RecipeCategory.MISC, ModItems.CELESTIUM_UPGRADE_TEMPLATE, 1)
                 .pattern("#o#")
                 .pattern("#p#")
                 .pattern("#l#")
-                .input('#', Items.NETHERITE_INGOT)
-                .input('o', Items.NETHER_STAR)
-                .input('p', Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE)
-                .input('l', Items.HEAVY_CORE)
-                .criterion(hasItem(Items.NETHER_STAR), conditionsFromItem(Items.NETHER_STAR))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_upgrade_template")));
+                .define('#', Items.NETHERITE_INGOT)
+                .define('o', Items.NETHER_STAR)
+                .define('p', Items.NETHERITE_UPGRADE_SMITHING_TEMPLATE)
+                .define('l', Items.HEAVY_CORE)
+                .unlockedBy(getHasName(Items.NETHER_STAR), has(Items.NETHER_STAR))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_upgrade_template")));
 
-        SmithingTransformRecipeJsonBuilder.create(
-                        Ingredient.ofItems(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
-                        Ingredient.ofItems(Items.NETHERITE_HELMET),
-                        Ingredient.ofItems(ModItems.CELESTIUM),
+        SmithingTransformRecipeBuilder.smithing(
+                        Ingredient.of(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
+                        Ingredient.of(Items.NETHERITE_HELMET),
+                        Ingredient.of(ModItems.CELESTIUM),
                         RecipeCategory.COMBAT,
                         ModItems.CELESTIUM_HELMET)
-                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_helmet")));
+                .unlocks(getHasName(ModItems.CELESTIUM_UPGRADE_TEMPLATE), has(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_helmet")));
 
-        SmithingTransformRecipeJsonBuilder.create(
-                        Ingredient.ofItems(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
-                        Ingredient.ofItems(Items.NETHERITE_CHESTPLATE),
-                        Ingredient.ofItems(ModItems.CELESTIUM),
+        SmithingTransformRecipeBuilder.smithing(
+                        Ingredient.of(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
+                        Ingredient.of(Items.NETHERITE_CHESTPLATE),
+                        Ingredient.of(ModItems.CELESTIUM),
                         RecipeCategory.COMBAT,
                         ModItems.CELESTIUM_CHESTPLATE)
-                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_chestplate")));
+                .unlocks(getHasName(ModItems.CELESTIUM_UPGRADE_TEMPLATE), has(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_chestplate")));
 
-        SmithingTransformRecipeJsonBuilder.create(
-                        Ingredient.ofItems(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
-                        Ingredient.ofItems(Items.NETHERITE_LEGGINGS),
-                        Ingredient.ofItems(ModItems.CELESTIUM),
+        SmithingTransformRecipeBuilder.smithing(
+                        Ingredient.of(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
+                        Ingredient.of(Items.NETHERITE_LEGGINGS),
+                        Ingredient.of(ModItems.CELESTIUM),
                         RecipeCategory.COMBAT,
                         ModItems.CELESTIUM_LEGGINGS)
-                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_leggings")));
+                .unlocks(getHasName(ModItems.CELESTIUM_UPGRADE_TEMPLATE), has(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_leggings")));
 
-        SmithingTransformRecipeJsonBuilder.create(
-                        Ingredient.ofItems(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
-                        Ingredient.ofItems(Items.NETHERITE_BOOTS),
-                        Ingredient.ofItems(ModItems.CELESTIUM),
+        SmithingTransformRecipeBuilder.smithing(
+                        Ingredient.of(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
+                        Ingredient.of(Items.NETHERITE_BOOTS),
+                        Ingredient.of(ModItems.CELESTIUM),
                         RecipeCategory.COMBAT,
                         ModItems.CELESTIUM_BOOTS)
-                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_boots")));
+                .unlocks(getHasName(ModItems.CELESTIUM_UPGRADE_TEMPLATE), has(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_boots")));
 
-        SmithingTransformRecipeJsonBuilder.create(
-                        Ingredient.ofItems(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
-                        Ingredient.ofItems(Items.NETHERITE_SWORD),
-                        Ingredient.ofItems(ModItems.CELESTIUM),
+        SmithingTransformRecipeBuilder.smithing(
+                        Ingredient.of(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
+                        Ingredient.of(Items.NETHERITE_SWORD),
+                        Ingredient.of(ModItems.CELESTIUM),
                         RecipeCategory.COMBAT,
                         ModItems.CELESTIUM_SWORD)
-                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_sword")));
+                .unlocks(getHasName(ModItems.CELESTIUM_UPGRADE_TEMPLATE), has(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_sword")));
 
-        SmithingTransformRecipeJsonBuilder.create(
-                        Ingredient.ofItems(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
-                        Ingredient.ofItems(Items.NETHERITE_PICKAXE),
-                        Ingredient.ofItems(ModItems.CELESTIUM),
+        SmithingTransformRecipeBuilder.smithing(
+                        Ingredient.of(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
+                        Ingredient.of(Items.NETHERITE_PICKAXE),
+                        Ingredient.of(ModItems.CELESTIUM),
                         RecipeCategory.COMBAT,
                         ModItems.CELESTIUM_PICKAXE)
-                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_pickaxe")));
+                .unlocks(getHasName(ModItems.CELESTIUM_UPGRADE_TEMPLATE), has(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_pickaxe")));
 
-        SmithingTransformRecipeJsonBuilder.create(
-                        Ingredient.ofItems(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
-                        Ingredient.ofItems(Items.NETHERITE_AXE),
-                        Ingredient.ofItems(ModItems.CELESTIUM),
+        SmithingTransformRecipeBuilder.smithing(
+                        Ingredient.of(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
+                        Ingredient.of(Items.NETHERITE_AXE),
+                        Ingredient.of(ModItems.CELESTIUM),
                         RecipeCategory.COMBAT,
                         ModItems.CELESTIUM_AXE)
-                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_axe")));
+                .unlocks(getHasName(ModItems.CELESTIUM_UPGRADE_TEMPLATE), has(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_axe")));
 
-        SmithingTransformRecipeJsonBuilder.create(
-                        Ingredient.ofItems(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
-                        Ingredient.ofItems(Items.NETHERITE_SHOVEL),
-                        Ingredient.ofItems(ModItems.CELESTIUM),
+        SmithingTransformRecipeBuilder.smithing(
+                        Ingredient.of(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
+                        Ingredient.of(Items.NETHERITE_SHOVEL),
+                        Ingredient.of(ModItems.CELESTIUM),
                         RecipeCategory.COMBAT,
                         ModItems.CELESTIUM_SHOVEL)
-                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_shovel")));
+                .unlocks(getHasName(ModItems.CELESTIUM_UPGRADE_TEMPLATE), has(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_shovel")));
 
-        SmithingTransformRecipeJsonBuilder.create(
-                        Ingredient.ofItems(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
-                        Ingredient.ofItems(Items.NETHERITE_HOE),
-                        Ingredient.ofItems(ModItems.CELESTIUM),
+        SmithingTransformRecipeBuilder.smithing(
+                        Ingredient.of(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
+                        Ingredient.of(Items.NETHERITE_HOE),
+                        Ingredient.of(ModItems.CELESTIUM),
                         RecipeCategory.COMBAT,
                         ModItems.CELESTIUM_HOE)
-                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_hoe")));
+                .unlocks(getHasName(ModItems.CELESTIUM_UPGRADE_TEMPLATE), has(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_hoe")));
 
-        SmithingTransformRecipeJsonBuilder.create(
-                        Ingredient.ofItems(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
-                        Ingredient.ofItems(Items.NETHERITE_SPEAR),
-                        Ingredient.ofItems(ModItems.CELESTIUM),
+        SmithingTransformRecipeBuilder.smithing(
+                        Ingredient.of(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
+                        Ingredient.of(Items.NETHERITE_SPEAR),
+                        Ingredient.of(ModItems.CELESTIUM),
                         RecipeCategory.COMBAT,
                         ModItems.CELESTIUM_SPEAR)
-                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_spear")));
+                .unlocks(getHasName(ModItems.CELESTIUM_UPGRADE_TEMPLATE), has(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_spear")));
 
-        SmithingTransformRecipeJsonBuilder.create(
-                        Ingredient.ofItems(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
-                        Ingredient.ofItems(Items.NETHERITE_HORSE_ARMOR),
-                        Ingredient.ofItems(ModItems.CELESTIUM),
+        SmithingTransformRecipeBuilder.smithing(
+                        Ingredient.of(ModItems.CELESTIUM_UPGRADE_TEMPLATE),
+                        Ingredient.of(Items.NETHERITE_HORSE_ARMOR),
+                        Ingredient.of(ModItems.CELESTIUM),
                         RecipeCategory.COMBAT,
                         ModItems.CELESTIUM_HORSE_ARMOR)
-                .criterion(hasItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE), conditionsFromItem(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
-                .offerTo(this.recipeExporter, RegistryKey.of(RegistryKeys.RECIPE, Identifier.of(ShopsAndTools.MOD_ID, "celestium_horse_armor")));
+                .unlocks(getHasName(ModItems.CELESTIUM_UPGRADE_TEMPLATE), has(ModItems.CELESTIUM_UPGRADE_TEMPLATE))
+                .save(this.recipeExporter, ResourceKey.create(Registries.RECIPE, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_horse_armor")));
     }
 }

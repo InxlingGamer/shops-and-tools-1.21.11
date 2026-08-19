@@ -5,18 +5,18 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.player.CelestiumPickaxeManager;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.HitResult;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.HitResult;
 
-public record ToggleCelestiumPickaxeAreaModePayload() implements CustomPayload {
-    public static final Id<ToggleCelestiumPickaxeAreaModePayload> ID =
-            new Id<>(Identifier.of(ShopsAndTools.MOD_ID, "toggle_celestium_pickaxe_area_mode"));
-    public static final PacketCodec<RegistryByteBuf, ToggleCelestiumPickaxeAreaModePayload> CODEC =
-            PacketCodec.unit(new ToggleCelestiumPickaxeAreaModePayload());
+public record ToggleCelestiumPickaxeAreaModePayload() implements CustomPacketPayload {
+    public static final Type<ToggleCelestiumPickaxeAreaModePayload> ID =
+            new Type<>(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "toggle_celestium_pickaxe_area_mode"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, ToggleCelestiumPickaxeAreaModePayload> CODEC =
+            StreamCodec.unit(new ToggleCelestiumPickaxeAreaModePayload());
 
     public static void register() {
         PayloadTypeRegistry.playC2S().register(ID, CODEC);
@@ -28,7 +28,7 @@ public record ToggleCelestiumPickaxeAreaModePayload() implements CustomPayload {
                     }
 
                     boolean enabled = CelestiumPickaxeManager.toggleAreaMining(context.player());
-                    context.player().sendMessage(Text.translatable(
+                    context.player().displayClientMessage(Component.translatable(
                             enabled
                                     ? "message.shopsandtools.celestium_pickaxe_area_enabled"
                                     : "message.shopsandtools.celestium_pickaxe_area_disabled"
@@ -42,7 +42,7 @@ public record ToggleCelestiumPickaxeAreaModePayload() implements CustomPayload {
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

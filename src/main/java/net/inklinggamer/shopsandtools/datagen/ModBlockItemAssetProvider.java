@@ -3,9 +3,8 @@ package net.inklinggamer.shopsandtools.datagen;
 import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
+import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
-import net.minecraft.data.DataWriter;
-
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -22,9 +21,9 @@ public class ModBlockItemAssetProvider implements DataProvider {
     }
 
     @Override
-    public CompletableFuture<?> run(DataWriter writer) {
+    public CompletableFuture<?> run(CachedOutput writer) {
         CompletableFuture<?>[] futures = BLOCK_ITEMS.stream()
-                .map(definition -> DataProvider.writeToPath(writer, createItemAsset(definition.modelPath()), getItemPath(definition.itemName())))
+                .map(definition -> DataProvider.saveStable(writer, createItemAsset(definition.modelPath()), getItemPath(definition.itemName())))
                 .toArray(CompletableFuture[]::new);
         return CompletableFuture.allOf(futures);
     }
@@ -46,7 +45,7 @@ public class ModBlockItemAssetProvider implements DataProvider {
     }
 
     private Path getItemPath(String fileName) {
-        return output.getPath()
+        return output.getOutputFolder()
                 .resolve("assets")
                 .resolve(ShopsAndTools.MOD_ID)
                 .resolve("items")

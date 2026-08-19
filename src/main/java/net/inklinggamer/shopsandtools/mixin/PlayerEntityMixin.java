@@ -4,11 +4,11 @@ import net.inklinggamer.shopsandtools.player.CelestiumAxeManager;
 import net.inklinggamer.shopsandtools.player.CelestiumBootsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumLeggingsManager;
 import net.inklinggamer.shopsandtools.player.CelestiumSwordManager;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerAbilities;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Abilities;
+import net.minecraft.world.entity.player.Player;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -18,7 +18,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(PlayerEntity.class)
+@Mixin(Player.class)
 public abstract class PlayerEntityMixin {
     @Unique
     private LivingEntity shopsandtools$celestiumWeaponTarget;
@@ -35,10 +35,10 @@ public abstract class PlayerEntityMixin {
     @Unique
     private boolean shopsandtools$celestiumAxeAttack;
 
-    @Inject(method = "isClimbing", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "onClimbable", at = @At("RETURN"), cancellable = true)
     private void shopsandtools$allowWallClimbing(CallbackInfoReturnable<Boolean> cir) {
-        PlayerEntity player = (PlayerEntity) (Object) this;
-        if (!player.getEntityWorld().isClient()
+        Player player = (Player) (Object) this;
+        if (!player.level().isClientSide()
                 && !cir.getReturnValueZ()
                 && CelestiumBootsManager.shouldWallClimb(player)) {
             cir.setReturnValue(true);
@@ -46,32 +46,32 @@ public abstract class PlayerEntityMixin {
     }
 
     @Redirect(
-            method = "handleFallDamage",
+            method = "causeFallDamage",
             at = @At(
                     value = "FIELD",
-                    target = "Lnet/minecraft/entity/player/PlayerAbilities;allowFlying:Z",
+                    target = "Lnet/minecraft/world/entity/player/Abilities;mayfly:Z",
                     opcode = Opcodes.GETFIELD
             )
     )
-    private boolean shopsandtools$restoreFallDamageForCelestiumLeggings(PlayerAbilities abilities) {
-        if (abilities.allowFlying && CelestiumLeggingsManager.hasActiveFlightPermission((PlayerEntity) (Object) this)) {
+    private boolean shopsandtools$restoreFallDamageForCelestiumLeggings(Abilities abilities) {
+        if (abilities.mayfly && CelestiumLeggingsManager.hasActiveFlightPermission((Player) (Object) this)) {
             return false;
         }
 
-        return abilities.allowFlying;
+        return abilities.mayfly;
     }
 
     @Inject(method = "attack", at = @At("HEAD"))
     private void shopsandtools$captureCelestiumWeaponTarget(Entity target, CallbackInfo ci) {
-        PlayerEntity player = (PlayerEntity) (Object) this;
-        if (player.getEntityWorld().isClient() || !(player instanceof ServerPlayerEntity serverPlayer)) {
+        Player player = (Player) (Object) this;
+        if (player.level().isClientSide() || !(player instanceof ServerPlayer serverPlayer)) {
             shopsandtools$clearCelestiumAttackState();
             return;
         }
 
         this.shopsandtools$celestiumSwordAttack = CelestiumSwordManager.isCelestiumSwordEquipped(player);
         this.shopsandtools$celestiumAxeAttack = CelestiumAxeManager.isCelestiumAxeEquipped(player);
-        this.shopsandtools$celestiumWeaponAttackCooldownProgress = player.getAttackCooldownProgress(0.5F);
+        this.shopsandtools$celestiumWeaponAttackCooldownProgress = player.getAttackStrengthScale(0.5F);
         CelestiumSwordManager.beginRageWeaponAttack(serverPlayer);
 
         if (!(this.shopsandtools$celestiumSwordAttack || this.shopsandtools$celestiumAxeAttack)
@@ -86,8 +86,8 @@ public abstract class PlayerEntityMixin {
 
     @Inject(method = "attack", at = @At("RETURN"))
     private void shopsandtools$applyCelestiumWeaponEffects(Entity target, CallbackInfo ci) {
-        PlayerEntity player = (PlayerEntity) (Object) this;
-        if (!(player instanceof ServerPlayerEntity serverPlayer)) {
+        Player player = (Player) (Object) this;
+        if (!(player instanceof ServerPlayer serverPlayer)) {
             shopsandtools$clearCelestiumAttackState();
             return;
         }

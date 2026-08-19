@@ -4,33 +4,33 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.ItemStack;
 
-public record ReturnToInventoryPayload() implements CustomPayload {
-    public static final CustomPayload.Id<ReturnToInventoryPayload> ID =
-            new CustomPayload.Id<>(Identifier.of(ShopsAndTools.MOD_ID, "return_to_inventory"));
+public record ReturnToInventoryPayload() implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<ReturnToInventoryPayload> ID =
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "return_to_inventory"));
     public static final ReturnToInventoryPayload INSTANCE = new ReturnToInventoryPayload();
-    public static final PacketCodec<PacketByteBuf, ReturnToInventoryPayload> CODEC = PacketCodec.unit(INSTANCE);
+    public static final StreamCodec<FriendlyByteBuf, ReturnToInventoryPayload> CODEC = StreamCodec.unit(INSTANCE);
 
     public static void register() {
         PayloadTypeRegistry.playC2S().register(ID, CODEC);
         ServerPlayNetworking.registerGlobalReceiver(ID, (payload, context) ->
                 context.server().execute(() -> {
-                    ItemStack cursorStack = context.player().currentScreenHandler.getCursorStack().copy();
+                    ItemStack cursorStack = context.player().containerMenu.getCarried().copy();
                     if (!cursorStack.isEmpty()) {
-                        context.player().currentScreenHandler.setCursorStack(ItemStack.EMPTY);
-                        context.player().currentScreenHandler.sendContentUpdates();
+                        context.player().containerMenu.setCarried(ItemStack.EMPTY);
+                        context.player().containerMenu.broadcastChanges();
                     }
 
-                    context.player().onHandledScreenClosed();
+                    context.player().doCloseContainer();
 
                     if (!cursorStack.isEmpty()) {
-                        context.player().playerScreenHandler.setCursorStack(cursorStack);
-                        context.player().playerScreenHandler.sendContentUpdates();
+                        context.player().inventoryMenu.setCarried(cursorStack);
+                        context.player().inventoryMenu.broadcastChanges();
                     }
                 })
         );
@@ -41,7 +41,7 @@ public record ReturnToInventoryPayload() implements CustomPayload {
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

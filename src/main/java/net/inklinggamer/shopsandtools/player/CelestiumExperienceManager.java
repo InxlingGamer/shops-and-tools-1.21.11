@@ -1,8 +1,7 @@
 package net.inklinggamer.shopsandtools.player;
 
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-
+import net.minecraft.server.level.ServerPlayer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -18,32 +17,32 @@ public final class CelestiumExperienceManager {
     }
 
     public static void tickServer(MinecraftServer server) {
-        XP_BONUS_REMAINDERS.entrySet().removeIf(entry -> server.getPlayerManager().getPlayer(entry.getKey()) == null);
+        XP_BONUS_REMAINDERS.entrySet().removeIf(entry -> server.getPlayerList().getPlayer(entry.getKey()) == null);
     }
 
-    public static void tickPlayer(ServerPlayerEntity player) {
+    public static void tickPlayer(ServerPlayer player) {
         if (!player.isAlive() || !hasHeldXpBonusItem(player)) {
-            XP_BONUS_REMAINDERS.remove(player.getUuid());
+            XP_BONUS_REMAINDERS.remove(player.getUUID());
             return;
         }
 
-        double remainder = XP_BONUS_REMAINDERS.getOrDefault(player.getUuid(), 0.0D);
+        double remainder = XP_BONUS_REMAINDERS.getOrDefault(player.getUUID(), 0.0D);
         if (remainder <= XP_REMAINDER_EPSILON) {
-            XP_BONUS_REMAINDERS.remove(player.getUuid());
+            XP_BONUS_REMAINDERS.remove(player.getUUID());
         }
     }
 
-    public static int applyHeldXpBonus(ServerPlayerEntity player, int baseExperience) {
+    public static int applyHeldXpBonus(ServerPlayer player, int baseExperience) {
         if (baseExperience <= 0) {
             return baseExperience;
         }
 
         if (!hasHeldXpBonusItem(player)) {
-            XP_BONUS_REMAINDERS.remove(player.getUuid());
+            XP_BONUS_REMAINDERS.remove(player.getUUID());
             return baseExperience;
         }
 
-        double carriedRemainder = XP_BONUS_REMAINDERS.getOrDefault(player.getUuid(), 0.0D);
+        double carriedRemainder = XP_BONUS_REMAINDERS.getOrDefault(player.getUUID(), 0.0D);
         XpAdjustment adjustment = adjustExperience(
                 baseExperience,
                 CelestiumSwordManager.isCelestiumSwordHeldForXp(player) ? 1 : 0,
@@ -53,9 +52,9 @@ public final class CelestiumExperienceManager {
         );
 
         if (adjustment.remainder() <= XP_REMAINDER_EPSILON) {
-            XP_BONUS_REMAINDERS.remove(player.getUuid());
+            XP_BONUS_REMAINDERS.remove(player.getUUID());
         } else {
-            XP_BONUS_REMAINDERS.put(player.getUuid(), adjustment.remainder());
+            XP_BONUS_REMAINDERS.put(player.getUUID(), adjustment.remainder());
         }
 
         return adjustment.adjustedExperience();
@@ -87,7 +86,7 @@ public final class CelestiumExperienceManager {
         return new XpAdjustment(baseExperience + bonusExperience, remainder);
     }
 
-    private static boolean hasHeldXpBonusItem(ServerPlayerEntity player) {
+    private static boolean hasHeldXpBonusItem(ServerPlayer player) {
         return CelestiumSwordManager.isCelestiumSwordHeldForXp(player)
                 || CelestiumPickaxeManager.isCelestiumPickaxeHeldForXp(player)
                 || CelestiumAxeManager.isCelestiumAxeHeldForXp(player);

@@ -5,16 +5,16 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.player.CelestiumShovelManager;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
-public record ArmCelestiumShovelSlamPayload() implements CustomPayload {
-    public static final Id<ArmCelestiumShovelSlamPayload> ID =
-            new Id<>(Identifier.of(ShopsAndTools.MOD_ID, "arm_celestium_shovel_slam"));
-    public static final PacketCodec<RegistryByteBuf, ArmCelestiumShovelSlamPayload> CODEC =
-            PacketCodec.unit(new ArmCelestiumShovelSlamPayload());
+public record ArmCelestiumShovelSlamPayload() implements CustomPacketPayload {
+    public static final Type<ArmCelestiumShovelSlamPayload> ID =
+            new Type<>(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "arm_celestium_shovel_slam"));
+    public static final StreamCodec<RegistryFriendlyByteBuf, ArmCelestiumShovelSlamPayload> CODEC =
+            StreamCodec.unit(new ArmCelestiumShovelSlamPayload());
 
     public static void register() {
         PayloadTypeRegistry.playC2S().register(ID, CODEC);
@@ -28,7 +28,7 @@ public record ArmCelestiumShovelSlamPayload() implements CustomPayload {
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

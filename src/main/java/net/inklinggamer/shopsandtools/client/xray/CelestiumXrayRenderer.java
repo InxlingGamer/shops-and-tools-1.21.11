@@ -3,19 +3,19 @@ package net.inklinggamer.shopsandtools.client.xray;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.mixin.client.RenderLayerInvoker;
 import net.inklinggamer.shopsandtools.mixin.client.RenderPipelinesAccessor;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderSetup;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
 import java.util.Collection;
@@ -23,7 +23,7 @@ import java.util.Collection;
 public final class CelestiumXrayRenderer {
     private static final float LINE_WIDTH = 2.0f;
     private static RenderPipeline xrayPipeline;
-    private static RenderLayer xrayLayer;
+    private static RenderType xrayLayer;
     private static boolean rendererDisabled;
 
     private CelestiumXrayRenderer() {
@@ -34,7 +34,7 @@ public final class CelestiumXrayRenderer {
             return;
         }
 
-        MatrixStack matrices = context.matrices();
+        PoseStack matrices = context.matrices();
         if (matrices == null || context.consumers() == null) {
             return;
         }
@@ -88,24 +88,24 @@ public final class CelestiumXrayRenderer {
         }
     }
 
-    private static void renderBuffered(MatrixStack matrices, VertexConsumer consumer, Collection<OreOutlineEntry> entries) {
-        Vec3d cameraPos = MinecraftClient.getInstance().gameRenderer.getCamera().getCameraPos();
+    private static void renderBuffered(PoseStack matrices, VertexConsumer consumer, Collection<OreOutlineEntry> entries) {
+        Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().position();
 
-        matrices.push();
+        matrices.pushPose();
         matrices.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
 
         for (OreOutlineEntry entry : entries) {
             drawBox(matrices, consumer, entry);
         }
 
-        matrices.pop();
+        matrices.popPose();
     }
 
     public static synchronized void clear() {
         // Buffered rendering does not keep per-world GPU buffers to release.
     }
 
-    private static void drawBox(MatrixStack matrices, VertexConsumer consumer, OreOutlineEntry entry) {
+    private static void drawBox(PoseStack matrices, VertexConsumer consumer, OreOutlineEntry entry) {
         float minX = entry.pos().getX();
         float minY = entry.pos().getY();
         float minZ = entry.pos().getZ();
@@ -134,7 +134,7 @@ public final class CelestiumXrayRenderer {
     }
 
     private static void line(
-            MatrixStack matrices,
+            PoseStack matrices,
             VertexConsumer consumer,
             float startX,
             float startY,
@@ -147,35 +147,35 @@ public final class CelestiumXrayRenderer {
             int blue
     ) {
         Vector3f direction = new Vector3f(endX - startX, endY - startY, endZ - startZ).normalize();
-        MatrixStack.Entry entry = matrices.peek();
+        PoseStack.Pose entry = matrices.last();
 
-        consumer.vertex(entry, startX, startY, startZ)
-                .color(red, green, blue, 255)
-                .normal(entry, direction)
-                .lineWidth(LINE_WIDTH);
-        consumer.vertex(entry, endX, endY, endZ)
-                .color(red, green, blue, 255)
-                .normal(entry, direction)
-                .lineWidth(LINE_WIDTH);
+        consumer.addVertex(entry, startX, startY, startZ)
+                .setColor(red, green, blue, 255)
+                .setNormal(entry, direction)
+                .setLineWidth(LINE_WIDTH);
+        consumer.addVertex(entry, endX, endY, endZ)
+                .setColor(red, green, blue, 255)
+                .setNormal(entry, direction)
+                .setLineWidth(LINE_WIDTH);
     }
 
     private static RenderPipeline createPipeline() {
         return RenderPipeline.builder(RenderPipelinesAccessor.shopsandtools$getLineSnippet())
-                .withLocation(Identifier.of(ShopsAndTools.MOD_ID, "celestium_xray_lines"))
+                .withLocation(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_xray_lines"))
                 .withVertexShader("core/rendertype_lines")
                 .withFragmentShader("core/rendertype_lines")
                 .withBlend(BlendFunction.TRANSLUCENT)
                 .withCull(false)
-                .withVertexFormat(VertexFormats.POSITION_COLOR_NORMAL_LINE_WIDTH, VertexFormat.DrawMode.LINES)
+                .withVertexFormat(DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH, VertexFormat.Mode.LINES)
                 .withDepthTestFunction(DepthTestFunction.NO_DEPTH_TEST)
                 .build();
     }
 
-    private static RenderLayer createLayer() {
+    private static RenderType createLayer() {
         RenderSetup renderSetup = RenderSetup.builder(xrayPipeline)
-                .translucent()
-                .expectedBufferSize(4096)
-                .build();
+                .sortOnUpload()
+                .bufferSize(4096)
+                .createRenderSetup();
 
         return RenderLayerInvoker.shopsandtools$create("shopsandtools_celestium_xray", renderSetup);
     }

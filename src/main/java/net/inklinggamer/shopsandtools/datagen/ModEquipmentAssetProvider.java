@@ -4,9 +4,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
+import net.minecraft.data.CachedOutput;
 import net.minecraft.data.DataProvider;
-import net.minecraft.data.DataWriter;
-
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 
@@ -18,9 +17,9 @@ public class ModEquipmentAssetProvider implements DataProvider {
     }
 
     @Override
-    public CompletableFuture<?> run(DataWriter writer) {
-        CompletableFuture<?> celestiumFuture = DataProvider.writeToPath(writer, createEquipmentModel(true, false), getEquipmentPath("celestium"));
-        CompletableFuture<?> celestiumElytraFuture = DataProvider.writeToPath(writer, createEquipmentModel(false, true), getEquipmentPath("celestium_elytra"));
+    public CompletableFuture<?> run(CachedOutput writer) {
+        CompletableFuture<?> celestiumFuture = DataProvider.saveStable(writer, createEquipmentModel(true, false), getEquipmentPath("celestium"));
+        CompletableFuture<?> celestiumElytraFuture = DataProvider.saveStable(writer, createEquipmentModel(false, true), getEquipmentPath("celestium_elytra"));
         return CompletableFuture.allOf(celestiumFuture, celestiumElytraFuture);
     }
 
@@ -67,7 +66,7 @@ public class ModEquipmentAssetProvider implements DataProvider {
     }
 
     private Path getEquipmentPath(String fileName) {
-        return output.getPath()
+        return output.getOutputFolder()
                 .resolve("assets")
                 .resolve(ShopsAndTools.MOD_ID)
                 .resolve("equipment")

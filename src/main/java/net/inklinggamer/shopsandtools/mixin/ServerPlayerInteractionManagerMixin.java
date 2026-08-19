@@ -3,16 +3,16 @@ package net.inklinggamer.shopsandtools.mixin;
 import net.inklinggamer.shopsandtools.player.CelestiumAxeManager;
 import net.inklinggamer.shopsandtools.player.CelestiumPickaxeManager;
 import net.inklinggamer.shopsandtools.player.CelestiumShovelManager;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.network.ServerPlayerInteractionManager;
-import net.minecraft.world.BlockView;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.protocol.game.ServerboundPlayerActionPacket;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerPlayerGameMode;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -25,79 +25,79 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-@Mixin(ServerPlayerInteractionManager.class)
+@Mixin(ServerPlayerGameMode.class)
 public abstract class ServerPlayerInteractionManagerMixin {
     @Shadow
     @Final
-    protected ServerPlayerEntity player;
+    protected ServerPlayer player;
 
     @org.spongepowered.asm.mixin.Unique
-    private final Deque<shopsandtools$BrokenBlockSnapshot> shopsandtools$brokenBlockSnapshots = new ArrayDeque<>();
+    private final Deque<BrokenBlockSnapshot> shopsandtools$brokenBlockSnapshots = new ArrayDeque<>();
 
-    @Inject(method = "processBlockBreakingAction", at = @At("HEAD"))
-    private void shopsandtools$trackCelestiumPickaxeMiningFace(BlockPos pos, PlayerActionC2SPacket.Action action, Direction direction, int worldHeight, int sequence, CallbackInfo ci) {
-        if (action == PlayerActionC2SPacket.Action.START_DESTROY_BLOCK) {
+    @Inject(method = "handleBlockBreakAction", at = @At("HEAD"))
+    private void shopsandtools$trackCelestiumPickaxeMiningFace(BlockPos pos, ServerboundPlayerActionPacket.Action action, Direction direction, int worldHeight, int sequence, CallbackInfo ci) {
+        if (action == ServerboundPlayerActionPacket.Action.START_DESTROY_BLOCK) {
             CelestiumPickaxeManager.beginMiningSelection(this.player, pos, direction);
             CelestiumShovelManager.beginMiningSelection(this.player, pos, direction);
             return;
         }
 
-        if (action == PlayerActionC2SPacket.Action.ABORT_DESTROY_BLOCK) {
+        if (action == ServerboundPlayerActionPacket.Action.ABORT_DESTROY_BLOCK) {
             CelestiumPickaxeManager.clearMiningSelection(this.player);
             CelestiumShovelManager.clearMiningSelection(this.player);
         }
     }
 
     @Redirect(
-            method = "processBlockBreakingAction",
+            method = "handleBlockBreakAction",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/block/BlockState;calcBlockBreakingDelta(Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/world/BlockView;Lnet/minecraft/util/math/BlockPos;)F"
+                    target = "Lnet/minecraft/world/level/block/state/BlockState;calcBlockBreakingDelta(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)F"
             )
     )
-    private float shopsandtools$useSlowestAreaMiningDelta(BlockState state, PlayerEntity player, BlockView world, BlockPos pos) {
-        float vanillaDelta = state.calcBlockBreakingDelta(player, world, pos);
+    private float shopsandtools$useSlowestAreaMiningDelta(BlockState state, Player player, BlockGetter world, BlockPos pos) {
+        float vanillaDelta = state.getDestroyProgress(player, world, pos);
         float adjustedDelta = CelestiumPickaxeManager.getAreaMiningDelta(this.player, pos, vanillaDelta);
         return CelestiumShovelManager.getAreaMiningDelta(this.player, pos, adjustedDelta);
     }
 
     @Redirect(
-            method = "continueMining",
+            method = "incrementDestroyProgress",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/block/BlockState;calcBlockBreakingDelta(Lnet/minecraft/entity/player/PlayerEntity;Lnet/minecraft/world/BlockView;Lnet/minecraft/util/math/BlockPos;)F"
+                    target = "Lnet/minecraft/world/level/block/state/BlockState;calcBlockBreakingDelta(Lnet/minecraft/world/entity/player/Player;Lnet/minecraft/world/level/BlockGetter;Lnet/minecraft/core/BlockPos;)F"
             )
     )
-    private float shopsandtools$useSlowestAreaMiningDeltaWhileContinuing(BlockState state, PlayerEntity player, BlockView world, BlockPos pos) {
-        float vanillaDelta = state.calcBlockBreakingDelta(player, world, pos);
+    private float shopsandtools$useSlowestAreaMiningDeltaWhileContinuing(BlockState state, Player player, BlockGetter world, BlockPos pos) {
+        float vanillaDelta = state.getDestroyProgress(player, world, pos);
         float adjustedDelta = CelestiumPickaxeManager.getAreaMiningDelta(this.player, pos, vanillaDelta);
         return CelestiumShovelManager.getAreaMiningDelta(this.player, pos, adjustedDelta);
     }
 
-    @Inject(method = "tryBreakBlock", at = @At("HEAD"))
+    @Inject(method = "destroyBlock", at = @At("HEAD"))
     private void shopsandtools$captureBrokenBlockContext(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
-        BlockState brokenState = this.player.getEntityWorld().getBlockState(pos);
-        BlockEntity brokenBlockEntity = this.player.getEntityWorld().getBlockEntity(pos);
-        ItemStack breakingTool = this.player.getMainHandStack().copy();
-        this.shopsandtools$brokenBlockSnapshots.push(new shopsandtools$BrokenBlockSnapshot(pos.toImmutable(), brokenState, brokenBlockEntity, breakingTool));
+        BlockState brokenState = this.player.level().getBlockState(pos);
+        BlockEntity brokenBlockEntity = this.player.level().getBlockEntity(pos);
+        ItemStack breakingTool = this.player.getMainHandItem().copy();
+        this.shopsandtools$brokenBlockSnapshots.push(new BrokenBlockSnapshot(pos.immutable(), brokenState, brokenBlockEntity, breakingTool));
     }
 
-    @Inject(method = "tryBreakBlock", at = @At("RETURN"))
+    @Inject(method = "destroyBlock", at = @At("RETURN"))
     private void shopsandtools$breakCelestiumPickaxeArea(BlockPos pos, CallbackInfoReturnable<Boolean> cir) {
-        shopsandtools$BrokenBlockSnapshot snapshot = this.shopsandtools$brokenBlockSnapshots.isEmpty()
+        BrokenBlockSnapshot snapshot = this.shopsandtools$brokenBlockSnapshots.isEmpty()
                 ? null
                 : this.shopsandtools$brokenBlockSnapshots.pop();
         if (cir.getReturnValueZ()) {
             CelestiumPickaxeManager.onBlockBroken(
                     this.player,
-                    (ServerPlayerInteractionManager) (Object) this,
+                    (ServerPlayerGameMode) (Object) this,
                     pos,
-                    snapshot != null && snapshot.pos().equals(pos) ? snapshot.state() : this.player.getEntityWorld().getBlockState(pos),
-                    snapshot != null && snapshot.pos().equals(pos) ? snapshot.tool() : this.player.getMainHandStack().copy()
+                    snapshot != null && snapshot.pos().equals(pos) ? snapshot.state() : this.player.level().getBlockState(pos),
+                    snapshot != null && snapshot.pos().equals(pos) ? snapshot.tool() : this.player.getMainHandItem().copy()
             );
             CelestiumShovelManager.onBlockBroken(
                     this.player,
-                    (ServerPlayerInteractionManager) (Object) this,
+                    (ServerPlayerGameMode) (Object) this,
                     pos,
                     snapshot != null && snapshot.pos().equals(pos) ? snapshot.state() : null,
                     snapshot != null && snapshot.pos().equals(pos) ? snapshot.blockEntity() : null,
@@ -112,6 +112,6 @@ public abstract class ServerPlayerInteractionManagerMixin {
     }
 
     @org.spongepowered.asm.mixin.Unique
-    private record shopsandtools$BrokenBlockSnapshot(BlockPos pos, BlockState state, BlockEntity blockEntity, ItemStack tool) {
+    private record BrokenBlockSnapshot(BlockPos pos, BlockState state, BlockEntity blockEntity, ItemStack tool) {
     }
 }

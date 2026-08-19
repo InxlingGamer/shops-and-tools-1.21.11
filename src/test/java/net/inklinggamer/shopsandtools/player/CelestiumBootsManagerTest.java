@@ -1,13 +1,13 @@
 package net.inklinggamer.shopsandtools.player;
 
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.phys.Vec3;
 
 public final class CelestiumBootsManagerTest {
     private static final double EPSILON = 1.0E-9D;
     private static final BlockPos START_POS = new BlockPos(10, 64, 20);
-    private static final BlockPos UP_POS = START_POS.up();
+    private static final BlockPos UP_POS = START_POS.above();
     private static final BlockPos STRAFE_POS = START_POS.east();
 
     private CelestiumBootsManagerTest() {
@@ -60,20 +60,20 @@ public final class CelestiumBootsManagerTest {
                 motion,
                 true,
                 Direction.EAST,
-                new Vec3d(0.0D, 0.0D, 1.0D),
-                new Vec3d(0.08D, 0.2D, 0.0D)
+                new Vec3(0.0D, 0.0D, 1.0D),
+                new Vec3(0.08D, 0.2D, 0.0D)
         );
     }
 
     private static void assertSidewaysStrafeMotion() {
-        assertStrafe("Right strafe on east wall should move south", Direction.EAST, new Vec3d(0.08D, 0.0D, 0.12D));
-        assertStrafe("Left strafe on east wall should move north", Direction.EAST, new Vec3d(0.08D, 0.0D, -0.12D), -1);
-        assertStrafe("Right strafe on west wall should move north", Direction.WEST, new Vec3d(-0.08D, 0.0D, -0.12D));
-        assertStrafe("Left strafe on west wall should move south", Direction.WEST, new Vec3d(-0.08D, 0.0D, 0.12D), -1);
-        assertStrafe("Right strafe on north wall should move west", Direction.NORTH, new Vec3d(-0.12D, 0.0D, -0.08D));
-        assertStrafe("Left strafe on north wall should move east", Direction.NORTH, new Vec3d(0.12D, 0.0D, -0.08D), -1);
-        assertStrafe("Right strafe on south wall should move west", Direction.SOUTH, new Vec3d(-0.12D, 0.0D, 0.08D));
-        assertStrafe("Left strafe on south wall should move east", Direction.SOUTH, new Vec3d(0.12D, 0.0D, 0.08D), -1);
+        assertStrafe("Right strafe on east wall should move south", Direction.EAST, new Vec3(0.08D, 0.0D, 0.12D));
+        assertStrafe("Left strafe on east wall should move north", Direction.EAST, new Vec3(0.08D, 0.0D, -0.12D), -1);
+        assertStrafe("Right strafe on west wall should move north", Direction.WEST, new Vec3(-0.08D, 0.0D, -0.12D));
+        assertStrafe("Left strafe on west wall should move south", Direction.WEST, new Vec3(-0.08D, 0.0D, 0.12D), -1);
+        assertStrafe("Right strafe on north wall should move west", Direction.NORTH, new Vec3(-0.12D, 0.0D, -0.08D));
+        assertStrafe("Left strafe on north wall should move east", Direction.NORTH, new Vec3(0.12D, 0.0D, -0.08D), -1);
+        assertStrafe("Right strafe on south wall should move west", Direction.SOUTH, new Vec3(-0.12D, 0.0D, 0.08D));
+        assertStrafe("Left strafe on south wall should move east", Direction.SOUTH, new Vec3(0.12D, 0.0D, 0.08D), -1);
     }
 
     private static void assertDetachResetMotion() {
@@ -81,7 +81,7 @@ public final class CelestiumBootsManagerTest {
                 CelestiumBootsManager.resolveAuthoritativeWallClimbMotion(
                         true,
                         Direction.EAST,
-                        new Vec3d(0.0D, 0.0D, 1.0D),
+                        new Vec3(0.0D, 0.0D, 1.0D),
                         null,
                         0.0F,
                         0,
@@ -94,7 +94,7 @@ public final class CelestiumBootsManagerTest {
                 false,
                 null,
                 null,
-                Vec3d.ZERO
+                Vec3.ZERO
         );
     }
 
@@ -103,7 +103,7 @@ public final class CelestiumBootsManagerTest {
                 CelestiumBootsManager.resolveAuthoritativeWallClimbMotion(
                         true,
                         Direction.EAST,
-                        new Vec3d(0.0D, 0.0D, 1.0D),
+                        new Vec3(0.0D, 0.0D, 1.0D),
                         Direction.NORTH,
                         0.0F,
                         0,
@@ -115,8 +115,8 @@ public final class CelestiumBootsManagerTest {
                 motion,
                 true,
                 Direction.NORTH,
-                new Vec3d(-1.0D, 0.0D, 0.0D),
-                new Vec3d(-0.12D, 0.0D, -0.08D)
+                new Vec3(-1.0D, 0.0D, 0.0D),
+                new Vec3(-0.12D, 0.0D, -0.08D)
         );
     }
 
@@ -139,16 +139,16 @@ public final class CelestiumBootsManagerTest {
                 continuedMotion,
                 true,
                 Direction.EAST,
-                new Vec3d(0.0D, 0.0D, -1.0D),
-                new Vec3d(0.08D, 0.0D, -0.12D)
+                new Vec3(0.0D, 0.0D, -1.0D),
+                new Vec3(0.08D, 0.0D, -0.12D)
         );
     }
 
-    private static void assertStrafe(String scenario, Direction wallDirection, Vec3d expectedVelocity) {
+    private static void assertStrafe(String scenario, Direction wallDirection, Vec3 expectedVelocity) {
         assertStrafe(scenario, wallDirection, expectedVelocity, 1);
     }
 
-    private static void assertStrafe(String scenario, Direction wallDirection, Vec3d expectedVelocity, int sidewaysInput) {
+    private static void assertStrafe(String scenario, Direction wallDirection, Vec3 expectedVelocity, int sidewaysInput) {
         CelestiumBootsManager.AuthoritativeWallClimbMotion motion =
                 CelestiumBootsManager.resolveAuthoritativeWallClimbMotion(false, null, null, wallDirection, 0.0F, 0, sidewaysInput);
 
@@ -167,8 +167,8 @@ public final class CelestiumBootsManagerTest {
             CelestiumBootsManager.AuthoritativeWallClimbMotion motion,
             boolean expectedActive,
             Direction expectedWallDirection,
-            Vec3d expectedStrafeBasis,
-            Vec3d expectedVelocity
+            Vec3 expectedStrafeBasis,
+            Vec3 expectedVelocity
     ) {
         if (motion.active() != expectedActive) {
             throw new AssertionError(scenario + " expected active=" + expectedActive + " but got " + motion.active());
@@ -182,7 +182,7 @@ public final class CelestiumBootsManagerTest {
         assertVecEquals(scenario + " should use the expected velocity", expectedVelocity, motion.velocity());
     }
 
-    private static void assertVecEquals(String scenario, Vec3d expected, Vec3d actual) {
+    private static void assertVecEquals(String scenario, Vec3 expected, Vec3 actual) {
         if (expected == null) {
             if (actual != null) {
                 throw new AssertionError(scenario + " expected null but got " + actual);

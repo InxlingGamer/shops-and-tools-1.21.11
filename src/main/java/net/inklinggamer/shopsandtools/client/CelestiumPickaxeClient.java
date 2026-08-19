@@ -8,15 +8,15 @@ import net.inklinggamer.shopsandtools.mixin.client.ClientPlayerInteractionManage
 import net.inklinggamer.shopsandtools.mixin.client.HandledScreenAccessor;
 import net.inklinggamer.shopsandtools.network.ToggleCelestiumPickaxeAreaModePayload;
 import net.inklinggamer.shopsandtools.network.ToggleCelestiumPickaxeEnchantModePayload;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
-import net.minecraft.client.input.KeyInput;
-import net.minecraft.client.network.ClientPlayerInteractionManager;
-import net.minecraft.sound.BlockSoundGroup;
-import net.minecraft.screen.slot.Slot;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.level.block.SoundType;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -40,15 +40,15 @@ public final class CelestiumPickaxeClient {
         ScreenEvents.AFTER_INIT.register(CelestiumPickaxeClient::registerInventoryToggleInput);
     }
 
-    public static void tick(MinecraftClient client) {
-        if (client.player == null || client.world == null) {
+    public static void tick(Minecraft client) {
+        if (client.player == null || client.level == null) {
             areaToggleHeld = false;
             clearOutline();
             clearBreakingAnimation(client);
             return;
         }
 
-        if (!client.options.useKey.isPressed()) {
+        if (!client.options.keyUse.isDown()) {
             areaToggleHeld = false;
         }
 
@@ -60,8 +60,8 @@ public final class CelestiumPickaxeClient {
         CelestiumPickaxeOutlineRenderer.render(context, outlinePositions);
     }
 
-    public static boolean handleRightClickToggle(MinecraftClient client) {
-        if (client.player == null || client.world == null || client.interactionManager == null) {
+    public static boolean handleRightClickToggle(Minecraft client) {
+        if (client.player == null || client.level == null || client.gameMode == null) {
             return false;
         }
 
@@ -71,9 +71,9 @@ public final class CelestiumPickaxeClient {
 
         if (!CelestiumPickaxeHelper.canToggleAreaMining(
                 client.player,
-                client.world,
-                client.crosshairTarget,
-                client.interactionManager.getCurrentGameMode()
+                client.level,
+                client.hitResult,
+                client.gameMode.getPlayerMode()
         )) {
             return false;
         }
@@ -84,7 +84,7 @@ public final class CelestiumPickaxeClient {
     }
 
     public static void onBreakingAttempt(BlockPos pos, Direction direction) {
-        breakingCenter = pos.toImmutable();
+        breakingCenter = pos.immutable();
         breakingFace = direction;
     }
 
@@ -93,7 +93,7 @@ public final class CelestiumPickaxeClient {
         breakingFace = null;
     }
 
-    public static float getAreaMiningDelta(MinecraftClient client, BlockPos pos, float fallbackDelta) {
+    public static float getAreaMiningDelta(Minecraft client, BlockPos pos, float fallbackDelta) {
         boolean centerEligible = shopsandtools$isAreaMiningCenterEligible(client, pos);
         if (!CelestiumPickaxeHelper.shouldDeferBreakPrediction(
                 shopsandtools$canUseAreaMining(client),
@@ -112,7 +112,7 @@ public final class CelestiumPickaxeClient {
         );
     }
 
-    public static boolean shouldDeferBreakPrediction(MinecraftClient client, BlockPos pos) {
+    public static boolean shouldDeferBreakPrediction(Minecraft client, BlockPos pos) {
         return CelestiumPickaxeHelper.shouldDeferBreakPrediction(
                 shopsandtools$canUseAreaMining(client),
                 breakingCenter != null && breakingCenter.equals(pos) && breakingFace != null,
@@ -120,12 +120,12 @@ public final class CelestiumPickaxeClient {
         );
     }
 
-    public static void playDeferredBreakSound(MinecraftClient client, BlockPos pos) {
-        if (client.player == null || client.world == null) {
+    public static void playDeferredBreakSound(Minecraft client, BlockPos pos) {
+        if (client.player == null || client.level == null) {
             return;
         }
 
-        BlockSoundGroup soundGroup = client.world.getBlockState(pos).getSoundGroup();
+        SoundType soundGroup = client.level.getBlockState(pos).getSoundType();
         if (soundGroup == null || soundGroup.getVolume() <= 0.0F) {
             return;
         }
@@ -133,7 +133,7 @@ public final class CelestiumPickaxeClient {
         client.player.playSound(soundGroup.getBreakSound(), soundGroup.getVolume(), soundGroup.getPitch());
     }
 
-    private static void registerInventoryToggleInput(MinecraftClient client, Screen screen, int scaledWidth, int scaledHeight) {
+    private static void registerInventoryToggleInput(Minecraft client, Screen screen, int scaledWidth, int scaledHeight) {
         if (!(screen instanceof InventoryScreen inventoryScreen)) {
             return;
         }
@@ -141,44 +141,44 @@ public final class CelestiumPickaxeClient {
         ScreenKeyboardEvents.allowKeyPress(screen).register((currentScreen, context) -> !handleInventoryKeyPress(client, inventoryScreen, context));
     }
 
-    private static boolean handleInventoryKeyPress(MinecraftClient client, InventoryScreen screen, KeyInput context) {
+    private static boolean handleInventoryKeyPress(Minecraft client, InventoryScreen screen, KeyEvent context) {
         if (client.player == null || !shopsandtools$isShiftKey(context.key())) {
             return false;
         }
 
         Slot slot = ((HandledScreenAccessor) screen).shopsandtools$getFocusedSlot();
-        if (slot == null || !slot.hasStack() || !CelestiumPickaxeHelper.isCelestiumPickaxe(slot.getStack())) {
+        if (slot == null || !slot.hasItem() || !CelestiumPickaxeHelper.isCelestiumPickaxe(slot.getItem())) {
             return false;
         }
 
-        ToggleCelestiumPickaxeEnchantModePayload.send(slot.id);
+        ToggleCelestiumPickaxeEnchantModePayload.send(slot.index);
         return true;
     }
 
-    private static void updateOutline(MinecraftClient client) {
+    private static void updateOutline(Minecraft client) {
         outlinePositions.clear();
-        if (!shopsandtools$canUseAreaMining(client) || client.interactionManager == null) {
+        if (!shopsandtools$canUseAreaMining(client) || client.gameMode == null) {
             return;
         }
 
-        if (!(client.crosshairTarget instanceof net.minecraft.util.hit.BlockHitResult hitResult)) {
+        if (!(client.hitResult instanceof net.minecraft.world.phys.BlockHitResult hitResult)) {
             return;
         }
 
         if (!CelestiumPickaxeHelper.isAreaMiningCenterEligible(
                 client.player,
-                client.world,
+                client.level,
                 hitResult.getBlockPos(),
-                client.interactionManager.getCurrentGameMode()
+                client.gameMode.getPlayerMode()
         )) {
             return;
         }
 
-        outlinePositions.addAll(shopsandtools$getAreaMiningTargets(client, hitResult.getBlockPos(), hitResult.getSide()).positions());
+        outlinePositions.addAll(shopsandtools$getAreaMiningTargets(client, hitResult.getBlockPos(), hitResult.getDirection()).positions());
     }
 
-    private static void updateBreakingAnimation(MinecraftClient client) {
-        ClientPlayerInteractionManager interactionManager = client.interactionManager;
+    private static void updateBreakingAnimation(Minecraft client) {
+        MultiPlayerGameMode interactionManager = client.gameMode;
         if (!shopsandtools$canUseAreaMining(client) || interactionManager == null) {
             clearBreakingAnimation(client);
             return;
@@ -198,16 +198,16 @@ public final class CelestiumPickaxeClient {
 
         if (!CelestiumPickaxeHelper.isValidMiningTarget(
                 client.player,
-                client.world,
+                client.level,
                 currentBreakingPos,
-                interactionManager.getCurrentGameMode()
+                interactionManager.getPlayerMode()
         )) {
             clearBreakingAnimation(client);
             return;
         }
 
         if (breakingCenter == null || !breakingCenter.equals(currentBreakingPos) || breakingFace == null) {
-            breakingCenter = currentBreakingPos.toImmutable();
+            breakingCenter = currentBreakingPos.immutable();
             if (breakingFace == null) {
                 clearBreakingAnimation(client);
                 return;
@@ -231,7 +231,7 @@ public final class CelestiumPickaxeClient {
         }
 
         for (int index = 0; index < breakingAnimationPositions.size(); index++) {
-            client.worldRenderer.setBlockBreakingInfo(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), currentStage);
+            client.levelRenderer.destroyBlockProgress(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), currentStage);
         }
     }
 
@@ -239,44 +239,44 @@ public final class CelestiumPickaxeClient {
         outlinePositions.clear();
     }
 
-    private static void clearBreakingAnimation(MinecraftClient client) {
+    private static void clearBreakingAnimation(Minecraft client) {
         for (int index = 0; index < breakingAnimationPositions.size(); index++) {
-            client.worldRenderer.setBlockBreakingInfo(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), -1);
+            client.levelRenderer.destroyBlockProgress(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), -1);
         }
         breakingAnimationPositions.clear();
         lastBreakingStage = -1;
     }
 
-    private static boolean shopsandtools$canUseAreaMining(MinecraftClient client) {
+    private static boolean shopsandtools$canUseAreaMining(Minecraft client) {
         return client.player != null
-                && CelestiumPickaxeHelper.isCelestiumPickaxe(client.player.getMainHandStack())
-                && CelestiumPickaxeHelper.isAreaMiningEnabled(client.player.getMainHandStack());
+                && CelestiumPickaxeHelper.isCelestiumPickaxe(client.player.getMainHandItem())
+                && CelestiumPickaxeHelper.isAreaMiningEnabled(client.player.getMainHandItem());
     }
 
-    private static CelestiumPickaxeHelper.AreaMiningTargets shopsandtools$getAreaMiningTargets(MinecraftClient client, BlockPos centerPos, Direction face) {
-        if (!shopsandtools$canUseAreaMining(client) || client.player == null || client.world == null || client.interactionManager == null) {
+    private static CelestiumPickaxeHelper.AreaMiningTargets shopsandtools$getAreaMiningTargets(Minecraft client, BlockPos centerPos, Direction face) {
+        if (!shopsandtools$canUseAreaMining(client) || client.player == null || client.level == null || client.gameMode == null) {
             return new CelestiumPickaxeHelper.AreaMiningTargets(List.of(), 0.0F);
         }
 
         return CelestiumPickaxeHelper.getAreaMiningTargets(
                 client.player,
-                client.world,
+                client.level,
                 centerPos,
                 face,
-                client.interactionManager.getCurrentGameMode()
+                client.gameMode.getPlayerMode()
         );
     }
 
-    private static boolean shopsandtools$isAreaMiningCenterEligible(MinecraftClient client, BlockPos pos) {
+    private static boolean shopsandtools$isAreaMiningCenterEligible(Minecraft client, BlockPos pos) {
         return shopsandtools$canUseAreaMining(client)
                 && client.player != null
-                && client.world != null
-                && client.interactionManager != null
+                && client.level != null
+                && client.gameMode != null
                 && CelestiumPickaxeHelper.isAreaMiningCenterEligible(
                         client.player,
-                        client.world,
+                        client.level,
                         pos,
-                        client.interactionManager.getCurrentGameMode()
+                        client.gameMode.getPlayerMode()
                 );
     }
 

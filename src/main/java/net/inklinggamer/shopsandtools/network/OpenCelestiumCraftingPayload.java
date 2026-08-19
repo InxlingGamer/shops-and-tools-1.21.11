@@ -6,16 +6,16 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.player.CelestiumLeggingsManager;
 import net.inklinggamer.shopsandtools.screen.CelestiumPortableCraftingScreenHandler;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
-public record OpenCelestiumCraftingPayload() implements CustomPayload {
-    public static final CustomPayload.Id<OpenCelestiumCraftingPayload> ID =
-            new CustomPayload.Id<>(Identifier.of(ShopsAndTools.MOD_ID, "open_celestium_crafting"));
+public record OpenCelestiumCraftingPayload() implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<OpenCelestiumCraftingPayload> ID =
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "open_celestium_crafting"));
     public static final OpenCelestiumCraftingPayload INSTANCE = new OpenCelestiumCraftingPayload();
-    public static final PacketCodec<PacketByteBuf, OpenCelestiumCraftingPayload> CODEC = PacketCodec.unit(INSTANCE);
+    public static final StreamCodec<FriendlyByteBuf, OpenCelestiumCraftingPayload> CODEC = StreamCodec.unit(INSTANCE);
 
     public static void register() {
         PayloadTypeRegistry.playC2S().register(ID, CODEC);
@@ -35,7 +35,7 @@ public record OpenCelestiumCraftingPayload() implements CustomPayload {
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

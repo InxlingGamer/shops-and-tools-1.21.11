@@ -1,9 +1,8 @@
 package net.inklinggamer.shopsandtools.client.xray;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-
 import java.util.Map;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 
 public final class CelestiumOrePalette {
     private static final OreColor DIAMOND = new OreColor(102, 255, 255);

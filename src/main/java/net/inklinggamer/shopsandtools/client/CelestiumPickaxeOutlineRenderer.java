@@ -3,20 +3,20 @@ package net.inklinggamer.shopsandtools.client;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.mixin.client.RenderLayerInvoker;
 import net.inklinggamer.shopsandtools.mixin.client.RenderPipelinesAccessor;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderSetup;
-import net.minecraft.client.render.VertexConsumer;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.rendertype.RenderSetup;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
 import java.util.Collection;
@@ -28,7 +28,7 @@ public final class CelestiumPickaxeOutlineRenderer {
     private static final int GREEN = 255;
     private static final int BLUE = 180;
     private static RenderPipeline pipeline;
-    private static RenderLayer layer;
+    private static RenderType layer;
     private static boolean rendererDisabled;
 
     private CelestiumPickaxeOutlineRenderer() {
@@ -39,20 +39,20 @@ public final class CelestiumPickaxeOutlineRenderer {
             return;
         }
 
-        MatrixStack matrices = context.matrices();
+        PoseStack matrices = context.matrices();
         if (matrices == null || context.consumers() == null) {
             return;
         }
 
-        Vec3d cameraPos = MinecraftClient.getInstance().gameRenderer.getCamera().getCameraPos();
+        Vec3 cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().position();
         VertexConsumer consumer = context.consumers().getBuffer(layer);
 
-        matrices.push();
+        matrices.pushPose();
         matrices.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
         for (BlockPos pos : positions) {
             drawBox(matrices, consumer, pos);
         }
-        matrices.pop();
+        matrices.popPose();
     }
 
     private static boolean ensureInitialized() {
@@ -72,7 +72,7 @@ public final class CelestiumPickaxeOutlineRenderer {
 
             layer = RenderLayerInvoker.shopsandtools$create(
                     "shopsandtools_celestium_pickaxe_outline",
-                    RenderSetup.builder(pipeline).translucent().expectedBufferSize(4096).build()
+                    RenderSetup.builder(pipeline).sortOnUpload().bufferSize(4096).createRenderSetup()
             );
             return true;
         } catch (RuntimeException exception) {
@@ -93,12 +93,12 @@ public final class CelestiumPickaxeOutlineRenderer {
 
         try {
             pipeline = RenderPipeline.builder(RenderPipelinesAccessor.shopsandtools$getLineSnippet())
-                    .withLocation(Identifier.of(ShopsAndTools.MOD_ID, "celestium_pickaxe_outline"))
+                    .withLocation(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_pickaxe_outline"))
                     .withVertexShader("core/rendertype_lines")
                     .withFragmentShader("core/rendertype_lines")
                     .withBlend(BlendFunction.TRANSLUCENT)
                     .withCull(false)
-                    .withVertexFormat(VertexFormats.POSITION_COLOR_NORMAL_LINE_WIDTH, VertexFormat.DrawMode.LINES)
+                    .withVertexFormat(DefaultVertexFormat.POSITION_COLOR_NORMAL_LINE_WIDTH, VertexFormat.Mode.LINES)
                     .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
                     .build();
             return pipeline;
@@ -109,7 +109,7 @@ public final class CelestiumPickaxeOutlineRenderer {
         }
     }
 
-    private static void drawBox(MatrixStack matrices, VertexConsumer consumer, BlockPos pos) {
+    private static void drawBox(PoseStack matrices, VertexConsumer consumer, BlockPos pos) {
         float minX = pos.getX() - OUTLINE_OFFSET;
         float minY = pos.getY() - OUTLINE_OFFSET;
         float minZ = pos.getZ() - OUTLINE_OFFSET;
@@ -133,17 +133,17 @@ public final class CelestiumPickaxeOutlineRenderer {
         line(matrices, consumer, minX, minY, maxZ, minX, maxY, maxZ);
     }
 
-    private static void line(MatrixStack matrices, VertexConsumer consumer, float startX, float startY, float startZ, float endX, float endY, float endZ) {
+    private static void line(PoseStack matrices, VertexConsumer consumer, float startX, float startY, float startZ, float endX, float endY, float endZ) {
         Vector3f direction = new Vector3f(endX - startX, endY - startY, endZ - startZ).normalize();
-        MatrixStack.Entry entry = matrices.peek();
+        PoseStack.Pose entry = matrices.last();
 
-        consumer.vertex(entry, startX, startY, startZ)
-                .color(RED, GREEN, BLUE, 255)
-                .normal(entry, direction)
-                .lineWidth(LINE_WIDTH);
-        consumer.vertex(entry, endX, endY, endZ)
-                .color(RED, GREEN, BLUE, 255)
-                .normal(entry, direction)
-                .lineWidth(LINE_WIDTH);
+        consumer.addVertex(entry, startX, startY, startZ)
+                .setColor(RED, GREEN, BLUE, 255)
+                .setNormal(entry, direction)
+                .setLineWidth(LINE_WIDTH);
+        consumer.addVertex(entry, endX, endY, endZ)
+                .setColor(RED, GREEN, BLUE, 255)
+                .setNormal(entry, direction)
+                .setLineWidth(LINE_WIDTH);
     }
 }

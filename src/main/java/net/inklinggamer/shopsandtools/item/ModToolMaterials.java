@@ -2,17 +2,16 @@ package net.inklinggamer.shopsandtools.item;
 
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.util.ModTags;
-import net.minecraft.item.Item;
-import net.minecraft.item.ToolMaterial;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ToolMaterial;
 
 public class ModToolMaterials {
 
     // 1. We must define a Tag for what item repairs Celestium tools in an anvil
-    public static final TagKey<Item> CELESTIUM_REPAIR = TagKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID, "celestium_repair"));
+    public static final TagKey<Item> CELESTIUM_REPAIR = TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_repair"));
 
     // 2. We instantiate the ToolMaterial directly using the new 1.21 format!
     public static final ToolMaterial CELESTIUM = new ToolMaterial(

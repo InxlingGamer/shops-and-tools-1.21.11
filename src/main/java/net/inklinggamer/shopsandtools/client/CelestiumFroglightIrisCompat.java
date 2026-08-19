@@ -6,10 +6,9 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.block.ModBlocks;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.MinecraftClient;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -52,7 +51,7 @@ public final class CelestiumFroglightIrisCompat {
         ClientTickEvents.END_CLIENT_TICK.register(CelestiumFroglightIrisCompat::tick);
     }
 
-    private static void tick(MinecraftClient client) {
+    private static void tick(Minecraft client) {
         if (reflectionUnavailable) {
             return;
         }
@@ -85,8 +84,8 @@ public final class CelestiumFroglightIrisCompat {
                 setItemIds(worldRenderingSettings, patchedItemIds);
             }
 
-            if ((blockMappingUpdated || packItemMappingUpdated) && client.worldRenderer != null) {
-                client.worldRenderer.reload();
+            if ((blockMappingUpdated || packItemMappingUpdated) && client.levelRenderer != null) {
+                client.levelRenderer.allChanged();
             }
 
             if (!mappingApplied && (blockMappingUpdated || heldMappingUpdated || packItemMappingUpdated)) {
@@ -106,8 +105,8 @@ public final class CelestiumFroglightIrisCompat {
 
         return createPatchedAliasIds(
                 blockStateIds,
-                ModBlocks.CELESTIUM_BLOCK.getDefaultState(),
-                Blocks.PEARLESCENT_FROGLIGHT.getDefaultState()
+                ModBlocks.CELESTIUM_BLOCK.defaultBlockState(),
+                Blocks.PEARLESCENT_FROGLIGHT.defaultBlockState()
         );
     }
 
@@ -147,7 +146,7 @@ public final class CelestiumFroglightIrisCompat {
         return copy;
     }
 
-    private static boolean patchHeldLightItemIdsInShaderPack(MinecraftClient client) throws ReflectiveOperationException {
+    private static boolean patchHeldLightItemIdsInShaderPack(Minecraft client) throws ReflectiveOperationException {
         Object shaderPack = getCurrentShaderPack();
         if (shaderPack == null) {
             return false;
@@ -182,7 +181,7 @@ public final class CelestiumFroglightIrisCompat {
             setItemIds(worldRenderingSettings, patchedItemIds);
         }
 
-        if (client.world != null) {
+        if (client.level != null) {
             Object pipelineManager = getPipelineManagerMethod.invoke(null);
             destroyPipelineMethod.invoke(pipelineManager);
             Object currentDimension = getCurrentDimensionMethod.invoke(null);

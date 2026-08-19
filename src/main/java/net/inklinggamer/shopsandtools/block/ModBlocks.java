@@ -3,39 +3,39 @@ package net.inklinggamer.shopsandtools.block;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.item.CelestiumBlockItem;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemGroups;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.sound.BlockSoundGroup;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 
 public class ModBlocks {
 
     public static final Block CELESTIUM_BLOCK = registerBlock("celestium_block", createCelestiumSettings());
 
-    static AbstractBlock.Settings createCelestiumSettings() {
+    static BlockBehaviour.Properties createCelestiumSettings() {
         return copyBlockSettings(Blocks.PEARLESCENT_FROGLIGHT)
-                .strength(Blocks.OBSIDIAN.getHardness(), Blocks.OBSIDIAN.getBlastResistance())
-                .requiresTool()
-                .sounds(BlockSoundGroup.AMETHYST_BLOCK);
+                .strength(Blocks.OBSIDIAN.defaultDestroyTime(), Blocks.OBSIDIAN.getExplosionResistance())
+                .requiresCorrectToolForDrops()
+                .sound(SoundType.AMETHYST);
     }
 
-    static AbstractBlock.Settings copyBlockSettings(AbstractBlock block) {
-        return AbstractBlock.Settings.copy(block);
+    static BlockBehaviour.Properties copyBlockSettings(BlockBehaviour block) {
+        return BlockBehaviour.Properties.ofFullCopy(block);
     }
 
-    private static Block registerBlock(String name, AbstractBlock.Settings blockSettings) {
-        RegistryKey<Block> key = RegistryKey.of(RegistryKeys.BLOCK, Identifier.of(ShopsAndTools.MOD_ID, name));
-        Block block = new Block(blockSettings.registryKey(key));
+    private static Block registerBlock(String name, BlockBehaviour.Properties blockSettings) {
+        ResourceKey<Block> key = ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, name));
+        Block block = new Block(blockSettings.setId(key));
 
-        Registry.register(Registries.BLOCK, key, block);
+        Registry.register(BuiltInRegistries.BLOCK, key, block);
 
         registerBlockItem(name, block);
 
@@ -43,20 +43,20 @@ public class ModBlocks {
     }
 
     private static void registerBlockItem(String name, Block block) {
-        RegistryKey<Item> key = RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ShopsAndTools.MOD_ID, name));
+        ResourceKey<Item> key = ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, name));
 
         BlockItem item = "celestium_block".equals(name)
-                ? new CelestiumBlockItem(block, new Item.Settings().registryKey(key).useBlockPrefixedTranslationKey())
-                : new BlockItem(block, new Item.Settings().registryKey(key).useBlockPrefixedTranslationKey());
+                ? new CelestiumBlockItem(block, new Item.Properties().setId(key).useBlockDescriptionPrefix())
+                : new BlockItem(block, new Item.Properties().setId(key).useBlockDescriptionPrefix());
 
-        Registry.register(Registries.ITEM, key, item);
+        Registry.register(BuiltInRegistries.ITEM, key, item);
     }
 
     public static void registerModBlocks() {
         ShopsAndTools.LOGGER.info("Registering Mod Blocks for " + ShopsAndTools.MOD_ID);
 
-        ItemGroupEvents.modifyEntriesEvent(ItemGroups.BUILDING_BLOCKS).register(fabricItemGroupEntries -> {
-            fabricItemGroupEntries.add(ModBlocks.CELESTIUM_BLOCK);
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.BUILDING_BLOCKS).register(fabricItemGroupEntries -> {
+            fabricItemGroupEntries.accept(ModBlocks.CELESTIUM_BLOCK);
         });
     }
 }

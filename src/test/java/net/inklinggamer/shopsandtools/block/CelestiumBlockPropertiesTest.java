@@ -29,8 +29,8 @@ public final class CelestiumBlockPropertiesTest {
     private static void assertCopyHelperUsesVanillaCopy() {
         String modBlocksSource = readSourceFile();
         assertTrue(
-                "Celestium should use AbstractBlock.Settings.copy for full vanilla parity",
-                modBlocksSource.contains("return AbstractBlock.Settings.copy(block);")
+                "Celestium should use BlockBehaviour.Properties.ofFullCopy for full vanilla parity",
+                modBlocksSource.contains("return BlockBehaviour.Properties.ofFullCopy(block);")
         );
     }
 
@@ -40,15 +40,15 @@ public final class CelestiumBlockPropertiesTest {
 
         assertTrue(
                 "Celestium should use obsidian hardness and blast resistance",
-                createCelestiumSettingsBody.contains(".strength(Blocks.OBSIDIAN.getHardness(), Blocks.OBSIDIAN.getBlastResistance())")
+                createCelestiumSettingsBody.contains(".strength(Blocks.OBSIDIAN.defaultDestroyTime(), Blocks.OBSIDIAN.getExplosionResistance())")
         );
         assertTrue(
                 "Celestium should require the correct tool like obsidian",
-                createCelestiumSettingsBody.contains(".requiresTool()")
+                createCelestiumSettingsBody.contains(".requiresCorrectToolForDrops()")
         );
         assertTrue(
                 "Celestium should use the amethyst block sound group",
-                createCelestiumSettingsBody.contains(".sounds(BlockSoundGroup.AMETHYST_BLOCK)")
+                createCelestiumSettingsBody.contains(".sound(SoundType.AMETHYST)")
         );
     }
 
@@ -69,7 +69,7 @@ public final class CelestiumBlockPropertiesTest {
     }
 
     private static String extractCreateCelestiumSettingsBody(String source) {
-        String methodSignature = "static AbstractBlock.Settings createCelestiumSettings()";
+        String methodSignature = "static BlockBehaviour.Properties createCelestiumSettings()";
         int methodStart = source.indexOf(methodSignature);
         if (methodStart < 0) {
             throw new AssertionError("Could not find createCelestiumSettings() in ModBlocks");

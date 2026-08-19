@@ -5,15 +5,15 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.player.CelestiumBootsManager;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.util.Identifier;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
-public record SyncCelestiumWallClimbInputPayload(boolean sneakHeld, boolean forwardHeld, boolean backwardHeld, boolean leftHeld, boolean rightHeld) implements CustomPayload {
-    public static final CustomPayload.Id<SyncCelestiumWallClimbInputPayload> ID =
-            new CustomPayload.Id<>(Identifier.of(ShopsAndTools.MOD_ID, "sync_celestium_wall_climb_input"));
-    public static final PacketCodec<PacketByteBuf, SyncCelestiumWallClimbInputPayload> CODEC = PacketCodec.of(
+public record SyncCelestiumWallClimbInputPayload(boolean sneakHeld, boolean forwardHeld, boolean backwardHeld, boolean leftHeld, boolean rightHeld) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<SyncCelestiumWallClimbInputPayload> ID =
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "sync_celestium_wall_climb_input"));
+    public static final StreamCodec<FriendlyByteBuf, SyncCelestiumWallClimbInputPayload> CODEC = StreamCodec.ofMember(
             (payload, buf) -> {
                 buf.writeBoolean(payload.sneakHeld());
                 buf.writeBoolean(payload.forwardHeld());
@@ -43,7 +43,7 @@ public record SyncCelestiumWallClimbInputPayload(boolean sneakHeld, boolean forw
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

@@ -1,29 +1,27 @@
 package net.inklinggamer.shopsandtools.item;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.BeetrootsBlock;
-import net.minecraft.block.CarrotsBlock;
-import net.minecraft.block.CropBlock;
-import net.minecraft.block.NetherWartBlock;
-import net.minecraft.block.PotatoesBlock;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.util.math.BlockPos;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.block.BeetrootBlock;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.CarrotBlock;
+import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.NetherWartBlock;
+import net.minecraft.world.level.block.PotatoBlock;
+import net.minecraft.world.level.block.state.BlockState;
 
 public final class CelestiumHoeHelper {
     public static final int EFFICIENCY_LEVEL = 10;
@@ -66,20 +64,20 @@ public final class CelestiumHoeHelper {
     }
 
     public static boolean isCelestiumHoe(ItemStack stack) {
-        return stack.isOf(ModItems.CELESTIUM_HOE);
+        return stack.is(ModItems.CELESTIUM_HOE);
     }
 
-    public static void initializeSmithingResult(ItemStack stack, DynamicRegistryManager registryManager) {
+    public static void initializeSmithingResult(ItemStack stack, RegistryAccess registryManager) {
         if (!isCelestiumHoe(stack)) {
             return;
         }
 
-        Registry<Enchantment> enchantmentRegistry = registryManager.getOrThrow(RegistryKeys.ENCHANTMENT);
-        RegistryEntry<Enchantment> efficiency = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.EFFICIENCY);
-        RegistryEntry<Enchantment> unbreaking = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.UNBREAKING);
-        RegistryEntry<Enchantment> fortune = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.FORTUNE);
+        Registry<Enchantment> enchantmentRegistry = registryManager.lookupOrThrow(Registries.ENCHANTMENT);
+        Holder<Enchantment> efficiency = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.EFFICIENCY);
+        Holder<Enchantment> unbreaking = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.UNBREAKING);
+        Holder<Enchantment> fortune = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.FORTUNE);
 
-        EnchantmentHelper.apply(stack, builder -> {
+        EnchantmentHelper.updateEnchantments(stack, builder -> {
             builder.set(efficiency, EFFICIENCY_LEVEL);
             builder.set(unbreaking, UNBREAKING_LEVEL);
             builder.set(fortune, FORTUNE_LEVEL);
@@ -115,7 +113,7 @@ public final class CelestiumHoeHelper {
         List<BlockPos> positions = new ArrayList<>(9);
         for (BlockPos pos : getHorizontalArea(center)) {
             if (isSupportedMatureCrop(stateProvider.apply(pos))) {
-                positions.add(pos.toImmutable());
+                positions.add(pos.immutable());
             }
         }
 
@@ -126,14 +124,14 @@ public final class CelestiumHoeHelper {
         List<BlockPos> positions = new ArrayList<>(9);
         for (int offsetX = -1; offsetX <= 1; offsetX++) {
             for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-                positions.add(center.add(offsetX, 0, offsetZ));
+                positions.add(center.offset(offsetX, 0, offsetZ));
             }
         }
         return positions;
     }
 
     public static BlockState getReplantState(BlockState harvestedState) {
-        return harvestedState.getBlock().getDefaultState();
+        return harvestedState.getBlock().defaultBlockState();
     }
 
     public static Item getReplantCostItem(BlockState harvestedState) {
@@ -167,7 +165,7 @@ public final class CelestiumHoeHelper {
         }
 
         for (ItemStack drop : drops) {
-            if (!drop.isEmpty() && drop.isOf(replantItem)) {
+            if (!drop.isEmpty() && drop.is(replantItem)) {
                 drop.setCount(getRemainingCountAfterReplant(drop.getCount()));
                 return;
             }
@@ -197,23 +195,23 @@ public final class CelestiumHoeHelper {
             return null;
         }
 
-        if (state.isOf(Blocks.WHEAT)) {
+        if (state.is(Blocks.WHEAT)) {
             return SupportedCropType.WHEAT;
         }
 
-        if (state.isOf(Blocks.CARROTS)) {
+        if (state.is(Blocks.CARROTS)) {
             return SupportedCropType.CARROT;
         }
 
-        if (state.isOf(Blocks.POTATOES)) {
+        if (state.is(Blocks.POTATOES)) {
             return SupportedCropType.POTATO;
         }
 
-        if (state.isOf(Blocks.BEETROOTS)) {
+        if (state.is(Blocks.BEETROOTS)) {
             return SupportedCropType.BEETROOT;
         }
 
-        if (state.isOf(Blocks.NETHER_WART)) {
+        if (state.is(Blocks.NETHER_WART)) {
             return SupportedCropType.NETHER_WART;
         }
 
@@ -222,16 +220,16 @@ public final class CelestiumHoeHelper {
 
     private static int getCropAge(BlockState state, SupportedCropType cropType) {
         return switch (cropType) {
-            case WHEAT -> state.get(CropBlock.AGE);
-            case CARROT -> state.get(CarrotsBlock.AGE);
-            case POTATO -> state.get(PotatoesBlock.AGE);
-            case BEETROOT -> state.get(BeetrootsBlock.AGE);
-            case NETHER_WART -> state.get(NetherWartBlock.AGE);
+            case WHEAT -> state.getValue(CropBlock.AGE);
+            case CARROT -> state.getValue(CarrotBlock.AGE);
+            case POTATO -> state.getValue(PotatoBlock.AGE);
+            case BEETROOT -> state.getValue(BeetrootBlock.AGE);
+            case NETHER_WART -> state.getValue(NetherWartBlock.AGE);
         };
     }
 
-    private static RegistryEntry<Enchantment> shopsandtools$getEnchantment(Registry<Enchantment> registry, net.minecraft.registry.RegistryKey<Enchantment> key) {
+    private static Holder<Enchantment> shopsandtools$getEnchantment(Registry<Enchantment> registry, net.minecraft.resources.ResourceKey<Enchantment> key) {
         Enchantment enchantment = registry.getValueOrThrow(key);
-        return registry.getEntry(enchantment);
+        return registry.wrapAsHolder(enchantment);
     }
 }

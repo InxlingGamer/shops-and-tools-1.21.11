@@ -1,45 +1,45 @@
 package net.inklinggamer.shopsandtools.screen;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.screen.CraftingScreenHandler;
-import net.minecraft.screen.ScreenHandlerContext;
-import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.CraftingMenu;
+import net.minecraft.world.item.ItemStack;
 
-public class CelestiumPortableCraftingScreenHandler extends CraftingScreenHandler {
-    private static final Text TITLE = Text.translatable("container.shopsandtools.celestium_portable_crafting");
+public class CelestiumPortableCraftingScreenHandler extends CraftingMenu {
+    private static final Component TITLE = Component.translatable("container.shopsandtools.celestium_portable_crafting");
 
-    public CelestiumPortableCraftingScreenHandler(int syncId, PlayerInventory playerInventory, ScreenHandlerContext context) {
+    public CelestiumPortableCraftingScreenHandler(int syncId, Inventory playerInventory, ContainerLevelAccess context) {
         super(syncId, playerInventory, context);
     }
 
-    public static void openFor(ServerPlayerEntity player) {
-        ItemStack cursorStack = player.currentScreenHandler.getCursorStack().copy();
+    public static void openFor(ServerPlayer player) {
+        ItemStack cursorStack = player.containerMenu.getCarried().copy();
         if (!cursorStack.isEmpty()) {
-            player.currentScreenHandler.setCursorStack(ItemStack.EMPTY);
-            player.currentScreenHandler.sendContentUpdates();
+            player.containerMenu.setCarried(ItemStack.EMPTY);
+            player.containerMenu.broadcastChanges();
         }
 
-        player.openHandledScreen(new SimpleNamedScreenHandlerFactory(
+        player.openMenu(new SimpleMenuProvider(
                 (syncId, inventory, opener) -> new CelestiumPortableCraftingScreenHandler(
                         syncId,
                         inventory,
-                        ScreenHandlerContext.create(opener.getEntityWorld(), opener.getBlockPos())
+                        ContainerLevelAccess.create(opener.level(), opener.blockPosition())
                 ),
                 TITLE
         ));
 
         if (!cursorStack.isEmpty()) {
-            player.currentScreenHandler.setCursorStack(cursorStack);
-            player.currentScreenHandler.sendContentUpdates();
+            player.containerMenu.setCarried(cursorStack);
+            player.containerMenu.broadcastChanges();
         }
     }
 
     @Override
-    public boolean canUse(PlayerEntity player) {
+    public boolean stillValid(Player player) {
         return true;
     }
 }

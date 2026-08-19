@@ -3,27 +3,26 @@ package net.inklinggamer.shopsandtools.player;
 import com.mojang.datafixers.util.Pair;
 import net.inklinggamer.shopsandtools.item.CelestiumShovelHelper;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumTrialChamberMarkerPayload;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.particle.DustParticleEffect;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntryList;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.HolderSet;
+import net.minecraft.core.particles.DustParticleOptions;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.network.ServerPlayerInteractionManager;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.gen.structure.Structure;
-import net.minecraft.world.gen.structure.StructureKeys;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerPlayerGameMode;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.phys.HitResult;
 import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
@@ -40,7 +39,7 @@ public final class CelestiumShovelManager {
     private static final float RAW_GOLD_DROP_CHANCE = 0.05F;
     private static final float RAW_IRON_DROP_CHANCE = 0.03F;
     private static final float DIAMOND_DROP_CHANCE = 0.003F;
-    private static final DustParticleEffect SLAM_PARTICLE = new DustParticleEffect(0xFF59C0, 1.75F);
+    private static final DustParticleOptions SLAM_PARTICLE = new DustParticleOptions(0xFF59C0, 1.75F);
 
     private static final Map<UUID, PlayerState> STATES = new HashMap<>();
 
@@ -49,72 +48,72 @@ public final class CelestiumShovelManager {
 
     public static void tickServer(MinecraftServer server) {
         STATES.entrySet().removeIf(entry -> {
-            ServerPlayerEntity player = server.getPlayerManager().getPlayer(entry.getKey());
+            ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
             return player == null || entry.getValue().canDiscard(CelestiumShovelHelper.canUseGroundSlam(player));
         });
     }
 
-    public static void tickPlayer(ServerPlayerEntity player) {
+    public static void tickPlayer(ServerPlayer player) {
         if (!player.isAlive() || player.isSpectator()) {
-            STATES.remove(player.getUuid());
+            STATES.remove(player.getUUID());
             return;
         }
 
         boolean canUseGroundSlam = CelestiumShovelHelper.canUseGroundSlam(player);
-        PlayerState state = STATES.get(player.getUuid());
+        PlayerState state = STATES.get(player.getUUID());
         if (state == null) {
             if (!canUseGroundSlam) {
                 return;
             }
 
-            state = new PlayerState(player.isOnGround(), player.isSneaking());
-            STATES.put(player.getUuid(), state);
+            state = new PlayerState(player.onGround(), player.isShiftKeyDown());
+            STATES.put(player.getUUID(), state);
         }
 
         state.tickSuppression();
         updateGroundSlamTracking(player, state, canUseGroundSlam);
 
         if (state.canDiscard(canUseGroundSlam)) {
-            STATES.remove(player.getUuid());
+            STATES.remove(player.getUUID());
         }
     }
 
-    public static boolean isHoldingCelestiumShovel(ServerPlayerEntity player) {
-        return CelestiumShovelHelper.isCelestiumShovel(player.getMainHandStack());
+    public static boolean isHoldingCelestiumShovel(ServerPlayer player) {
+        return CelestiumShovelHelper.isCelestiumShovel(player.getMainHandItem());
     }
 
-    public static boolean isAreaMiningEnabled(ServerPlayerEntity player) {
-        return CelestiumShovelHelper.isAreaMiningEnabled(player.getMainHandStack());
+    public static boolean isAreaMiningEnabled(ServerPlayer player) {
+        return CelestiumShovelHelper.isAreaMiningEnabled(player.getMainHandItem());
     }
 
-    public static HitResult getCurrentTarget(ServerPlayerEntity player) {
-        return player.raycast(player.getBlockInteractionRange(), 1.0F, false);
+    public static HitResult getCurrentTarget(ServerPlayer player) {
+        return player.pick(player.blockInteractionRange(), 1.0F, false);
     }
 
-    public static boolean canToggleAreaMining(ServerPlayerEntity player, HitResult hitResult) {
+    public static boolean canToggleAreaMining(ServerPlayer player, HitResult hitResult) {
         return CelestiumShovelHelper.canToggleAreaMining(
                 player,
-                player.getEntityWorld(),
+                player.level(),
                 hitResult,
-                player.interactionManager.getGameMode()
+                player.gameMode.getGameModeForPlayer()
         );
     }
 
-    public static boolean isValidMiningTarget(ServerPlayerEntity player, BlockPos pos) {
+    public static boolean isValidMiningTarget(ServerPlayer player, BlockPos pos) {
         return CelestiumShovelHelper.isValidMiningTarget(
                 player,
-                player.getEntityWorld(),
+                player.level(),
                 pos,
-                player.interactionManager.getGameMode()
+                player.gameMode.getGameModeForPlayer()
         );
     }
 
-    public static boolean toggleAreaMining(ServerPlayerEntity player) {
-        return CelestiumShovelHelper.toggleAreaMining(player.getMainHandStack());
+    public static boolean toggleAreaMining(ServerPlayer player) {
+        return CelestiumShovelHelper.toggleAreaMining(player.getMainHandItem());
     }
 
-    public static void beginMiningSelection(ServerPlayerEntity player, BlockPos pos, Direction face) {
-        PlayerState state = STATES.get(player.getUuid());
+    public static void beginMiningSelection(ServerPlayer player, BlockPos pos, Direction face) {
+        PlayerState state = STATES.get(player.getUUID());
         if (state != null && state.isMiningSuppressed()) {
             clearMiningSelection(player);
             return;
@@ -125,13 +124,13 @@ public final class CelestiumShovelManager {
             return;
         }
 
-        state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState(player.isOnGround(), player.isSneaking()));
-        state.miningCenter = pos.toImmutable();
+        state = STATES.computeIfAbsent(player.getUUID(), uuid -> new PlayerState(player.onGround(), player.isShiftKeyDown()));
+        state.miningCenter = pos.immutable();
         state.miningFace = face;
     }
 
-    public static void clearMiningSelection(ServerPlayerEntity player) {
-        PlayerState state = STATES.get(player.getUuid());
+    public static void clearMiningSelection(ServerPlayer player) {
+        PlayerState state = STATES.get(player.getUUID());
         if (state == null) {
             return;
         }
@@ -139,16 +138,16 @@ public final class CelestiumShovelManager {
         state.miningCenter = null;
         state.miningFace = null;
         if (state.canDiscard(CelestiumShovelHelper.canUseGroundSlam(player))) {
-            STATES.remove(player.getUuid());
+            STATES.remove(player.getUUID());
         }
     }
 
-    public static boolean armSlam(ServerPlayerEntity player) {
-        PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState(player.isOnGround(), player.isSneaking()));
+    public static boolean armSlam(ServerPlayer player) {
+        PlayerState state = STATES.computeIfAbsent(player.getUUID(), uuid -> new PlayerState(player.onGround(), player.isShiftKeyDown()));
         HitResult hitResult = getCurrentTarget(player);
         if (!state.slamJumped
                 || !state.slamSneakPrimed
-                || !CelestiumShovelHelper.canArmSlam(player, player.getEntityWorld(), hitResult)) {
+                || !CelestiumShovelHelper.canArmSlam(player, player.level(), hitResult)) {
             return false;
         }
 
@@ -159,8 +158,8 @@ public final class CelestiumShovelManager {
     }
 
     public static void onBlockBroken(
-            ServerPlayerEntity player,
-            ServerPlayerInteractionManager interactionManager,
+            ServerPlayer player,
+            ServerPlayerGameMode interactionManager,
             BlockPos centerPos,
             @Nullable BlockState brokenState,
             @Nullable BlockEntity brokenBlockEntity,
@@ -172,7 +171,7 @@ public final class CelestiumShovelManager {
             return;
         }
 
-        PlayerState state = STATES.get(player.getUuid());
+        PlayerState state = STATES.get(player.getUUID());
         if (state != null && state.isMiningSuppressed()) {
             clearMiningSelection(player);
             return;
@@ -194,7 +193,7 @@ public final class CelestiumShovelManager {
                     continue;
                 }
 
-                interactionManager.tryBreakBlock(targetPos);
+                interactionManager.destroyBlock(targetPos);
             }
         } finally {
             AREA_BREAK_IN_PROGRESS.set(false);
@@ -202,7 +201,7 @@ public final class CelestiumShovelManager {
         }
     }
 
-    public static float getAreaMiningDelta(ServerPlayerEntity player, BlockPos centerPos, float fallbackDelta) {
+    public static float getAreaMiningDelta(ServerPlayer player, BlockPos centerPos, float fallbackDelta) {
         PlayerState state = getActiveMiningState(player, centerPos);
         if (state == null) {
             return fallbackDelta;
@@ -210,15 +209,15 @@ public final class CelestiumShovelManager {
 
         float areaMiningDelta = CelestiumShovelHelper.getAreaMiningTargets(
                 player,
-                player.getEntityWorld(),
+                player.level(),
                 centerPos,
                 state.miningFace,
-                player.interactionManager.getGameMode()
+                player.gameMode.getGameModeForPlayer()
         ).effectiveBreakingDelta();
         return areaMiningDelta > 0.0F ? areaMiningDelta : fallbackDelta;
     }
 
-    public static List<BlockPos> getAreaMiningTargets(ServerPlayerEntity player, BlockPos centerPos) {
+    public static List<BlockPos> getAreaMiningTargets(ServerPlayer player, BlockPos centerPos) {
         PlayerState state = getActiveMiningState(player, centerPos);
         if (state == null) {
             return List.of();
@@ -226,19 +225,19 @@ public final class CelestiumShovelManager {
 
         return CelestiumShovelHelper.getAreaMiningTargets(
                 player,
-                player.getEntityWorld(),
+                player.level(),
                 centerPos,
                 state.miningFace,
-                player.interactionManager.getGameMode()
+                player.gameMode.getGameModeForPlayer()
         ).breakablePositions();
     }
 
-    private static PlayerState getActiveMiningState(ServerPlayerEntity player, BlockPos centerPos) {
+    private static PlayerState getActiveMiningState(ServerPlayer player, BlockPos centerPos) {
         if (!isAreaMiningEnabled(player)) {
             return null;
         }
 
-        PlayerState state = STATES.get(player.getUuid());
+        PlayerState state = STATES.get(player.getUUID());
         if (state == null
                 || state.isMiningSuppressed()
                 || state.miningCenter == null
@@ -251,7 +250,7 @@ public final class CelestiumShovelManager {
     }
 
     private static void trySpawnBonusDrops(
-            ServerPlayerEntity player,
+            ServerPlayer player,
             BlockPos pos,
             @Nullable BlockState brokenState,
             @Nullable BlockEntity brokenBlockEntity,
@@ -265,8 +264,8 @@ public final class CelestiumShovelManager {
             return;
         }
 
-        ServerWorld world = (ServerWorld) player.getEntityWorld();
-        if (Block.getDroppedStacks(brokenState, world, pos, brokenBlockEntity, player, breakingTool).isEmpty()) {
+        ServerLevel world = (ServerLevel) player.level();
+        if (Block.getDrops(brokenState, world, pos, brokenBlockEntity, player, breakingTool).isEmpty()) {
             return;
         }
 
@@ -275,15 +274,15 @@ public final class CelestiumShovelManager {
         maybeDropBonus(world, pos, player.getRandom().nextFloat(), DIAMOND_DROP_CHANCE, new ItemStack(Items.DIAMOND));
     }
 
-    private static void maybeDropBonus(ServerWorld world, BlockPos pos, float roll, float chance, ItemStack stack) {
+    private static void maybeDropBonus(ServerLevel world, BlockPos pos, float roll, float chance, ItemStack stack) {
         if (roll < chance) {
-            Block.dropStack(world, pos.up(), stack);
+            Block.popResource(world, pos.above(), stack);
         }
     }
 
-    private static void updateGroundSlamTracking(ServerPlayerEntity player, PlayerState state, boolean canUseGroundSlam) {
-        boolean onGround = player.isOnGround();
-        boolean sneaking = player.isSneaking();
+    private static void updateGroundSlamTracking(ServerPlayer player, PlayerState state, boolean canUseGroundSlam) {
+        boolean onGround = player.onGround();
+        boolean sneaking = player.isShiftKeyDown();
 
         if (!canUseGroundSlam) {
             state.resetSlamState();
@@ -295,7 +294,7 @@ public final class CelestiumShovelManager {
             return;
         }
 
-        if (state.wasOnGround && !onGround && player.getVelocity().y > 0.0D) {
+        if (state.wasOnGround && !onGround && player.getDeltaMovement().y > 0.0D) {
             state.slamJumped = true;
             state.slamSneakPrimed = false;
             state.slamArmed = false;
@@ -322,8 +321,8 @@ public final class CelestiumShovelManager {
         state.wasSneaking = sneaking;
     }
 
-    private static void triggerGroundSlam(ServerPlayerEntity player, PlayerState state) {
-        ServerWorld world = (ServerWorld) player.getEntityWorld();
+    private static void triggerGroundSlam(ServerPlayer player, PlayerState state) {
+        ServerLevel world = (ServerLevel) player.level();
         clearMiningSelection(player);
         state.startMiningSuppression();
 
@@ -332,12 +331,12 @@ public final class CelestiumShovelManager {
                 player.getX(),
                 player.getY(),
                 player.getZ(),
-                SoundEvents.ENTITY_WARDEN_SONIC_BOOM,
-                SoundCategory.PLAYERS,
+                SoundEvents.WARDEN_SONIC_BOOM,
+                SoundSource.PLAYERS,
                 2.0F,
                 1.0F
         );
-        world.spawnParticles(
+        world.sendParticles(
                 SLAM_PARTICLE,
                 player.getX(),
                 player.getY() + 0.1D,
@@ -349,27 +348,27 @@ public final class CelestiumShovelManager {
                 0.02D
         );
 
-        RegistryEntryList<Structure> trialChambers = RegistryEntryList.of(
-                world.getRegistryManager().getOrThrow(RegistryKeys.STRUCTURE)
-                        .getEntry(world.getRegistryManager().getOrThrow(RegistryKeys.STRUCTURE).getValueOrThrow(StructureKeys.TRIAL_CHAMBERS))
+        HolderSet<Structure> trialChambers = HolderSet.direct(
+                world.registryAccess().lookupOrThrow(Registries.STRUCTURE)
+                        .wrapAsHolder(world.registryAccess().lookupOrThrow(Registries.STRUCTURE).getValueOrThrow(BuiltinStructures.TRIAL_CHAMBERS))
         );
-        Pair<BlockPos, ?> locatedTrialChamber = world.getChunkManager().getChunkGenerator().locateStructure(
+        Pair<BlockPos, ?> locatedTrialChamber = world.getChunkSource().getGenerator().findNearestMapStructure(
                 world,
                 trialChambers,
-                player.getBlockPos(),
+                player.blockPosition(),
                 TRIAL_CHAMBER_SEARCH_RADIUS_CHUNKS,
                 false
         );
         BlockPos trialChamberPos = locatedTrialChamber == null ? null : locatedTrialChamber.getFirst();
         if (trialChamberPos == null) {
-            player.sendMessage(Text.translatable("message.shopsandtools.celestium_shovel_trial_chamber_not_found"), true);
+            player.displayClientMessage(Component.translatable("message.shopsandtools.celestium_shovel_trial_chamber_not_found"), true);
             return;
         }
 
         SyncCelestiumTrialChamberMarkerPayload.send(
                 player,
                 trialChamberPos,
-                world.getRegistryKey().getValue(),
+                world.dimension().identifier(),
                 TRIAL_CHAMBER_MARKER_DURATION_TICKS
         );
     }

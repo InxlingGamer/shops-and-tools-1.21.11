@@ -1,9 +1,9 @@
 package net.inklinggamer.shopsandtools.client;
 
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Arm;
+import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.world.entity.HumanoidArm;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 public final class LeftHotbarStatusBarLayout {
     public static final int DEFAULT_BAR_WIDTH = 74;
@@ -19,10 +19,10 @@ public final class LeftHotbarStatusBarLayout {
     private LeftHotbarStatusBarLayout() {
     }
 
-    public static Layout resolve(DrawContext drawContext, PlayerEntity player) {
+    public static Layout resolve(GuiGraphics drawContext, Player player) {
         return resolve(
-                drawContext.getScaledWindowWidth(),
-                drawContext.getScaledWindowHeight(),
+                drawContext.guiWidth(),
+                drawContext.guiHeight(),
                 isLeftOffhandVisible(player)
         );
     }
@@ -43,9 +43,9 @@ public final class LeftHotbarStatusBarLayout {
         return new Layout(Math.max(LEFT_SCREEN_MARGIN, barX), barY, barWidth);
     }
 
-    private static boolean isLeftOffhandVisible(PlayerEntity player) {
-        ItemStack offhandStack = player.getOffHandStack();
-        return !offhandStack.isEmpty() && player.getMainArm().getOpposite() == Arm.LEFT;
+    private static boolean isLeftOffhandVisible(Player player) {
+        ItemStack offhandStack = player.getOffhandItem();
+        return !offhandStack.isEmpty() && player.getMainArm().getOpposite() == HumanoidArm.LEFT;
     }
 
     public record Layout(int x, int y, int width) {

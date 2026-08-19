@@ -7,14 +7,13 @@ import net.inklinggamer.shopsandtools.item.CelestiumShovelHelper;
 import net.inklinggamer.shopsandtools.mixin.client.ClientPlayerInteractionManagerAccessor;
 import net.inklinggamer.shopsandtools.network.ArmCelestiumShovelSlamPayload;
 import net.inklinggamer.shopsandtools.network.ToggleCelestiumShovelAreaModePayload;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerInteractionManager;
-import net.minecraft.sound.BlockSoundGroup;
-import net.minecraft.util.Hand;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.level.block.SoundType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,8 +46,8 @@ public final class CelestiumShovelClient {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> resetState());
     }
 
-    public static void tick(MinecraftClient client) {
-        if (client.player == null || client.world == null) {
+    public static void tick(Minecraft client) {
+        if (client.player == null || client.level == null) {
             areaToggleHeld = false;
             slamArmHeld = false;
             slamMiningSuppressed = false;
@@ -59,11 +58,11 @@ public final class CelestiumShovelClient {
             return;
         }
 
-        if (!client.options.useKey.isPressed()) {
+        if (!client.options.keyUse.isDown()) {
             areaToggleHeld = false;
         }
 
-        if (!client.options.attackKey.isPressed()) {
+        if (!client.options.keyAttack.isDown()) {
             slamArmHeld = false;
             slamMiningSuppressed = false;
         }
@@ -84,8 +83,8 @@ public final class CelestiumShovelClient {
         CelestiumTrialChamberMarkerRenderer.render(context, trialChamberMarkerPos);
     }
 
-    public static boolean handleRightClickToggle(MinecraftClient client) {
-        if (client.player == null || client.world == null || client.interactionManager == null) {
+    public static boolean handleRightClickToggle(Minecraft client) {
+        if (client.player == null || client.level == null || client.gameMode == null) {
             return false;
         }
 
@@ -95,9 +94,9 @@ public final class CelestiumShovelClient {
 
         if (!CelestiumShovelHelper.canToggleAreaMining(
                 client.player,
-                client.world,
-                client.crosshairTarget,
-                client.interactionManager.getCurrentGameMode()
+                client.level,
+                client.hitResult,
+                client.gameMode.getPlayerMode()
         )) {
             return false;
         }
@@ -107,8 +106,8 @@ public final class CelestiumShovelClient {
         return true;
     }
 
-    public static boolean handleGroundSlamAttempt(MinecraftClient client) {
-        if (client.player == null || client.world == null) {
+    public static boolean handleGroundSlamAttempt(Minecraft client) {
+        if (client.player == null || client.level == null) {
             return false;
         }
 
@@ -118,7 +117,7 @@ public final class CelestiumShovelClient {
 
         if (!slamJumped
                 || !slamSneakPrimed
-                || !CelestiumShovelHelper.canArmSlam(client.player, client.world, client.crosshairTarget)) {
+                || !CelestiumShovelHelper.canArmSlam(client.player, client.level, client.hitResult)) {
             return false;
         }
 
@@ -131,7 +130,7 @@ public final class CelestiumShovelClient {
         clearBreakingState();
         clearOutline();
         clearBreakingAnimation(client);
-        client.player.swingHand(Hand.MAIN_HAND);
+        client.player.swing(InteractionHand.MAIN_HAND);
         ArmCelestiumShovelSlamPayload.send();
         return true;
     }
@@ -142,7 +141,7 @@ public final class CelestiumShovelClient {
             return;
         }
 
-        breakingCenter = pos.toImmutable();
+        breakingCenter = pos.immutable();
         breakingFace = direction;
     }
 
@@ -151,7 +150,7 @@ public final class CelestiumShovelClient {
         breakingFace = null;
     }
 
-    public static float getAreaMiningDelta(MinecraftClient client, BlockPos pos, float fallbackDelta) {
+    public static float getAreaMiningDelta(Minecraft client, BlockPos pos, float fallbackDelta) {
         if (slamMiningSuppressed) {
             return fallbackDelta;
         }
@@ -164,7 +163,7 @@ public final class CelestiumShovelClient {
         return areaMiningDelta > 0.0F ? areaMiningDelta : fallbackDelta;
     }
 
-    public static boolean shouldDeferBreakPrediction(MinecraftClient client, BlockPos pos) {
+    public static boolean shouldDeferBreakPrediction(Minecraft client, BlockPos pos) {
         if (slamMiningSuppressed) {
             return false;
         }
@@ -174,12 +173,12 @@ public final class CelestiumShovelClient {
                 && breakingCenter.equals(pos);
     }
 
-    public static void playDeferredBreakSound(MinecraftClient client, BlockPos pos) {
-        if (client.player == null || client.world == null) {
+    public static void playDeferredBreakSound(Minecraft client, BlockPos pos) {
+        if (client.player == null || client.level == null) {
             return;
         }
 
-        BlockSoundGroup soundGroup = client.world.getBlockState(pos).getSoundGroup();
+        SoundType soundGroup = client.level.getBlockState(pos).getSoundType();
         if (soundGroup == null || soundGroup.getVolume() <= 0.0F) {
             return;
         }
@@ -188,14 +187,14 @@ public final class CelestiumShovelClient {
     }
 
     public static void syncTrialChamberMarker(BlockPos pos, Identifier dimensionId, int durationTicks) {
-        trialChamberMarkerPos = pos.toImmutable();
+        trialChamberMarkerPos = pos.immutable();
         trialChamberMarkerDimensionId = dimensionId;
         trialChamberMarkerRemainingTicks = durationTicks;
     }
 
-    private static void updateSlamSequence(MinecraftClient client) {
-        boolean onGround = client.player.isOnGround();
-        boolean sneaking = client.player.isSneaking();
+    private static void updateSlamSequence(Minecraft client) {
+        boolean onGround = client.player.onGround();
+        boolean sneaking = client.player.isShiftKeyDown();
 
         if (!CelestiumShovelHelper.canUseGroundSlam(client.player)) {
             resetSlamSequence();
@@ -205,7 +204,7 @@ public final class CelestiumShovelClient {
             return;
         }
 
-        if (wasOnGround && !onGround && client.player.getVelocity().y > 0.0D) {
+        if (wasOnGround && !onGround && client.player.getDeltaMovement().y > 0.0D) {
             slamJumped = true;
             slamSneakPrimed = false;
         }
@@ -223,30 +222,30 @@ public final class CelestiumShovelClient {
         wasSneaking = sneaking;
     }
 
-    private static void updateOutline(MinecraftClient client) {
+    private static void updateOutline(Minecraft client) {
         outlinePositions.clear();
-        if (slamMiningSuppressed || !shopsandtools$canUseAreaMining(client) || client.interactionManager == null) {
+        if (slamMiningSuppressed || !shopsandtools$canUseAreaMining(client) || client.gameMode == null) {
             return;
         }
 
-        if (!(client.crosshairTarget instanceof net.minecraft.util.hit.BlockHitResult hitResult)) {
+        if (!(client.hitResult instanceof net.minecraft.world.phys.BlockHitResult hitResult)) {
             return;
         }
 
         if (!CelestiumShovelHelper.isValidMiningTarget(
                 client.player,
-                client.world,
+                client.level,
                 hitResult.getBlockPos(),
-                client.interactionManager.getCurrentGameMode()
+                client.gameMode.getPlayerMode()
         )) {
             return;
         }
 
-        outlinePositions.addAll(shopsandtools$getAreaMiningTargets(client, hitResult.getBlockPos(), hitResult.getSide()).outlinePositions());
+        outlinePositions.addAll(shopsandtools$getAreaMiningTargets(client, hitResult.getBlockPos(), hitResult.getDirection()).outlinePositions());
     }
 
-    private static void updateBreakingAnimation(MinecraftClient client) {
-        ClientPlayerInteractionManager interactionManager = client.interactionManager;
+    private static void updateBreakingAnimation(Minecraft client) {
+        MultiPlayerGameMode interactionManager = client.gameMode;
         if (slamMiningSuppressed || !shopsandtools$canUseAreaMining(client) || interactionManager == null) {
             clearBreakingAnimation(client);
             return;
@@ -266,16 +265,16 @@ public final class CelestiumShovelClient {
 
         if (!CelestiumShovelHelper.isValidMiningTarget(
                 client.player,
-                client.world,
+                client.level,
                 currentBreakingPos,
-                interactionManager.getCurrentGameMode()
+                interactionManager.getPlayerMode()
         )) {
             clearBreakingAnimation(client);
             return;
         }
 
         if (breakingCenter == null || !breakingCenter.equals(currentBreakingPos) || breakingFace == null) {
-            breakingCenter = currentBreakingPos.toImmutable();
+            breakingCenter = currentBreakingPos.immutable();
             if (breakingFace == null) {
                 clearBreakingAnimation(client);
                 return;
@@ -299,18 +298,18 @@ public final class CelestiumShovelClient {
         }
 
         for (int index = 0; index < breakingAnimationPositions.size(); index++) {
-            client.worldRenderer.setBlockBreakingInfo(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), currentStage);
+            client.levelRenderer.destroyBlockProgress(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), currentStage);
         }
     }
 
-    private static void tickTrialChamberMarker(MinecraftClient client) {
+    private static void tickTrialChamberMarker(Minecraft client) {
         if (trialChamberMarkerRemainingTicks <= 0 || trialChamberMarkerPos == null) {
             clearTrialChamberMarker();
             return;
         }
 
         if (trialChamberMarkerDimensionId != null
-                && !client.world.getRegistryKey().getValue().equals(trialChamberMarkerDimensionId)) {
+                && !client.level.dimension().identifier().equals(trialChamberMarkerDimensionId)) {
             clearTrialChamberMarker();
             return;
         }
@@ -325,9 +324,9 @@ public final class CelestiumShovelClient {
         outlinePositions.clear();
     }
 
-    private static void clearBreakingAnimation(MinecraftClient client) {
+    private static void clearBreakingAnimation(Minecraft client) {
         for (int index = 0; index < breakingAnimationPositions.size(); index++) {
-            client.worldRenderer.setBlockBreakingInfo(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), -1);
+            client.levelRenderer.destroyBlockProgress(BREAKING_INFO_ID_BASE + index, breakingAnimationPositions.get(index), -1);
         }
         breakingAnimationPositions.clear();
         lastBreakingStage = -1;
@@ -359,23 +358,23 @@ public final class CelestiumShovelClient {
         clearTrialChamberMarker();
     }
 
-    private static boolean shopsandtools$canUseAreaMining(MinecraftClient client) {
+    private static boolean shopsandtools$canUseAreaMining(Minecraft client) {
         return client.player != null
-                && CelestiumShovelHelper.isCelestiumShovel(client.player.getMainHandStack())
-                && CelestiumShovelHelper.isAreaMiningEnabled(client.player.getMainHandStack());
+                && CelestiumShovelHelper.isCelestiumShovel(client.player.getMainHandItem())
+                && CelestiumShovelHelper.isAreaMiningEnabled(client.player.getMainHandItem());
     }
 
-    private static CelestiumShovelHelper.AreaMiningTargets shopsandtools$getAreaMiningTargets(MinecraftClient client, BlockPos centerPos, Direction face) {
-        if (!shopsandtools$canUseAreaMining(client) || client.player == null || client.world == null || client.interactionManager == null) {
+    private static CelestiumShovelHelper.AreaMiningTargets shopsandtools$getAreaMiningTargets(Minecraft client, BlockPos centerPos, Direction face) {
+        if (!shopsandtools$canUseAreaMining(client) || client.player == null || client.level == null || client.gameMode == null) {
             return new CelestiumShovelHelper.AreaMiningTargets(List.of(), List.of(), 0.0F);
         }
 
         return CelestiumShovelHelper.getAreaMiningTargets(
                 client.player,
-                client.world,
+                client.level,
                 centerPos,
                 face,
-                client.interactionManager.getCurrentGameMode()
+                client.gameMode.getPlayerMode()
         );
     }
 }

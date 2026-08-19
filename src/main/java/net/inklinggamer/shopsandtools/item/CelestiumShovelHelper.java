@@ -1,38 +1,37 @@
 package net.inklinggamer.shopsandtools.item;
 
 import net.inklinggamer.shopsandtools.util.ModTags;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ButtonBlock;
-import net.minecraft.block.CampfireBlock;
-import net.minecraft.block.ComparatorBlock;
-import net.minecraft.block.LeverBlock;
-import net.minecraft.block.RepeaterBlock;
-import net.minecraft.block.Blocks;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.GameMode;
-import net.minecraft.world.World;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.CampfireBlock;
+import net.minecraft.world.level.block.ComparatorBlock;
+import net.minecraft.world.level.block.LeverBlock;
+import net.minecraft.world.level.block.RepeaterBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +44,7 @@ public final class CelestiumShovelHelper {
     }
 
     public static boolean isCelestiumShovel(ItemStack stack) {
-        return stack.isOf(ModItems.CELESTIUM_SHOVEL);
+        return stack.is(ModItems.CELESTIUM_SHOVEL);
     }
 
     public static boolean isAreaMiningEnabled(ItemStack stack) {
@@ -62,25 +61,25 @@ public final class CelestiumShovelHelper {
         shopsandtools$setBoolean(stack, AREA_MINING_ENABLED_KEY, enabled);
     }
 
-    public static void initializeSmithingResult(ItemStack stack, DynamicRegistryManager registryManager) {
+    public static void initializeSmithingResult(ItemStack stack, RegistryAccess registryManager) {
         if (!isCelestiumShovel(stack)) {
             return;
         }
 
         setAreaMiningEnabled(stack, false);
 
-        Registry<Enchantment> enchantmentRegistry = registryManager.getOrThrow(RegistryKeys.ENCHANTMENT);
-        RegistryEntry<Enchantment> efficiency = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.EFFICIENCY);
-        RegistryEntry<Enchantment> unbreaking = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.UNBREAKING);
+        Registry<Enchantment> enchantmentRegistry = registryManager.lookupOrThrow(Registries.ENCHANTMENT);
+        Holder<Enchantment> efficiency = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.EFFICIENCY);
+        Holder<Enchantment> unbreaking = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.UNBREAKING);
 
-        EnchantmentHelper.apply(stack, builder -> {
+        EnchantmentHelper.updateEnchantments(stack, builder -> {
             builder.set(efficiency, EFFICIENCY_LEVEL);
             builder.set(unbreaking, UNBREAKING_LEVEL);
         });
     }
 
-    public static boolean canToggleAreaMining(PlayerEntity player, World world, HitResult hitResult, GameMode gameMode) {
-        if (!isCelestiumShovel(player.getMainHandStack())) {
+    public static boolean canToggleAreaMining(Player player, Level world, HitResult hitResult, GameType gameMode) {
+        if (!isCelestiumShovel(player.getMainHandItem())) {
             return false;
         }
 
@@ -88,7 +87,7 @@ public final class CelestiumShovelHelper {
         boolean interactiveTarget = isInteractiveBlockTarget(player, world, hitResult);
         boolean offhandPlacementWouldSucceed = false;
 
-        ItemStack offhandStack = player.getOffHandStack();
+        ItemStack offhandStack = player.getOffhandItem();
         if (!offhandStack.isEmpty() && offhandStack.getItem() instanceof BlockItem blockItem) {
             offhandPlacementWouldSucceed = canPlaceOffhandBlock(player, offhandStack, blockItem, hitResult);
         }
@@ -97,7 +96,7 @@ public final class CelestiumShovelHelper {
         boolean preservesNormalShovelUse = false;
         if (validMiningTarget && hitResult instanceof BlockHitResult blockHitResult && hitResult.getType() == HitResult.Type.BLOCK) {
             BlockPos pos = blockHitResult.getBlockPos();
-            if (player.canInteractWithBlockAt(pos, 1.0D)) {
+            if (player.isWithinBlockInteractionRange(pos, 1.0D)) {
                 preservesNormalShovelUse = preservesNormalShovelUse(world, pos, world.getBlockState(pos));
             }
         }
@@ -111,7 +110,7 @@ public final class CelestiumShovelHelper {
         );
     }
 
-    public static boolean isValidMiningTarget(PlayerEntity player, World world, HitResult hitResult, GameMode gameMode) {
+    public static boolean isValidMiningTarget(Player player, Level world, HitResult hitResult, GameType gameMode) {
         if (!(hitResult instanceof BlockHitResult blockHitResult) || hitResult.getType() != HitResult.Type.BLOCK) {
             return false;
         }
@@ -119,12 +118,12 @@ public final class CelestiumShovelHelper {
         return isValidMiningTarget(player, world, blockHitResult.getBlockPos(), gameMode);
     }
 
-    public static boolean isValidMiningTarget(PlayerEntity player, World world, BlockPos pos, GameMode gameMode) {
+    public static boolean isValidMiningTarget(Player player, Level world, BlockPos pos, GameType gameMode) {
         return getMiningDelta(player, world, pos, gameMode) > 0.0F;
     }
 
     public static boolean isLooseEarthBlock(BlockState state) {
-        return state.isIn(ModTags.Blocks.CELESTIUM_SHOVEL_AREA_MINEABLE) && state.isIn(BlockTags.SHOVEL_MINEABLE);
+        return state.is(ModTags.Blocks.CELESTIUM_SHOVEL_AREA_MINEABLE) && state.is(BlockTags.MINEABLE_WITH_SHOVEL);
     }
 
     public static boolean shouldAllowAreaToggle(
@@ -146,7 +145,7 @@ public final class CelestiumShovelHelper {
     }
 
     public static boolean isPathConvertibleShovelBlock(BlockState state) {
-        return isPathConvertibleShovelBlockId(Registries.BLOCK.getId(state.getBlock()).toString());
+        return isPathConvertibleShovelBlockId(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString());
     }
 
     public static boolean isPathConvertibleShovelBlockId(String blockId) {
@@ -161,32 +160,32 @@ public final class CelestiumShovelHelper {
         };
     }
 
-    public static boolean preservesNormalShovelUse(World world, BlockPos pos, BlockState state) {
-        if (state.isOf(Blocks.DIRT_PATH)) {
+    public static boolean preservesNormalShovelUse(Level world, BlockPos pos, BlockState state) {
+        if (state.is(Blocks.DIRT_PATH)) {
             return true;
         }
 
         if (isPathConvertibleShovelBlock(state)) {
-            return world.getBlockState(pos.up()).isAir();
+            return world.getBlockState(pos.above()).isAir();
         }
 
         return state.getBlock() instanceof CampfireBlock
-                && state.contains(CampfireBlock.LIT)
-                && state.get(CampfireBlock.LIT);
+                && state.hasProperty(CampfireBlock.LIT)
+                && state.getValue(CampfireBlock.LIT);
     }
 
-    public static boolean canUseGroundSlam(PlayerEntity player) {
-        return isCelestiumShovel(player.getMainHandStack())
-                && !player.hasVehicle()
-                && !player.isClimbing()
-                && !player.isTouchingWater()
-                && !player.isSubmergedInWater()
+    public static boolean canUseGroundSlam(Player player) {
+        return isCelestiumShovel(player.getMainHandItem())
+                && !player.isPassenger()
+                && !player.onClimbable()
+                && !player.isInWater()
+                && !player.isUnderWater()
                 && !player.isSwimming()
-                && !player.isGliding();
+                && !player.isFallFlying();
     }
 
-    public static boolean canArmSlam(PlayerEntity player, World world, HitResult hitResult) {
-        if (!canUseGroundSlam(player) || player.isOnGround()) {
+    public static boolean canArmSlam(Player player, Level world, HitResult hitResult) {
+        if (!canUseGroundSlam(player) || player.onGround()) {
             return false;
         }
 
@@ -195,7 +194,7 @@ public final class CelestiumShovelHelper {
         }
 
         BlockPos pos = blockHitResult.getBlockPos();
-        if (!player.canInteractWithBlockAt(pos, 1.0D)) {
+        if (!player.isWithinBlockInteractionRange(pos, 1.0D)) {
             return false;
         }
 
@@ -204,10 +203,10 @@ public final class CelestiumShovelHelper {
             return false;
         }
 
-        return blockHitResult.getPos().y <= player.getY() - 0.25D || pos.getY() < player.getBlockY();
+        return blockHitResult.getLocation().y <= player.getY() - 0.25D || pos.getY() < player.getBlockY();
     }
 
-    public static AreaMiningTargets getAreaMiningTargets(PlayerEntity player, World world, BlockPos center, Direction face, GameMode gameMode) {
+    public static AreaMiningTargets getAreaMiningTargets(Player player, Level world, BlockPos center, Direction face, GameType gameMode) {
         List<BlockPos> breakablePositions = new ArrayList<>(9);
         List<BlockPos> outlinePositions = new ArrayList<>(9);
         float effectiveBreakingDelta = Float.MAX_VALUE;
@@ -215,7 +214,7 @@ public final class CelestiumShovelHelper {
         for (BlockPos pos : getMiningPlane(center, face)) {
             BlockState state = world.getBlockState(pos);
             if (state.isAir()) {
-                outlinePositions.add(pos.toImmutable());
+                outlinePositions.add(pos.immutable());
                 continue;
             }
 
@@ -224,7 +223,7 @@ public final class CelestiumShovelHelper {
                 continue;
             }
 
-            BlockPos immutablePos = pos.toImmutable();
+            BlockPos immutablePos = pos.immutable();
             breakablePositions.add(immutablePos);
             outlinePositions.add(immutablePos);
             effectiveBreakingDelta = Math.min(effectiveBreakingDelta, miningDelta);
@@ -237,22 +236,22 @@ public final class CelestiumShovelHelper {
         );
     }
 
-    public static float getMiningDelta(PlayerEntity player, World world, BlockPos pos, GameMode gameMode) {
-        if (!player.canInteractWithBlockAt(pos, 1.0D) || player.isBlockBreakingRestricted(world, pos, gameMode)) {
+    public static float getMiningDelta(Player player, Level world, BlockPos pos, GameType gameMode) {
+        if (!player.isWithinBlockInteractionRange(pos, 1.0D) || player.blockActionRestricted(world, pos, gameMode)) {
             return 0.0F;
         }
 
         BlockState state = world.getBlockState(pos);
-        if (state.isAir() || state.getHardness(world, pos) < 0.0F || !isLooseEarthBlock(state)) {
+        if (state.isAir() || state.getDestroySpeed(world, pos) < 0.0F || !isLooseEarthBlock(state)) {
             return 0.0F;
         }
 
-        ItemStack tool = player.getMainHandStack();
-        if (tool.isEmpty() || !tool.canMine(state, world, pos, player)) {
+        ItemStack tool = player.getMainHandItem();
+        if (tool.isEmpty() || !tool.canDestroyBlock(state, world, pos, player)) {
             return 0.0F;
         }
 
-        return state.calcBlockBreakingDelta(player, world, pos);
+        return state.getDestroyProgress(player, world, pos);
     }
 
     public static List<BlockPos> getMiningPlane(BlockPos center, Direction face) {
@@ -261,9 +260,9 @@ public final class CelestiumShovelHelper {
         for (int first = -1; first <= 1; first++) {
             for (int second = -1; second <= 1; second++) {
                 positions.add(switch (face) {
-                    case DOWN, UP -> center.add(first, 0, second);
-                    case NORTH, SOUTH -> center.add(first, second, 0);
-                    case WEST, EAST -> center.add(0, second, first);
+                    case DOWN, UP -> center.offset(first, 0, second);
+                    case NORTH, SOUTH -> center.offset(first, second, 0);
+                    case WEST, EAST -> center.offset(0, second, first);
                 });
             }
         }
@@ -271,16 +270,16 @@ public final class CelestiumShovelHelper {
         return positions;
     }
 
-    private static boolean canPlaceOffhandBlock(PlayerEntity player, ItemStack offhandStack, BlockItem blockItem, HitResult hitResult) {
+    private static boolean canPlaceOffhandBlock(Player player, ItemStack offhandStack, BlockItem blockItem, HitResult hitResult) {
         if (!(hitResult instanceof BlockHitResult blockHitResult) || hitResult.getType() != HitResult.Type.BLOCK) {
             return false;
         }
 
-        if (!player.canInteractWithBlockAt(blockHitResult.getBlockPos(), 1.0D)) {
+        if (!player.isWithinBlockInteractionRange(blockHitResult.getBlockPos(), 1.0D)) {
             return false;
         }
 
-        ItemPlacementContext placementContext = blockItem.getPlacementContext(new ItemPlacementContext(player, Hand.OFF_HAND, offhandStack, blockHitResult));
+        BlockPlaceContext placementContext = blockItem.updatePlacementContext(new BlockPlaceContext(player, InteractionHand.OFF_HAND, offhandStack, blockHitResult));
         if (placementContext == null || !placementContext.canPlace()) {
             return false;
         }
@@ -288,18 +287,18 @@ public final class CelestiumShovelHelper {
         return placementContext.canPlace();
     }
 
-    private static boolean isInteractiveBlockTarget(PlayerEntity player, World world, HitResult hitResult) {
+    private static boolean isInteractiveBlockTarget(Player player, Level world, HitResult hitResult) {
         if (!(hitResult instanceof BlockHitResult blockHitResult) || hitResult.getType() != HitResult.Type.BLOCK) {
             return false;
         }
 
         BlockPos pos = blockHitResult.getBlockPos();
-        if (!player.canInteractWithBlockAt(pos, 1.0D)) {
+        if (!player.isWithinBlockInteractionRange(pos, 1.0D)) {
             return false;
         }
 
         BlockState state = world.getBlockState(pos);
-        if (state.isAir() || state.createScreenHandlerFactory(world, pos) != null) {
+        if (state.isAir() || state.getMenuProvider(world, pos) != null) {
             return !state.isAir();
         }
 
@@ -310,23 +309,23 @@ public final class CelestiumShovelHelper {
                 || block instanceof ComparatorBlock;
     }
 
-    private static RegistryEntry<Enchantment> shopsandtools$getEnchantment(Registry<Enchantment> registry, net.minecraft.registry.RegistryKey<Enchantment> key) {
+    private static Holder<Enchantment> shopsandtools$getEnchantment(Registry<Enchantment> registry, net.minecraft.resources.ResourceKey<Enchantment> key) {
         Enchantment enchantment = registry.getValueOrThrow(key);
-        return registry.getEntry(enchantment);
+        return registry.wrapAsHolder(enchantment);
     }
 
     private static boolean shopsandtools$getBoolean(ItemStack stack, String key) {
-        NbtComponent customData = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT);
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         if (customData.isEmpty()) {
             return false;
         }
 
-        NbtCompound nbt = customData.copyNbt();
+        CompoundTag nbt = customData.copyTag();
         return nbt.getBoolean(key).orElse(false);
     }
 
     private static void shopsandtools$setBoolean(ItemStack stack, String key, boolean value) {
-        NbtComponent.set(DataComponentTypes.CUSTOM_DATA, stack, nbt -> {
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, nbt -> {
             if (value) {
                 nbt.putBoolean(key, true);
             } else {

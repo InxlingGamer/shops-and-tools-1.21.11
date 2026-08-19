@@ -1,17 +1,17 @@
 package net.inklinggamer.shopsandtools.player;
 
 import net.inklinggamer.shopsandtools.item.CelestiumHoeHelper;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
 
 import java.util.List;
 
 public final class CelestiumHoeFeatureTest {
-    private static final RegistryKey<World> OVERWORLD = RegistryKey.of(RegistryKeys.WORLD, Identifier.of("minecraft", "overworld"));
-    private static final RegistryKey<World> NETHER = RegistryKey.of(RegistryKeys.WORLD, Identifier.of("minecraft", "the_nether"));
+    private static final ResourceKey<Level> OVERWORLD = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("minecraft", "overworld"));
+    private static final ResourceKey<Level> NETHER = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("minecraft", "the_nether"));
 
     private CelestiumHoeFeatureTest() {
     }
@@ -53,7 +53,7 @@ public final class CelestiumHoeFeatureTest {
         assertTrue("East block on the same plane should be included", targets.contains(center.east()));
         assertTrue("North block on the same plane should be included", targets.contains(center.north()));
         assertTrue("West block on the same plane should be included", targets.contains(center.west()));
-        assertFalse("Blocks above the center plane should not be included", targets.contains(center.up()));
+        assertFalse("Blocks above the center plane should not be included", targets.contains(center.above()));
         assertEquals("The horizontal area should contain exactly 9 blocks", 9, targets.size());
     }
 

@@ -2,16 +2,15 @@ package net.inklinggamer.shopsandtools.entity;
 
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.boss.BossBar;
-import net.minecraft.entity.boss.ServerBossBar;
-import net.minecraft.entity.mob.WardenEntity;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-
+import net.minecraft.server.level.ServerBossEvent;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.BossEvent;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.warden.Warden;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,23 +58,23 @@ public final class WardenBossBarManager {
         return Math.max(0, remainingTicks - 1);
     }
 
-    private static void handleEntityLoad(Entity entity, ServerWorld world) {
-        if (!(entity instanceof WardenEntity warden)) {
+    private static void handleEntityLoad(Entity entity, ServerLevel world) {
+        if (!(entity instanceof Warden warden)) {
             return;
         }
 
-        TrackedWarden previousTracker = TRACKERS.put(warden.getUuid(), new TrackedWarden(warden, world));
+        TrackedWarden previousTracker = TRACKERS.put(warden.getUUID(), new TrackedWarden(warden, world));
         if (previousTracker != null) {
             previousTracker.clearPlayers();
         }
     }
 
-    private static void handleEntityUnload(Entity entity, ServerWorld world) {
-        if (!(entity instanceof WardenEntity warden)) {
+    private static void handleEntityUnload(Entity entity, ServerLevel world) {
+        if (!(entity instanceof Warden warden)) {
             return;
         }
 
-        TrackedWarden tracker = TRACKERS.get(warden.getUuid());
+        TrackedWarden tracker = TRACKERS.get(warden.getUUID());
         if (tracker == null) {
             return;
         }
@@ -84,18 +83,18 @@ public final class WardenBossBarManager {
         tracker.detach();
         if (!tracker.isPersistingAfterDeath()) {
             tracker.clearPlayers();
-            TRACKERS.remove(warden.getUuid());
+            TRACKERS.remove(warden.getUUID());
         }
     }
 
-    private static void handleAfterDeath(LivingEntity entity, net.minecraft.entity.damage.DamageSource damageSource) {
-        if (!(entity instanceof WardenEntity warden)) {
+    private static void handleAfterDeath(LivingEntity entity, net.minecraft.world.damagesource.DamageSource damageSource) {
+        if (!(entity instanceof Warden warden)) {
             return;
         }
 
-        TRACKERS.compute(warden.getUuid(), (uuid, existingTracker) -> {
+        TRACKERS.compute(warden.getUUID(), (uuid, existingTracker) -> {
             TrackedWarden tracker = existingTracker == null
-                    ? new TrackedWarden(warden, (ServerWorld) warden.getEntityWorld())
+                    ? new TrackedWarden(warden, (ServerLevel) warden.level())
                     : existingTracker;
             tracker.markDead();
             return tracker;
@@ -103,17 +102,17 @@ public final class WardenBossBarManager {
     }
 
     private static final class TrackedWarden {
-        private final ServerBossBar bossBar;
-        private WardenEntity warden;
-        private ServerWorld world;
+        private final ServerBossEvent bossBar;
+        private Warden warden;
+        private ServerLevel world;
         private double x;
         private double y;
         private double z;
-        private Text name;
+        private Component name;
         private int deathGraceTicksRemaining;
 
-        private TrackedWarden(WardenEntity warden, ServerWorld world) {
-            this.bossBar = new ServerBossBar(warden.getDisplayName(), BossBar.Color.BLUE, BossBar.Style.PROGRESS);
+        private TrackedWarden(Warden warden, ServerLevel world) {
+            this.bossBar = new ServerBossEvent(warden.getDisplayName(), BossEvent.BossBarColor.BLUE, BossEvent.BossBarOverlay.PROGRESS);
             this.warden = warden;
             this.world = world;
             this.name = warden.getDisplayName();
@@ -138,7 +137,7 @@ public final class WardenBossBarManager {
         private void markDead() {
             captureWardenState();
             this.deathGraceTicksRemaining = DEATH_GRACE_TICKS;
-            this.bossBar.setPercent(0.0F);
+            this.bossBar.setProgress(0.0F);
         }
 
         private boolean isPersistingAfterDeath() {
@@ -154,31 +153,31 @@ public final class WardenBossBarManager {
                 return;
             }
 
-            this.world = (ServerWorld) this.warden.getEntityWorld();
+            this.world = (ServerLevel) this.warden.level();
             this.x = this.warden.getX();
             this.y = this.warden.getY();
             this.z = this.warden.getZ();
             this.name = this.warden.getDisplayName();
             this.bossBar.setName(this.name);
-            this.bossBar.setPercent(this.warden.isAlive() ? getBossBarPercent(this.warden.getHealth(), this.warden.getMaxHealth()) : 0.0F);
+            this.bossBar.setProgress(this.warden.isAlive() ? getBossBarPercent(this.warden.getHealth(), this.warden.getMaxHealth()) : 0.0F);
         }
 
         private void syncPlayers() {
-            for (ServerPlayerEntity player : List.copyOf(this.bossBar.getPlayers())) {
-                if (player.getEntityWorld() != this.world || !isWithinBossBarRange(player.squaredDistanceTo(this.x, this.y, this.z))) {
+            for (ServerPlayer player : List.copyOf(this.bossBar.getPlayers())) {
+                if (player.level() != this.world || !isWithinBossBarRange(player.distanceToSqr(this.x, this.y, this.z))) {
                     this.bossBar.removePlayer(player);
                 }
             }
 
-            for (ServerPlayerEntity player : this.world.getPlayers()) {
-                if (isWithinBossBarRange(player.squaredDistanceTo(this.x, this.y, this.z))) {
+            for (ServerPlayer player : this.world.players()) {
+                if (isWithinBossBarRange(player.distanceToSqr(this.x, this.y, this.z))) {
                     this.bossBar.addPlayer(player);
                 }
             }
         }
 
         private void clearPlayers() {
-            this.bossBar.clearPlayers();
+            this.bossBar.removeAllPlayers();
         }
     }
 }

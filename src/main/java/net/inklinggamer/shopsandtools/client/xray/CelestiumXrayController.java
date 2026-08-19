@@ -3,19 +3,19 @@ package net.inklinggamer.shopsandtools.client.xray;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.inklinggamer.shopsandtools.item.ModItems;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.text.Text;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.Util;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.World;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.Collections;
@@ -27,10 +27,10 @@ public final class CelestiumXrayController {
     private static final int SCAN_RADIUS = 16;
     private static final int PERIODIC_RESCAN_TICKS = 20;
 
-    private static final KeyBinding TOGGLE_KEY = new KeyBinding(
+    private static final KeyMapping TOGGLE_KEY = new KeyMapping(
             "key.shopsandtools.celestium_xray",
             GLFW.GLFW_KEY_X,
-            KeyBinding.Category.GAMEPLAY
+            KeyMapping.Category.GAMEPLAY
     );
 
     private static final Set<OreOutlineEntry> renderQueue = Collections.synchronizedSet(new HashSet<>());
@@ -49,8 +49,8 @@ public final class CelestiumXrayController {
         KeyBindingHelper.registerKeyBinding(TOGGLE_KEY);
     }
 
-    public static void tick(MinecraftClient client) {
-        if (client.player == null || client.world == null) {
+    public static void tick(Minecraft client) {
+        if (client.player == null || client.level == null) {
             clearState();
             return;
         }
@@ -62,8 +62,8 @@ public final class CelestiumXrayController {
             return;
         }
 
-        if (shouldRescan(client.world, client.player)) {
-            scheduleScan(client.world, client.player.getBlockPos(), client);
+        if (shouldRescan(client.level, client.player)) {
+            scheduleScan(client.level, client.player.blockPosition(), client);
         }
     }
 
@@ -74,8 +74,8 @@ public final class CelestiumXrayController {
         CelestiumXrayRenderer.render(context, renderQueue);
     }
 
-    private static void handleToggleInput(MinecraftClient client) {
-        while (TOGGLE_KEY.wasPressed()) {
+    private static void handleToggleInput(Minecraft client) {
+        while (TOGGLE_KEY.consumeClick()) {
             if (!helmetEquipped) {
                 xrayEnabledByPlayer = false;
                 clearOutlines();
@@ -98,9 +98,9 @@ public final class CelestiumXrayController {
         }
     }
 
-    private static void updateHelmetState(PlayerEntity player) {
-        ItemStack equipped = player.getEquippedStack(EquipmentSlot.HEAD);
-        boolean nowEquipped = equipped.isOf(ModItems.CELESTIUM_HELMET);
+    private static void updateHelmetState(Player player) {
+        ItemStack equipped = player.getItemBySlot(EquipmentSlot.HEAD);
+        boolean nowEquipped = equipped.is(ModItems.CELESTIUM_HELMET);
         if (nowEquipped == helmetEquipped) {
             return;
         }
@@ -113,53 +113,53 @@ public final class CelestiumXrayController {
         }
     }
 
-    private static boolean shouldRescan(ClientWorld world, PlayerEntity player) {
+    private static boolean shouldRescan(ClientLevel world, Player player) {
         if (scanDirty) {
             return true;
         }
 
-        BlockPos currentPos = player.getBlockPos();
+        BlockPos currentPos = player.blockPosition();
         if (!currentPos.equals(lastScanOrigin)) {
             return true;
         }
 
-        return world.getTime() - lastScanWorldTime >= PERIODIC_RESCAN_TICKS;
+        return world.getGameTime() - lastScanWorldTime >= PERIODIC_RESCAN_TICKS;
     }
 
-    private static void scheduleScan(ClientWorld world, BlockPos origin, MinecraftClient client) {
+    private static void scheduleScan(ClientLevel world, BlockPos origin, Minecraft client) {
         if (!scanInProgress.compareAndSet(false, true)) {
             return;
         }
 
         scanDirty = false;
-        BlockPos immutableOrigin = origin.toImmutable();
+        BlockPos immutableOrigin = origin.immutable();
 
-        Util.getMainWorkerExecutor().execute(() -> {
+        Util.backgroundExecutor().execute(() -> {
             Set<OreOutlineEntry> scanned = scanWorld(world, immutableOrigin);
             client.execute(() -> {
                 renderQueue.clear();
                 renderQueue.addAll(scanned);
                 CelestiumXrayRenderer.markDirty();
                 lastScanOrigin = immutableOrigin;
-                lastScanWorldTime = world.getTime();
+                lastScanWorldTime = world.getGameTime();
                 scanInProgress.set(false);
             });
         });
     }
 
-    private static Set<OreOutlineEntry> scanWorld(World world, BlockPos origin) {
+    private static Set<OreOutlineEntry> scanWorld(Level world, BlockPos origin) {
         Set<OreOutlineEntry> found = new HashSet<>();
 
         for (int x = origin.getX() - SCAN_RADIUS; x <= origin.getX() + SCAN_RADIUS; x++) {
             for (int y = origin.getY() - SCAN_RADIUS; y <= origin.getY() + SCAN_RADIUS; y++) {
-                if (y < world.getBottomY() || y > world.getTopYInclusive()) {
+                if (y < world.getMinY() || y > world.getMaxY()) {
                     continue;
                 }
 
                 for (int z = origin.getZ() - SCAN_RADIUS; z <= origin.getZ() + SCAN_RADIUS; z++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     ChunkPos chunkPos = new ChunkPos(pos);
-                    if (!world.isChunkLoaded(chunkPos.x, chunkPos.z)) {
+                    if (!world.hasChunk(chunkPos.x, chunkPos.z)) {
                         continue;
                     }
 
@@ -167,7 +167,7 @@ public final class CelestiumXrayController {
                     Block block = state.getBlock();
                     OreColor color = CelestiumOrePalette.getColor(block);
                     if (color != null) {
-                        found.add(new OreOutlineEntry(pos.toImmutable(), color));
+                        found.add(new OreOutlineEntry(pos.immutable(), color));
                     }
                 }
             }
@@ -180,9 +180,9 @@ public final class CelestiumXrayController {
         return helmetEquipped && xrayEnabledByPlayer;
     }
 
-    private static void sendActionBar(MinecraftClient client, String translationKey) {
+    private static void sendActionBar(Minecraft client, String translationKey) {
         if (client.player != null) {
-            client.player.sendMessage(Text.translatable(translationKey), true);
+            client.player.displayClientMessage(Component.translatable(translationKey), true);
         }
     }
 

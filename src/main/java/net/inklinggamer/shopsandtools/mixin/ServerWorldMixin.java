@@ -2,24 +2,24 @@ package net.inklinggamer.shopsandtools.mixin;
 
 import net.inklinggamer.shopsandtools.item.CelestiumHoeHelper;
 import net.inklinggamer.shopsandtools.player.CelestiumHoeManager;
-import net.minecraft.block.BlockState;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(ServerWorld.class)
+@Mixin(ServerLevel.class)
 public abstract class ServerWorldMixin {
     @Redirect(
             method = "tickChunk",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/block/BlockState;randomTick(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/util/math/random/Random;)V"
+                    target = "Lnet/minecraft/world/level/block/state/BlockState;randomTick(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/util/RandomSource;)V"
             )
     )
-    private void shopsandtools$boostCelestiumHoeCropGrowth(BlockState state, ServerWorld world, BlockPos pos, Random random) {
+    private void shopsandtools$boostCelestiumHoeCropGrowth(BlockState state, ServerLevel world, BlockPos pos, RandomSource random) {
         boolean shouldBoost = CelestiumHoeManager.shouldApplyGrowthBoost(world, pos, state);
         state.randomTick(world, pos, random);
 

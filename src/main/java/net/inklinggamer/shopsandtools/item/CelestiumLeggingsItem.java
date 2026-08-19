@@ -1,9 +1,9 @@
 package net.inklinggamer.shopsandtools.item;
 
-import net.minecraft.item.Item;
+import net.minecraft.world.item.Item;
 
 public class CelestiumLeggingsItem extends Item {
-    public CelestiumLeggingsItem(Settings settings) {
+    public CelestiumLeggingsItem(Properties settings) {
         super(settings);
     }
 }

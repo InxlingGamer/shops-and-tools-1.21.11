@@ -1,36 +1,35 @@
 package net.inklinggamer.shopsandtools.item;
 
 import net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ButtonBlock;
-import net.minecraft.block.ComparatorBlock;
-import net.minecraft.block.LeverBlock;
-import net.minecraft.block.RepeaterBlock;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.NbtComponent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.registry.tag.TagKey;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.GameMode;
-import net.minecraft.world.World;
-
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.CustomData;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.ButtonBlock;
+import net.minecraft.world.level.block.ComparatorBlock;
+import net.minecraft.world.level.block.LeverBlock;
+import net.minecraft.world.level.block.RepeaterBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -61,7 +60,7 @@ public final class CelestiumPickaxeHelper {
     }
 
     public static boolean isCelestiumPickaxe(ItemStack stack) {
-        return stack.isOf(ModItems.CELESTIUM_PICKAXE);
+        return stack.is(ModItems.CELESTIUM_PICKAXE);
     }
 
     public static boolean isAreaMiningEnabled(ItemStack stack) {
@@ -91,11 +90,11 @@ public final class CelestiumPickaxeHelper {
             return;
         }
 
-        targetStack.copy(DataComponentTypes.ENCHANTMENTS, sourceStack);
-        targetStack.copy(DataComponentTypes.CUSTOM_DATA, sourceStack);
+        targetStack.copyFrom(DataComponents.ENCHANTMENTS, sourceStack);
+        targetStack.copyFrom(DataComponents.CUSTOM_DATA, sourceStack);
     }
 
-    public static void initializeSmithingResult(ItemStack stack, DynamicRegistryManager registryManager) {
+    public static void initializeSmithingResult(ItemStack stack, RegistryAccess registryManager) {
         if (!isCelestiumPickaxe(stack)) {
             return;
         }
@@ -104,14 +103,14 @@ public final class CelestiumPickaxeHelper {
         applyEnchantMode(stack, registryManager, false);
     }
 
-    public static boolean toggleEnchantMode(ItemStack stack, DynamicRegistryManager registryManager) {
+    public static boolean toggleEnchantMode(ItemStack stack, RegistryAccess registryManager) {
         boolean silkModeEnabled = !isSilkModeEnabled(stack);
         applyEnchantMode(stack, registryManager, silkModeEnabled);
         return silkModeEnabled;
     }
 
-    public static boolean canToggleAreaMining(PlayerEntity player, World world, HitResult hitResult, GameMode gameMode) {
-        if (!isCelestiumPickaxe(player.getMainHandStack())) {
+    public static boolean canToggleAreaMining(Player player, Level world, HitResult hitResult, GameType gameMode) {
+        if (!isCelestiumPickaxe(player.getMainHandItem())) {
             return false;
         }
 
@@ -123,7 +122,7 @@ public final class CelestiumPickaxeHelper {
             return false;
         }
 
-        ItemStack offhandStack = player.getOffHandStack();
+        ItemStack offhandStack = player.getOffhandItem();
         if (offhandStack.isEmpty()) {
             return true;
         }
@@ -135,7 +134,7 @@ public final class CelestiumPickaxeHelper {
         return isValidMiningTarget(player, world, hitResult, gameMode);
     }
 
-    public static boolean isValidMiningTarget(PlayerEntity player, World world, HitResult hitResult, GameMode gameMode) {
+    public static boolean isValidMiningTarget(Player player, Level world, HitResult hitResult, GameType gameMode) {
         if (!(hitResult instanceof BlockHitResult blockHitResult) || hitResult.getType() != HitResult.Type.BLOCK) {
             return false;
         }
@@ -143,11 +142,11 @@ public final class CelestiumPickaxeHelper {
         return isAreaMiningCenterEligible(player, world, blockHitResult.getBlockPos(), gameMode);
     }
 
-    public static boolean isValidMiningTarget(PlayerEntity player, World world, BlockPos pos, GameMode gameMode) {
+    public static boolean isValidMiningTarget(Player player, Level world, BlockPos pos, GameType gameMode) {
         return isAreaMiningCenterEligible(player, world, pos, gameMode);
     }
 
-    public static boolean isAreaMiningCenterEligible(PlayerEntity player, World world, BlockPos pos, GameMode gameMode) {
+    public static boolean isAreaMiningCenterEligible(Player player, Level world, BlockPos pos, GameType gameMode) {
         return getMiningDelta(player, world, pos, gameMode) > 0.0F;
     }
 
@@ -171,7 +170,7 @@ public final class CelestiumPickaxeHelper {
         return shouldApplyAreaMining(areaMiningEnabled, centerEligible) && areaMiningDelta > 0.0F ? areaMiningDelta : fallbackDelta;
     }
 
-    public static AreaMiningTargets getAreaMiningTargets(PlayerEntity player, World world, BlockPos center, Direction face, GameMode gameMode) {
+    public static AreaMiningTargets getAreaMiningTargets(Player player, Level world, BlockPos center, Direction face, GameType gameMode) {
         if (!isAreaMiningCenterEligible(player, world, center, gameMode)) {
             return new AreaMiningTargets(List.of(), 0.0F);
         }
@@ -185,7 +184,7 @@ public final class CelestiumPickaxeHelper {
                 continue;
             }
 
-            positions.add(pos.toImmutable());
+            positions.add(pos.immutable());
             effectiveBreakingDelta = Math.min(effectiveBreakingDelta, miningDelta);
         }
 
@@ -196,10 +195,10 @@ public final class CelestiumPickaxeHelper {
     }
 
     public static boolean isVeinMiningOre(BlockState state) {
-        return state.isIn(ConventionalBlockTags.ORES);
+        return state.is(ConventionalBlockTags.ORES);
     }
 
-    public static List<BlockPos> getVeinMiningTargets(PlayerEntity player, World world, BlockPos centerPos, BlockState centerState, GameMode gameMode) {
+    public static List<BlockPos> getVeinMiningTargets(Player player, Level world, BlockPos centerPos, BlockState centerState, GameType gameMode) {
         if (!canVeinMineOre(player, world, centerPos, centerState, gameMode)) {
             return List.of();
         }
@@ -207,11 +206,11 @@ public final class CelestiumPickaxeHelper {
         List<BlockPos> positions = new ArrayList<>();
         ArrayDeque<BlockPos> frontier = new ArrayDeque<>();
         Set<BlockPos> visited = new HashSet<>();
-        frontier.add(centerPos.toImmutable());
+        frontier.add(centerPos.immutable());
 
         while (!frontier.isEmpty()) {
             BlockPos current = frontier.removeFirst();
-            BlockPos immutableCurrent = current.toImmutable();
+            BlockPos immutableCurrent = current.immutable();
             if (!visited.add(immutableCurrent)) {
                 continue;
             }
@@ -231,36 +230,36 @@ public final class CelestiumPickaxeHelper {
 
     public static List<BlockPos> combineSecondaryBreakTargets(BlockPos centerPos, Iterable<BlockPos> initialTargets, Iterable<BlockPos> veinTargets) {
         LinkedHashSet<BlockPos> combinedTargets = new LinkedHashSet<>();
-        BlockPos immutableCenter = centerPos.toImmutable();
+        BlockPos immutableCenter = centerPos.immutable();
 
         for (BlockPos targetPos : initialTargets) {
-            combinedTargets.add(targetPos.toImmutable());
+            combinedTargets.add(targetPos.immutable());
         }
 
         for (BlockPos targetPos : veinTargets) {
-            combinedTargets.add(targetPos.toImmutable());
+            combinedTargets.add(targetPos.immutable());
         }
 
         combinedTargets.remove(immutableCenter);
         return combinedTargets.stream().toList();
     }
 
-    public static float getMiningDelta(PlayerEntity player, World world, BlockPos pos, GameMode gameMode) {
-        if (!player.canInteractWithBlockAt(pos, 1.0D) || player.isBlockBreakingRestricted(world, pos, gameMode)) {
+    public static float getMiningDelta(Player player, Level world, BlockPos pos, GameType gameMode) {
+        if (!player.isWithinBlockInteractionRange(pos, 1.0D) || player.blockActionRestricted(world, pos, gameMode)) {
             return 0.0F;
         }
 
         BlockState state = world.getBlockState(pos);
-        if (state.isAir() || state.getHardness(world, pos) < 0.0F || !state.isIn(BlockTags.PICKAXE_MINEABLE)) {
+        if (state.isAir() || state.getDestroySpeed(world, pos) < 0.0F || !state.is(BlockTags.MINEABLE_WITH_PICKAXE)) {
             return 0.0F;
         }
 
-        ItemStack tool = player.getMainHandStack();
-        if (tool.isEmpty() || !tool.canMine(state, world, pos, player)) {
+        ItemStack tool = player.getMainHandItem();
+        if (tool.isEmpty() || !tool.canDestroyBlock(state, world, pos, player)) {
             return 0.0F;
         }
 
-        return state.calcBlockBreakingDelta(player, world, pos);
+        return state.getDestroyProgress(player, world, pos);
     }
 
     public static List<BlockPos> getMiningPlane(BlockPos center, Direction face) {
@@ -269,9 +268,9 @@ public final class CelestiumPickaxeHelper {
         for (int first = -1; first <= 1; first++) {
             for (int second = -1; second <= 1; second++) {
                 positions.add(switch (face) {
-                    case DOWN, UP -> center.add(first, 0, second);
-                    case NORTH, SOUTH -> center.add(first, second, 0);
-                    case WEST, EAST -> center.add(0, second, first);
+                    case DOWN, UP -> center.offset(first, 0, second);
+                    case NORTH, SOUTH -> center.offset(first, second, 0);
+                    case WEST, EAST -> center.offset(0, second, first);
                 });
             }
         }
@@ -289,7 +288,7 @@ public final class CelestiumPickaxeHelper {
                         continue;
                     }
 
-                    positions.add(center.add(offsetX, offsetY, offsetZ));
+                    positions.add(center.offset(offsetX, offsetY, offsetZ));
                 }
             }
         }
@@ -313,16 +312,16 @@ public final class CelestiumPickaxeHelper {
         return seedIdentity.equals(candidateIdentity);
     }
 
-    private static boolean canPlaceOffhandBlock(PlayerEntity player, ItemStack offhandStack, BlockItem blockItem, HitResult hitResult) {
+    private static boolean canPlaceOffhandBlock(Player player, ItemStack offhandStack, BlockItem blockItem, HitResult hitResult) {
         if (!(hitResult instanceof BlockHitResult blockHitResult) || hitResult.getType() != HitResult.Type.BLOCK) {
             return false;
         }
 
-        if (!player.canInteractWithBlockAt(blockHitResult.getBlockPos(), 1.0D)) {
+        if (!player.isWithinBlockInteractionRange(blockHitResult.getBlockPos(), 1.0D)) {
             return false;
         }
 
-        ItemPlacementContext placementContext = blockItem.getPlacementContext(new ItemPlacementContext(player, Hand.OFF_HAND, offhandStack, blockHitResult));
+        BlockPlaceContext placementContext = blockItem.updatePlacementContext(new BlockPlaceContext(player, InteractionHand.OFF_HAND, offhandStack, blockHitResult));
         if (placementContext == null || !placementContext.canPlace()) {
             return false;
         }
@@ -330,18 +329,18 @@ public final class CelestiumPickaxeHelper {
         return placementContext.canPlace();
     }
 
-    private static boolean isInteractiveBlockTarget(PlayerEntity player, World world, HitResult hitResult) {
+    private static boolean isInteractiveBlockTarget(Player player, Level world, HitResult hitResult) {
         if (!(hitResult instanceof BlockHitResult blockHitResult) || hitResult.getType() != HitResult.Type.BLOCK) {
             return false;
         }
 
         BlockPos pos = blockHitResult.getBlockPos();
-        if (!player.canInteractWithBlockAt(pos, 1.0D)) {
+        if (!player.isWithinBlockInteractionRange(pos, 1.0D)) {
             return false;
         }
 
         BlockState state = world.getBlockState(pos);
-        if (state.isAir() || state.createScreenHandlerFactory(world, pos) != null) {
+        if (state.isAir() || state.getMenuProvider(world, pos) != null) {
             return !state.isAir();
         }
 
@@ -352,17 +351,17 @@ public final class CelestiumPickaxeHelper {
                 || block instanceof ComparatorBlock;
     }
 
-    private static void applyEnchantMode(ItemStack stack, DynamicRegistryManager registryManager, boolean silkModeEnabled) {
-        Registry<Enchantment> enchantmentRegistry = registryManager.getOrThrow(RegistryKeys.ENCHANTMENT);
-        RegistryEntry<Enchantment> efficiency = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.EFFICIENCY);
-        RegistryEntry<Enchantment> unbreaking = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.UNBREAKING);
-        RegistryEntry<Enchantment> fortune = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.FORTUNE);
-        RegistryEntry<Enchantment> silkTouch = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.SILK_TOUCH);
+    private static void applyEnchantMode(ItemStack stack, RegistryAccess registryManager, boolean silkModeEnabled) {
+        Registry<Enchantment> enchantmentRegistry = registryManager.lookupOrThrow(Registries.ENCHANTMENT);
+        Holder<Enchantment> efficiency = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.EFFICIENCY);
+        Holder<Enchantment> unbreaking = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.UNBREAKING);
+        Holder<Enchantment> fortune = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.FORTUNE);
+        Holder<Enchantment> silkTouch = shopsandtools$getEnchantment(enchantmentRegistry, Enchantments.SILK_TOUCH);
 
-        EnchantmentHelper.apply(stack, builder -> {
+        EnchantmentHelper.updateEnchantments(stack, builder -> {
             builder.set(efficiency, EFFICIENCY_LEVEL);
             builder.set(unbreaking, UNBREAKING_LEVEL);
-            builder.remove(entry -> entry.matchesKey(Enchantments.FORTUNE) || entry.matchesKey(Enchantments.SILK_TOUCH));
+            builder.removeIf(entry -> entry.is(Enchantments.FORTUNE) || entry.is(Enchantments.SILK_TOUCH));
 
             if (silkModeEnabled) {
                 builder.set(silkTouch, 1);
@@ -373,25 +372,25 @@ public final class CelestiumPickaxeHelper {
         setSilkModeEnabled(stack, silkModeEnabled);
     }
 
-    private static RegistryEntry<Enchantment> shopsandtools$getEnchantment(Registry<Enchantment> registry, net.minecraft.registry.RegistryKey<Enchantment> key) {
+    private static Holder<Enchantment> shopsandtools$getEnchantment(Registry<Enchantment> registry, net.minecraft.resources.ResourceKey<Enchantment> key) {
         Enchantment enchantment = registry.getValueOrThrow(key);
-        return registry.getEntry(enchantment);
+        return registry.wrapAsHolder(enchantment);
     }
 
-    private static boolean canVeinMineOre(PlayerEntity player, World world, BlockPos pos, BlockState state, GameMode gameMode) {
-        if (player.isBlockBreakingRestricted(world, pos, gameMode)) {
+    private static boolean canVeinMineOre(Player player, Level world, BlockPos pos, BlockState state, GameType gameMode) {
+        if (player.blockActionRestricted(world, pos, gameMode)) {
             return false;
         }
 
         if (state.isAir()
-                || state.getHardness(world, pos) < 0.0F
-                || !state.isIn(BlockTags.PICKAXE_MINEABLE)
+                || state.getDestroySpeed(world, pos) < 0.0F
+                || !state.is(BlockTags.MINEABLE_WITH_PICKAXE)
                 || !isVeinMiningOre(state)) {
             return false;
         }
 
-        ItemStack tool = player.getMainHandStack();
-        return !tool.isEmpty() && tool.canMine(state, world, pos, player);
+        ItemStack tool = player.getMainHandItem();
+        return !tool.isEmpty() && tool.canDestroyBlock(state, world, pos, player);
     }
 
     private static boolean areMatchingVeinOres(BlockState seedState, BlockState candidateState) {
@@ -413,7 +412,7 @@ public final class CelestiumPickaxeHelper {
         }
 
         for (OreFamily oreFamily : VEIN_ORE_FAMILIES) {
-            if (state.isIn(oreFamily.tag())) {
+            if (state.is(oreFamily.tag())) {
                 return oreFamily.id();
             }
         }
@@ -422,17 +421,17 @@ public final class CelestiumPickaxeHelper {
     }
 
     private static boolean shopsandtools$getBoolean(ItemStack stack, String key) {
-        NbtComponent customData = stack.getOrDefault(DataComponentTypes.CUSTOM_DATA, NbtComponent.DEFAULT);
+        CustomData customData = stack.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY);
         if (customData.isEmpty()) {
             return false;
         }
 
-        NbtCompound nbt = customData.copyNbt();
+        CompoundTag nbt = customData.copyTag();
         return nbt.getBoolean(key).orElse(false);
     }
 
     private static void shopsandtools$setBoolean(ItemStack stack, String key, boolean value) {
-        NbtComponent.set(DataComponentTypes.CUSTOM_DATA, stack, nbt -> {
+        CustomData.update(DataComponents.CUSTOM_DATA, stack, nbt -> {
             if (value) {
                 nbt.putBoolean(key, true);
             } else {

@@ -1,14 +1,14 @@
 package net.inklinggamer.shopsandtools.mixin;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.state.BlockState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
 @Mixin(Entity.class)
 public interface EntityInvoker {
-    @Invoker("scheduleVelocityUpdate")
+    @Invoker("markHurt")
     void shopsandtools$invokeScheduleVelocityUpdate();
 
     @Invoker("playStepSound")

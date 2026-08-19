@@ -2,10 +2,9 @@ package net.inklinggamer.shopsandtools.client;
 
 import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderContext;
 import net.inklinggamer.shopsandtools.item.CelestiumHoeHelper;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.BlockHitResult;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,8 +14,8 @@ public final class CelestiumHoeClient {
     private CelestiumHoeClient() {
     }
 
-    public static void tick(MinecraftClient client) {
-        if (client.player == null || client.world == null) {
+    public static void tick(Minecraft client) {
+        if (client.player == null || client.level == null) {
             outlinePositions.clear();
             return;
         }
@@ -28,16 +27,16 @@ public final class CelestiumHoeClient {
         CelestiumPickaxeOutlineRenderer.render(context, outlinePositions);
     }
 
-    private static void updateOutline(MinecraftClient client) {
+    private static void updateOutline(Minecraft client) {
         outlinePositions.clear();
-        if (client.player == null || client.world == null || !CelestiumHoeHelper.isCelestiumHoe(client.player.getMainHandStack())) {
+        if (client.player == null || client.level == null || !CelestiumHoeHelper.isCelestiumHoe(client.player.getMainHandItem())) {
             return;
         }
 
-        if (!(client.crosshairTarget instanceof BlockHitResult hitResult)) {
+        if (!(client.hitResult instanceof BlockHitResult hitResult)) {
             return;
         }
 
-        outlinePositions.addAll(CelestiumHoeHelper.getHarvestTargets(hitResult.getBlockPos(), client.world::getBlockState));
+        outlinePositions.addAll(CelestiumHoeHelper.getHarvestTargets(hitResult.getBlockPos(), client.level::getBlockState));
     }
 }

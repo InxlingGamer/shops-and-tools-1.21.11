@@ -3,29 +3,28 @@ package net.inklinggamer.shopsandtools.player;
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.inklinggamer.shopsandtools.mixin.EntityInvoker;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumWallClimbStatePayload;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.registry.tag.BlockTags;
-import net.minecraft.registry.tag.TagKey;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.BlockSoundGroup;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.shape.VoxelShape;
-import net.minecraft.world.World;
-import net.minecraft.world.event.GameEvent;
-
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -36,8 +35,8 @@ public final class CelestiumBootsManager {
     private static final double WALL_STRAFE_SPEED = 0.12D;
     private static final double WALL_STICK_SPEED = 0.08D;
     private static final double WALL_CONTACT_EPSILON = 1.0E-4D;
-    private static final TagKey<Block> FENCES_TAG = TagKey.of(RegistryKeys.BLOCK, Identifier.of("minecraft", "fences"));
-    private static final TagKey<Block> WALLS_TAG = TagKey.of(RegistryKeys.BLOCK, Identifier.of("minecraft", "walls"));
+    private static final TagKey<Block> FENCES_TAG = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("minecraft", "fences"));
+    private static final TagKey<Block> WALLS_TAG = TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("minecraft", "walls"));
     private static final Direction[] HORIZONTAL_DIRECTIONS = {
             Direction.NORTH,
             Direction.SOUTH,
@@ -51,10 +50,10 @@ public final class CelestiumBootsManager {
     }
 
     public static void tickServer(MinecraftServer server) {
-        STATES.entrySet().removeIf(entry -> server.getPlayerManager().getPlayer(entry.getKey()) == null);
+        STATES.entrySet().removeIf(entry -> server.getPlayerList().getPlayer(entry.getKey()) == null);
     }
 
-    public static void tickPlayer(ServerPlayerEntity player) {
+    public static void tickPlayer(ServerPlayer player) {
         if (!player.isAlive()) {
             resetPlayerState(player);
             return;
@@ -65,13 +64,13 @@ public final class CelestiumBootsManager {
             return;
         }
 
-        PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
+        PlayerState state = STATES.computeIfAbsent(player.getUUID(), uuid -> new PlayerState());
         AuthoritativeWallClimbMotion motion = resolveAuthoritativeWallClimbMotion(
                 state.wallClimbing,
                 state.wallDirection,
                 state.wallStrafeBasis,
                 resolveWallDirection(player, state.wallDirection, state.wallClimbing),
-                player.getYaw(),
+                player.getYRot(),
                 getVerticalWallInput(player),
                 getSidewaysInput(player)
         );
@@ -89,12 +88,12 @@ public final class CelestiumBootsManager {
         playWallClimbSound(player, state);
     }
 
-    public static boolean isCelestiumBootsEquipped(PlayerEntity player) {
-        return player.getEquippedStack(EquipmentSlot.FEET).isOf(ModItems.CELESTIUM_BOOTS);
+    public static boolean isCelestiumBootsEquipped(Player player) {
+        return player.getItemBySlot(EquipmentSlot.FEET).is(ModItems.CELESTIUM_BOOTS);
     }
 
-    public static void setWallClimbInput(ServerPlayerEntity player, boolean sneakHeld, boolean forwardHeld, boolean backwardHeld, boolean leftHeld, boolean rightHeld) {
-        PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
+    public static void setWallClimbInput(ServerPlayer player, boolean sneakHeld, boolean forwardHeld, boolean backwardHeld, boolean leftHeld, boolean rightHeld) {
+        PlayerState state = STATES.computeIfAbsent(player.getUUID(), uuid -> new PlayerState());
         state.sneakKeyHeld = sneakHeld;
         state.forwardKeyHeld = forwardHeld;
         state.backwardKeyHeld = backwardHeld;
@@ -109,12 +108,12 @@ public final class CelestiumBootsManager {
         }
     }
 
-    public static boolean shouldWallClimb(PlayerEntity player) {
-        if (!(player instanceof ServerPlayerEntity serverPlayer)) {
+    public static boolean shouldWallClimb(Player player) {
+        if (!(player instanceof ServerPlayer serverPlayer)) {
             return false;
         }
 
-        PlayerState state = STATES.get(serverPlayer.getUuid());
+        PlayerState state = STATES.get(serverPlayer.getUUID());
         Direction preferredDirection = null;
         boolean continuingWallClimb = false;
         if (state != null) {
@@ -125,18 +124,18 @@ public final class CelestiumBootsManager {
         return resolveWallClimbDirection(player, preferredDirection, continuingWallClimb) != null;
     }
 
-    public static Direction resolveWallClimbDirection(PlayerEntity player, Direction preferredDirection, boolean continuingWallClimb) {
+    public static Direction resolveWallClimbDirection(Player player, Direction preferredDirection, boolean continuingWallClimb) {
         return resolveWallDirection(player, preferredDirection, continuingWallClimb);
     }
 
-    public static BlockPos resolveWallClimbSoundPos(PlayerEntity player, Direction wallDirection) {
+    public static BlockPos resolveWallClimbSoundPos(Player player, Direction wallDirection) {
         return wallDirection == null ? null : resolveWallSoundPos(player, wallDirection);
     }
 
     static AuthoritativeWallClimbMotion resolveAuthoritativeWallClimbMotion(
             boolean wasActive,
             Direction previousWallDirection,
-            Vec3d previousWallStrafeBasis,
+            Vec3 previousWallStrafeBasis,
             Direction currentWallDirection,
             float attachmentYaw,
             int verticalInput,
@@ -146,7 +145,7 @@ public final class CelestiumBootsManager {
             return AuthoritativeWallClimbMotion.inactive();
         }
 
-        Vec3d wallStrafeBasis = previousWallStrafeBasis;
+        Vec3 wallStrafeBasis = previousWallStrafeBasis;
         if (!wasActive || previousWallDirection != currentWallDirection || wallStrafeBasis == null) {
             wallStrafeBasis = resolveWallStrafeBasis(currentWallDirection, attachmentYaw);
         }
@@ -171,7 +170,7 @@ public final class CelestiumBootsManager {
         return new WallClimbSoundTransition(!currentSoundPos.equals(previousSoundPos), currentSoundPos);
     }
 
-    public static boolean hasWallClimbMovementInput(PlayerEntity player) {
+    public static boolean hasWallClimbMovementInput(Player player) {
         return isMovingOnWall(player);
     }
 
@@ -179,16 +178,16 @@ public final class CelestiumBootsManager {
         return getVerticalWallInput(forwardHeld, backwardHeld) != 0 || getSidewaysInput(leftHeld, rightHeld) != 0;
     }
 
-    private static Direction resolveWallDirection(PlayerEntity player, Direction preferredDirection, boolean continuingWallClimb) {
+    private static Direction resolveWallDirection(Player player, Direction preferredDirection, boolean continuingWallClimb) {
         if (!isCelestiumBootsEquipped(player)
                 || !player.isAlive()
                 || player.isSpectator()
                 || !isSneakKeyHeld(player)
-                || player.hasVehicle()
+                || player.isPassenger()
                 || player.isSwimming()
-                || player.isTouchingWater()
-                || player.isSubmergedInWater()
-                || player.isGliding()
+                || player.isInWater()
+                || player.isUnderWater()
+                || player.isFallFlying()
                 || player.getAbilities().flying) {
             return null;
         }
@@ -204,44 +203,44 @@ public final class CelestiumBootsManager {
         return findBestWallDirection(player, continuingWallClimb);
     }
 
-    public static boolean shouldMuffleMovementVibrations(Entity entity, RegistryEntry<GameEvent> event) {
-        if (!(entity instanceof PlayerEntity player) || !isCelestiumBootsEquipped(player)) {
+    public static boolean shouldMuffleMovementVibrations(Entity entity, Holder<GameEvent> event) {
+        if (!(entity instanceof Player player) || !isCelestiumBootsEquipped(player)) {
             return false;
         }
 
         return event == GameEvent.STEP || event == GameEvent.HIT_GROUND;
     }
 
-    private static boolean isSneakKeyHeld(PlayerEntity player) {
-        if (player instanceof ServerPlayerEntity serverPlayer) {
-            PlayerState state = STATES.get(serverPlayer.getUuid());
+    private static boolean isSneakKeyHeld(Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            PlayerState state = STATES.get(serverPlayer.getUUID());
             return state != null && state.sneakKeyHeld;
         }
 
-        return player.isSneaking();
+        return player.isShiftKeyDown();
     }
 
-    private static boolean isForwardKeyHeld(PlayerEntity player) {
-        if (player instanceof ServerPlayerEntity serverPlayer) {
-            PlayerState state = STATES.get(serverPlayer.getUuid());
+    private static boolean isForwardKeyHeld(Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            PlayerState state = STATES.get(serverPlayer.getUUID());
             return state != null && state.forwardKeyHeld;
         }
 
-        return player.forwardSpeed > 0.0F;
+        return player.zza > 0.0F;
     }
 
-    private static boolean isBackwardKeyHeld(PlayerEntity player) {
-        if (player instanceof ServerPlayerEntity serverPlayer) {
-            PlayerState state = STATES.get(serverPlayer.getUuid());
+    private static boolean isBackwardKeyHeld(Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            PlayerState state = STATES.get(serverPlayer.getUUID());
             return state != null && state.backwardKeyHeld;
         }
 
-        return player.forwardSpeed < 0.0F;
+        return player.zza < 0.0F;
     }
 
-    private static int getSidewaysInput(PlayerEntity player) {
-        if (player instanceof ServerPlayerEntity serverPlayer) {
-            PlayerState state = STATES.get(serverPlayer.getUuid());
+    private static int getSidewaysInput(Player player) {
+        if (player instanceof ServerPlayer serverPlayer) {
+            PlayerState state = STATES.get(serverPlayer.getUUID());
             if (state == null) {
                 return 0;
             }
@@ -249,14 +248,14 @@ public final class CelestiumBootsManager {
             return getSidewaysInput(state.leftKeyHeld, state.rightKeyHeld);
         }
 
-        return Math.round(player.sidewaysSpeed);
+        return Math.round(player.xxa);
     }
 
     private static int getSidewaysInput(boolean leftHeld, boolean rightHeld) {
         return (rightHeld ? 1 : 0) - (leftHeld ? 1 : 0);
     }
 
-    private static int getVerticalWallInput(PlayerEntity player) {
+    private static int getVerticalWallInput(Player player) {
         return getVerticalWallInput(isForwardKeyHeld(player), isBackwardKeyHeld(player));
     }
 
@@ -264,22 +263,22 @@ public final class CelestiumBootsManager {
         return (forwardHeld ? 1 : 0) - (backwardHeld ? 1 : 0);
     }
 
-    private static boolean isMovingOnWall(PlayerEntity player) {
+    private static boolean isMovingOnWall(Player player) {
         return getVerticalWallInput(player) != 0 || getSidewaysInput(player) != 0;
     }
 
-    private static Direction findBestWallDirection(PlayerEntity player, boolean continuingWallClimb) {
+    private static Direction findBestWallDirection(Player player, boolean continuingWallClimb) {
         Direction bestDirection = null;
         double bestScore = Double.NEGATIVE_INFINITY;
-        Vec3d horizontalLook = getHorizontalClimbLookVector(player);
+        Vec3 horizontalLook = getHorizontalClimbLookVector(player);
 
         for (Direction direction : HORIZONTAL_DIRECTIONS) {
             if (!hasValidClimbSurface(player, direction, continuingWallClimb)) {
                 continue;
             }
 
-            Vec3d wallNormal = new Vec3d(direction.getOffsetX(), 0.0D, direction.getOffsetZ());
-            double score = horizontalLook.dotProduct(wallNormal);
+            Vec3 wallNormal = new Vec3(direction.getStepX(), 0.0D, direction.getStepZ());
+            double score = horizontalLook.dot(wallNormal);
             if (score > bestScore) {
                 bestScore = score;
                 bestDirection = direction;
@@ -289,53 +288,53 @@ public final class CelestiumBootsManager {
         return bestDirection;
     }
 
-    private static boolean hasValidClimbSurface(PlayerEntity player, Direction direction, boolean continuingWallClimb) {
+    private static boolean hasValidClimbSurface(Player player, Direction direction, boolean continuingWallClimb) {
         return hasClimbColumn(player, direction)
                 || hasTallFenceOrWall(player, direction)
-                || continuingWallClimb && !player.isOnGround() && (
+                || continuingWallClimb && !player.onGround() && (
                         hasClimbColumnBelowFeet(player, direction)
                         || hasTallFenceOrWallBelowFeet(player, direction)
                 );
     }
 
-    private static boolean hasClimbColumn(PlayerEntity player, Direction direction) {
-        World world = player.getEntityWorld();
-        Box playerBox = player.getBoundingBox();
-        int lowerY = MathHelper.floor(playerBox.minY + WALL_CONTACT_EPSILON);
+    private static boolean hasClimbColumn(Player player, Direction direction) {
+        Level world = player.level();
+        AABB playerBox = player.getBoundingBox();
+        int lowerY = Mth.floor(playerBox.minY + WALL_CONTACT_EPSILON);
         return hasClimbColumn(world, playerBox, lowerY, direction);
     }
 
-    private static boolean hasClimbColumnBelowFeet(PlayerEntity player, Direction direction) {
-        World world = player.getEntityWorld();
-        Box playerBox = player.getBoundingBox();
-        int lowerY = MathHelper.floor(playerBox.minY + WALL_CONTACT_EPSILON) - 1;
+    private static boolean hasClimbColumnBelowFeet(Player player, Direction direction) {
+        Level world = player.level();
+        AABB playerBox = player.getBoundingBox();
+        int lowerY = Mth.floor(playerBox.minY + WALL_CONTACT_EPSILON) - 1;
         return hasClimbColumn(world, playerBox, lowerY, direction);
     }
 
-    private static boolean hasTallFenceOrWall(PlayerEntity player, Direction direction) {
-        World world = player.getEntityWorld();
-        Box playerBox = player.getBoundingBox();
-        int lowerY = MathHelper.floor(playerBox.minY + WALL_CONTACT_EPSILON);
+    private static boolean hasTallFenceOrWall(Player player, Direction direction) {
+        Level world = player.level();
+        AABB playerBox = player.getBoundingBox();
+        int lowerY = Mth.floor(playerBox.minY + WALL_CONTACT_EPSILON);
         return hasTallFenceOrWall(world, playerBox, lowerY, direction);
     }
 
-    private static boolean hasTallFenceOrWallBelowFeet(PlayerEntity player, Direction direction) {
-        World world = player.getEntityWorld();
-        Box playerBox = player.getBoundingBox();
-        int lowerY = MathHelper.floor(playerBox.minY + WALL_CONTACT_EPSILON) - 1;
+    private static boolean hasTallFenceOrWallBelowFeet(Player player, Direction direction) {
+        Level world = player.level();
+        AABB playerBox = player.getBoundingBox();
+        int lowerY = Mth.floor(playerBox.minY + WALL_CONTACT_EPSILON) - 1;
         return hasTallFenceOrWall(world, playerBox, lowerY, direction);
     }
 
-    private static boolean hasClimbColumn(World world, Box playerBox, int lowerY, Direction direction) {
+    private static boolean hasClimbColumn(Level world, AABB playerBox, int lowerY, Direction direction) {
         return hasWallSegment(world, playerBox, lowerY, direction) && hasWallSegment(world, playerBox, lowerY + 1, direction);
     }
 
-    private static boolean hasTallFenceOrWall(World world, Box playerBox, int y, Direction direction) {
+    private static boolean hasTallFenceOrWall(Level world, AABB playerBox, int y, Direction direction) {
         switch (direction) {
             case WEST -> {
-                int x = MathHelper.floor(playerBox.minX - WALL_CONTACT_EPSILON);
-                int minZ = MathHelper.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
-                int maxZ = MathHelper.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
+                int x = Mth.floor(playerBox.minX - WALL_CONTACT_EPSILON);
+                int minZ = Mth.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
+                int maxZ = Mth.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
                 for (int z = minZ; z <= maxZ; z++) {
                     if (isTallFenceOrWall(world, new BlockPos(x, y, z))) {
                         return true;
@@ -343,9 +342,9 @@ public final class CelestiumBootsManager {
                 }
             }
             case EAST -> {
-                int x = MathHelper.floor(playerBox.maxX + WALL_CONTACT_EPSILON);
-                int minZ = MathHelper.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
-                int maxZ = MathHelper.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
+                int x = Mth.floor(playerBox.maxX + WALL_CONTACT_EPSILON);
+                int minZ = Mth.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
+                int maxZ = Mth.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
                 for (int z = minZ; z <= maxZ; z++) {
                     if (isTallFenceOrWall(world, new BlockPos(x, y, z))) {
                         return true;
@@ -353,9 +352,9 @@ public final class CelestiumBootsManager {
                 }
             }
             case NORTH -> {
-                int z = MathHelper.floor(playerBox.minZ - WALL_CONTACT_EPSILON);
-                int minX = MathHelper.floor(playerBox.minX + WALL_CONTACT_EPSILON);
-                int maxX = MathHelper.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
+                int z = Mth.floor(playerBox.minZ - WALL_CONTACT_EPSILON);
+                int minX = Mth.floor(playerBox.minX + WALL_CONTACT_EPSILON);
+                int maxX = Mth.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
                 for (int x = minX; x <= maxX; x++) {
                     if (isTallFenceOrWall(world, new BlockPos(x, y, z))) {
                         return true;
@@ -363,9 +362,9 @@ public final class CelestiumBootsManager {
                 }
             }
             case SOUTH -> {
-                int z = MathHelper.floor(playerBox.maxZ + WALL_CONTACT_EPSILON);
-                int minX = MathHelper.floor(playerBox.minX + WALL_CONTACT_EPSILON);
-                int maxX = MathHelper.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
+                int z = Mth.floor(playerBox.maxZ + WALL_CONTACT_EPSILON);
+                int minX = Mth.floor(playerBox.minX + WALL_CONTACT_EPSILON);
+                int maxX = Mth.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
                 for (int x = minX; x <= maxX; x++) {
                     if (isTallFenceOrWall(world, new BlockPos(x, y, z))) {
                         return true;
@@ -380,12 +379,12 @@ public final class CelestiumBootsManager {
         return false;
     }
 
-    private static boolean hasWallSegment(World world, Box playerBox, int y, Direction direction) {
+    private static boolean hasWallSegment(Level world, AABB playerBox, int y, Direction direction) {
         switch (direction) {
             case WEST -> {
-                int x = MathHelper.floor(playerBox.minX - WALL_CONTACT_EPSILON);
-                int minZ = MathHelper.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
-                int maxZ = MathHelper.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
+                int x = Mth.floor(playerBox.minX - WALL_CONTACT_EPSILON);
+                int minZ = Mth.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
+                int maxZ = Mth.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
                 for (int z = minZ; z <= maxZ; z++) {
                     if (isClimbWall(world, new BlockPos(x, y, z))) {
                         return true;
@@ -393,9 +392,9 @@ public final class CelestiumBootsManager {
                 }
             }
             case EAST -> {
-                int x = MathHelper.floor(playerBox.maxX + WALL_CONTACT_EPSILON);
-                int minZ = MathHelper.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
-                int maxZ = MathHelper.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
+                int x = Mth.floor(playerBox.maxX + WALL_CONTACT_EPSILON);
+                int minZ = Mth.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
+                int maxZ = Mth.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
                 for (int z = minZ; z <= maxZ; z++) {
                     if (isClimbWall(world, new BlockPos(x, y, z))) {
                         return true;
@@ -403,9 +402,9 @@ public final class CelestiumBootsManager {
                 }
             }
             case NORTH -> {
-                int z = MathHelper.floor(playerBox.minZ - WALL_CONTACT_EPSILON);
-                int minX = MathHelper.floor(playerBox.minX + WALL_CONTACT_EPSILON);
-                int maxX = MathHelper.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
+                int z = Mth.floor(playerBox.minZ - WALL_CONTACT_EPSILON);
+                int minX = Mth.floor(playerBox.minX + WALL_CONTACT_EPSILON);
+                int maxX = Mth.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
                 for (int x = minX; x <= maxX; x++) {
                     if (isClimbWall(world, new BlockPos(x, y, z))) {
                         return true;
@@ -413,9 +412,9 @@ public final class CelestiumBootsManager {
                 }
             }
             case SOUTH -> {
-                int z = MathHelper.floor(playerBox.maxZ + WALL_CONTACT_EPSILON);
-                int minX = MathHelper.floor(playerBox.minX + WALL_CONTACT_EPSILON);
-                int maxX = MathHelper.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
+                int z = Mth.floor(playerBox.maxZ + WALL_CONTACT_EPSILON);
+                int minX = Mth.floor(playerBox.minX + WALL_CONTACT_EPSILON);
+                int maxX = Mth.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
                 for (int x = minX; x <= maxX; x++) {
                     if (isClimbWall(world, new BlockPos(x, y, z))) {
                         return true;
@@ -430,54 +429,54 @@ public final class CelestiumBootsManager {
         return false;
     }
 
-    private static boolean isClimbWall(World world, BlockPos pos) {
+    private static boolean isClimbWall(Level world, BlockPos pos) {
         BlockState state = world.getBlockState(pos);
         return !state.isAir()
-                && !state.isIn(BlockTags.CLIMBABLE)
-                && state.blocksMovement()
+                && !state.is(BlockTags.CLIMBABLE)
+                && state.blocksMotion()
                 && !state.getCollisionShape(world, pos).isEmpty();
     }
 
-    private static boolean isTallFenceOrWall(World world, BlockPos pos) {
+    private static boolean isTallFenceOrWall(Level world, BlockPos pos) {
         BlockState state = world.getBlockState(pos);
-        if (!state.isIn(FENCES_TAG) && !state.isIn(WALLS_TAG)) {
+        if (!state.is(FENCES_TAG) && !state.is(WALLS_TAG)) {
             return false;
         }
 
         VoxelShape collisionShape = state.getCollisionShape(world, pos);
         return !state.isAir()
-                && !state.isIn(BlockTags.CLIMBABLE)
-                && state.blocksMovement()
+                && !state.is(BlockTags.CLIMBABLE)
+                && state.blocksMotion()
                 && !collisionShape.isEmpty()
-                && collisionShape.getMax(Direction.Axis.Y) > 1.0D + WALL_CONTACT_EPSILON;
+                && collisionShape.max(Direction.Axis.Y) > 1.0D + WALL_CONTACT_EPSILON;
     }
 
-    static Vec3d resolveWallStrafeBasis(Direction wallDirection, float yawDegrees) {
-        Vec3d wallNormal = getWallNormal(wallDirection);
-        Vec3d wallTangent = new Vec3d(-wallNormal.z, 0.0D, wallNormal.x);
-        if (wallTangent.dotProduct(getCameraRightVector(yawDegrees)) < 0.0D) {
-            wallTangent = wallTangent.negate();
+    static Vec3 resolveWallStrafeBasis(Direction wallDirection, float yawDegrees) {
+        Vec3 wallNormal = getWallNormal(wallDirection);
+        Vec3 wallTangent = new Vec3(-wallNormal.z, 0.0D, wallNormal.x);
+        if (wallTangent.dot(getCameraRightVector(yawDegrees)) < 0.0D) {
+            wallTangent = wallTangent.reverse();
         }
 
         return wallTangent;
     }
 
-    static Vec3d getWallClimbVelocity(Direction wallDirection, Vec3d wallStrafeBasis, int verticalInput, int sidewaysInput) {
-        Vec3d strafeVelocity = sidewaysInput == 0 || wallStrafeBasis == null
-                ? Vec3d.ZERO
-                : wallStrafeBasis.multiply(sidewaysInput * WALL_STRAFE_SPEED);
+    static Vec3 getWallClimbVelocity(Direction wallDirection, Vec3 wallStrafeBasis, int verticalInput, int sidewaysInput) {
+        Vec3 strafeVelocity = sidewaysInput == 0 || wallStrafeBasis == null
+                ? Vec3.ZERO
+                : wallStrafeBasis.scale(sidewaysInput * WALL_STRAFE_SPEED);
         return strafeVelocity
-                .add(getWallNormal(wallDirection).multiply(WALL_STICK_SPEED))
+                .add(getWallNormal(wallDirection).scale(WALL_STICK_SPEED))
                 .add(0.0D, verticalInput * WALL_CLIMB_SPEED, 0.0D);
     }
 
-    private static void applyWallMovement(ServerPlayerEntity player, Vec3d wallVelocity) {
-        player.setVelocity(wallVelocity);
+    private static void applyWallMovement(ServerPlayer player, Vec3 wallVelocity) {
+        player.setDeltaMovement(wallVelocity);
         player.fallDistance = 0.0D;
         ((EntityInvoker) player).shopsandtools$invokeScheduleVelocityUpdate();
     }
 
-    private static void playWallClimbSound(ServerPlayerEntity player, PlayerState state) {
+    private static void playWallClimbSound(ServerPlayer player, PlayerState state) {
         if (!isMovingOnWall(player)) {
             resetWallClimbSoundState(state);
             return;
@@ -493,62 +492,62 @@ public final class CelestiumBootsManager {
         playWallStepSound(player, soundPos);
     }
 
-    private static void playWallStepSound(ServerPlayerEntity player, BlockPos soundPos) {
-        BlockSoundGroup soundGroup = player.getEntityWorld().getBlockState(soundPos).getSoundGroup();
+    private static void playWallStepSound(ServerPlayer player, BlockPos soundPos) {
+        SoundType soundGroup = player.level().getBlockState(soundPos).getSoundType();
         if (soundGroup == null || soundGroup.getVolume() <= 0.0F) {
             return;
         }
 
-        player.getEntityWorld().playSound(
+        player.level().playSound(
                 player,
                 soundPos.getX() + 0.5D,
                 soundPos.getY() + 0.5D,
                 soundPos.getZ() + 0.5D,
                 soundGroup.getStepSound(),
-                SoundCategory.PLAYERS,
+                SoundSource.PLAYERS,
                 Math.max(0.1F, soundGroup.getVolume() * WALL_CLIMB_SOUND_VOLUME_MULTIPLIER),
                 soundGroup.getPitch()
         );
     }
 
-    private static BlockPos resolveWallSoundPos(PlayerEntity player, Direction wallDirection) {
-        Box playerBox = player.getBoundingBox();
-        World world = player.getEntityWorld();
-        int feetY = MathHelper.floor(playerBox.minY + WALL_CONTACT_EPSILON);
+    private static BlockPos resolveWallSoundPos(Player player, Direction wallDirection) {
+        AABB playerBox = player.getBoundingBox();
+        Level world = player.level();
+        int feetY = Mth.floor(playerBox.minY + WALL_CONTACT_EPSILON);
         BlockPos soundPos = findWallSoundSurface(world, playerBox, feetY, wallDirection);
         if (soundPos != null) {
             return soundPos;
         }
 
-        return player.isOnGround() ? null : findWallSoundSurface(world, playerBox, feetY - 1, wallDirection);
+        return player.onGround() ? null : findWallSoundSurface(world, playerBox, feetY - 1, wallDirection);
     }
 
-    private static Vec3d getCameraRightVector(float yawDegrees) {
+    private static Vec3 getCameraRightVector(float yawDegrees) {
         float yawRadians = yawDegrees * (float) (Math.PI / 180.0);
-        return new Vec3d(-Math.cos(yawRadians), 0.0D, -Math.sin(yawRadians));
+        return new Vec3(-Math.cos(yawRadians), 0.0D, -Math.sin(yawRadians));
     }
 
-    private static Vec3d getWallNormal(Direction wallDirection) {
-        return new Vec3d(wallDirection.getOffsetX(), 0.0D, wallDirection.getOffsetZ());
+    private static Vec3 getWallNormal(Direction wallDirection) {
+        return new Vec3(wallDirection.getStepX(), 0.0D, wallDirection.getStepZ());
     }
 
-    private static Vec3d getHorizontalClimbLookVector(PlayerEntity player) {
-        Vec3d look = player.getRotationVector();
-        Vec3d horizontalLook = new Vec3d(look.x, 0.0D, look.z);
-        if (horizontalLook.lengthSquared() > 1.0E-6D) {
+    private static Vec3 getHorizontalClimbLookVector(Player player) {
+        Vec3 look = player.getLookAngle();
+        Vec3 horizontalLook = new Vec3(look.x, 0.0D, look.z);
+        if (horizontalLook.lengthSqr() > 1.0E-6D) {
             return horizontalLook.normalize();
         }
 
-        double yawRadians = Math.toRadians(player.getYaw());
-        return new Vec3d(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
+        double yawRadians = Math.toRadians(player.getYRot());
+        return new Vec3(-Math.sin(yawRadians), 0.0D, Math.cos(yawRadians));
     }
 
-    private static BlockPos findWallSoundSurface(World world, Box playerBox, int y, Direction direction) {
+    private static BlockPos findWallSoundSurface(Level world, AABB playerBox, int y, Direction direction) {
         switch (direction) {
             case WEST -> {
-                int x = MathHelper.floor(playerBox.minX - WALL_CONTACT_EPSILON);
-                int minZ = MathHelper.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
-                int maxZ = MathHelper.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
+                int x = Mth.floor(playerBox.minX - WALL_CONTACT_EPSILON);
+                int minZ = Mth.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
+                int maxZ = Mth.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
                 for (int z = minZ; z <= maxZ; z++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     if (isWallSoundSurface(world, pos)) {
@@ -557,9 +556,9 @@ public final class CelestiumBootsManager {
                 }
             }
             case EAST -> {
-                int x = MathHelper.floor(playerBox.maxX + WALL_CONTACT_EPSILON);
-                int minZ = MathHelper.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
-                int maxZ = MathHelper.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
+                int x = Mth.floor(playerBox.maxX + WALL_CONTACT_EPSILON);
+                int minZ = Mth.floor(playerBox.minZ + WALL_CONTACT_EPSILON);
+                int maxZ = Mth.floor(playerBox.maxZ - WALL_CONTACT_EPSILON);
                 for (int z = minZ; z <= maxZ; z++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     if (isWallSoundSurface(world, pos)) {
@@ -568,9 +567,9 @@ public final class CelestiumBootsManager {
                 }
             }
             case NORTH -> {
-                int z = MathHelper.floor(playerBox.minZ - WALL_CONTACT_EPSILON);
-                int minX = MathHelper.floor(playerBox.minX + WALL_CONTACT_EPSILON);
-                int maxX = MathHelper.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
+                int z = Mth.floor(playerBox.minZ - WALL_CONTACT_EPSILON);
+                int minX = Mth.floor(playerBox.minX + WALL_CONTACT_EPSILON);
+                int maxX = Mth.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
                 for (int x = minX; x <= maxX; x++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     if (isWallSoundSurface(world, pos)) {
@@ -579,9 +578,9 @@ public final class CelestiumBootsManager {
                 }
             }
             case SOUTH -> {
-                int z = MathHelper.floor(playerBox.maxZ + WALL_CONTACT_EPSILON);
-                int minX = MathHelper.floor(playerBox.minX + WALL_CONTACT_EPSILON);
-                int maxX = MathHelper.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
+                int z = Mth.floor(playerBox.maxZ + WALL_CONTACT_EPSILON);
+                int minX = Mth.floor(playerBox.minX + WALL_CONTACT_EPSILON);
+                int maxX = Mth.floor(playerBox.maxX - WALL_CONTACT_EPSILON);
                 for (int x = minX; x <= maxX; x++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     if (isWallSoundSurface(world, pos)) {
@@ -597,19 +596,19 @@ public final class CelestiumBootsManager {
         return null;
     }
 
-    private static boolean isWallSoundSurface(World world, BlockPos pos) {
+    private static boolean isWallSoundSurface(Level world, BlockPos pos) {
         return isClimbWall(world, pos) || isTallFenceOrWall(world, pos);
     }
 
-    private static void resetPlayerState(ServerPlayerEntity player) {
-        PlayerState state = STATES.remove(player.getUuid());
+    private static void resetPlayerState(ServerPlayer player) {
+        PlayerState state = STATES.remove(player.getUUID());
         if (state != null) {
             syncWallClimbState(player, state, AuthoritativeWallClimbMotion.inactive());
         }
     }
 
-    private static void syncWallClimbState(ServerPlayerEntity player, PlayerState state, AuthoritativeWallClimbMotion motion) {
-        Vec3d velocity = motion.active() ? motion.velocity() : Vec3d.ZERO;
+    private static void syncWallClimbState(ServerPlayer player, PlayerState state, AuthoritativeWallClimbMotion motion) {
+        Vec3 velocity = motion.active() ? motion.velocity() : Vec3.ZERO;
         if (!shouldSyncWallClimbState(state, motion.active(), motion.wallDirection(), velocity)) {
             return;
         }
@@ -620,13 +619,13 @@ public final class CelestiumBootsManager {
         state.lastSyncedWallVelocity = velocity;
     }
 
-    private static boolean shouldSyncWallClimbState(PlayerState state, boolean active, Direction wallDirection, Vec3d velocity) {
+    private static boolean shouldSyncWallClimbState(PlayerState state, boolean active, Direction wallDirection, Vec3 velocity) {
         return state.lastSyncedWallClimbActive != active
                 || state.lastSyncedWallDirection != wallDirection
                 || !hasSameVelocity(state.lastSyncedWallVelocity, velocity);
     }
 
-    private static boolean hasSameVelocity(Vec3d previousVelocity, Vec3d velocity) {
+    private static boolean hasSameVelocity(Vec3 previousVelocity, Vec3 velocity) {
         return Math.abs(previousVelocity.x - velocity.x) <= 1.0E-7D
                 && Math.abs(previousVelocity.y - velocity.y) <= 1.0E-7D
                 && Math.abs(previousVelocity.z - velocity.z) <= 1.0E-7D;
@@ -639,9 +638,9 @@ public final class CelestiumBootsManager {
     public record WallClimbSoundTransition(boolean shouldPlaySound, BlockPos trackedSoundPos) {
     }
 
-    static record AuthoritativeWallClimbMotion(boolean active, Direction wallDirection, Vec3d wallStrafeBasis, Vec3d velocity) {
+    static record AuthoritativeWallClimbMotion(boolean active, Direction wallDirection, Vec3 wallStrafeBasis, Vec3 velocity) {
         private static AuthoritativeWallClimbMotion inactive() {
-            return new AuthoritativeWallClimbMotion(false, null, null, Vec3d.ZERO);
+            return new AuthoritativeWallClimbMotion(false, null, null, Vec3.ZERO);
         }
     }
 
@@ -653,10 +652,10 @@ public final class CelestiumBootsManager {
         private boolean rightKeyHeld;
         private boolean wallClimbing;
         private Direction wallDirection;
-        private Vec3d wallStrafeBasis;
+        private Vec3 wallStrafeBasis;
         private BlockPos lastWallClimbSoundPos;
         private boolean lastSyncedWallClimbActive;
         private Direction lastSyncedWallDirection;
-        private Vec3d lastSyncedWallVelocity = Vec3d.ZERO;
+        private Vec3 lastSyncedWallVelocity = Vec3.ZERO;
     }
 }

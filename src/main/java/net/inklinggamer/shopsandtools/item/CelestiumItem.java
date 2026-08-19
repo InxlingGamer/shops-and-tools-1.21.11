@@ -1,20 +1,20 @@
 package net.inklinggamer.shopsandtools.item;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import org.joml.Vector3f;
 
 public class CelestiumItem extends Item {
-    public CelestiumItem(Settings settings) {
+    public CelestiumItem(Properties settings) {
         super(settings);
     }
 
-    public int getLightEmission(PlayerEntity player, ItemStack stack) {
+    public int getLightEmission(Player player, ItemStack stack) {
         return CelestiumHeldLight.getPearlescentFroglightLightEmission();
     }
 
-    public Vector3f getLightColor(PlayerEntity player, ItemStack stack) {
+    public Vector3f getLightColor(Player player, ItemStack stack) {
         return CelestiumHeldLight.createPearlescentFroglightColor();
     }
 }

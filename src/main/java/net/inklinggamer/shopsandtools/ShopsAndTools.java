@@ -71,7 +71,7 @@ public class ShopsAndTools implements ModInitializer {
 			CelestiumSpearManager.tickServer(server);
 			CelestiumSwordManager.tickServer(server);
 			WardenBossBarManager.tickServer(server);
-			server.getPlayerManager().getPlayerList().forEach(player -> {
+			server.getPlayerList().getPlayers().forEach(player -> {
 				CelestiumBootsManager.tickPlayer(player);
 				CelestiumChestItem.tickPlayer(player);
 				CelestiumExperienceManager.tickPlayer(player);

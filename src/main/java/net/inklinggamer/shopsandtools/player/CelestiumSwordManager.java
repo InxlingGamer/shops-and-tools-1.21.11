@@ -3,17 +3,14 @@ package net.inklinggamer.shopsandtools.player;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.item.ModItems;
 import net.inklinggamer.shopsandtools.network.SyncCelestiumRagePayload;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.attribute.EntityAttributeInstance;
-import net.minecraft.entity.attribute.EntityAttributeModifier;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.mob.MobEntity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
-
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -27,7 +24,7 @@ public final class CelestiumSwordManager {
     private static final int RAGE_DURATION_TICKS = 1200;
     private static final float LIFESTEAL_RATIO = 0.10F;
     private static final double ATTACK_SPEED_PER_STACK = 0.05D;
-    private static final Identifier RAGE_ATTACK_SPEED_MODIFIER_ID = Identifier.of(ShopsAndTools.MOD_ID, "celestium_sword_rage_attack_speed");
+    private static final Identifier RAGE_ATTACK_SPEED_MODIFIER_ID = Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "celestium_sword_rage_attack_speed");
 
     private static final Map<UUID, PlayerState> STATES = new HashMap<>();
     private static final Set<UUID> ACTIVE_ATTACKERS = new HashSet<>();
@@ -36,54 +33,54 @@ public final class CelestiumSwordManager {
     }
 
     public static void tickServer(MinecraftServer server) {
-        STATES.entrySet().removeIf(entry -> server.getPlayerManager().getPlayer(entry.getKey()) == null);
+        STATES.entrySet().removeIf(entry -> server.getPlayerList().getPlayer(entry.getKey()) == null);
     }
 
-    public static void tickPlayer(ServerPlayerEntity player) {
+    public static void tickPlayer(ServerPlayer player) {
         if (!player.isAlive()) {
             resetPlayerState(player);
             return;
         }
 
-        PlayerState state = STATES.get(player.getUuid());
+        PlayerState state = STATES.get(player.getUUID());
         if (state == null) {
             clearAttackSpeedModifier(player);
             return;
         }
 
-        expireRageStacks(state, player.getEntityWorld().getTime());
+        expireRageStacks(state, player.level().getGameTime());
         updateAttackSpeedModifier(player, state);
         syncRageStacks(player, state);
 
         if (state.canDiscard()) {
-            STATES.remove(player.getUuid());
+            STATES.remove(player.getUUID());
         }
     }
 
-    public static boolean isCelestiumSwordEquipped(PlayerEntity player) {
-        return player.getEquippedStack(EquipmentSlot.MAINHAND).isOf(ModItems.CELESTIUM_SWORD);
+    public static boolean isCelestiumSwordEquipped(Player player) {
+        return player.getItemBySlot(EquipmentSlot.MAINHAND).is(ModItems.CELESTIUM_SWORD);
     }
 
-    public static boolean isCelestiumSwordHeldForXp(PlayerEntity player) {
-        return player.getMainHandStack().isOf(ModItems.CELESTIUM_SWORD)
-                || player.getOffHandStack().isOf(ModItems.CELESTIUM_SWORD);
+    public static boolean isCelestiumSwordHeldForXp(Player player) {
+        return player.getMainHandItem().is(ModItems.CELESTIUM_SWORD)
+                || player.getOffhandItem().is(ModItems.CELESTIUM_SWORD);
     }
 
-    public static boolean isCelestiumRageWeaponEquipped(PlayerEntity player) {
+    public static boolean isCelestiumRageWeaponEquipped(Player player) {
         return isCelestiumSwordEquipped(player) || CelestiumAxeManager.isCelestiumAxeEquipped(player);
     }
 
-    public static void beginRageWeaponAttack(ServerPlayerEntity player) {
+    public static void beginRageWeaponAttack(ServerPlayer player) {
         if (isCelestiumRageWeaponEquipped(player)) {
-            ACTIVE_ATTACKERS.add(player.getUuid());
+            ACTIVE_ATTACKERS.add(player.getUUID());
         }
     }
 
-    public static void endRageWeaponAttack(ServerPlayerEntity player) {
-        ACTIVE_ATTACKERS.remove(player.getUuid());
+    public static void endRageWeaponAttack(ServerPlayer player) {
+        ACTIVE_ATTACKERS.remove(player.getUUID());
     }
 
-    public static void onDirectSwordDamage(ServerPlayerEntity player, float damageDealt) {
+    public static void onDirectSwordDamage(ServerPlayer player, float damageDealt) {
         if (!isCelestiumSwordEquipped(player) || damageDealt <= 0.0F) {
             return;
         }
@@ -91,17 +88,17 @@ public final class CelestiumSwordManager {
         player.heal(damageDealt * LIFESTEAL_RATIO);
     }
 
-    public static void onRageWeaponMobKilled(ServerPlayerEntity player) {
-        if (!ACTIVE_ATTACKERS.contains(player.getUuid()) || !isCelestiumRageWeaponEquipped(player)) {
+    public static void onRageWeaponMobKilled(ServerPlayer player) {
+        if (!ACTIVE_ATTACKERS.contains(player.getUUID()) || !isCelestiumRageWeaponEquipped(player)) {
             return;
         }
 
         addRageStack(player);
     }
 
-    private static void addRageStack(ServerPlayerEntity player) {
-        PlayerState state = STATES.computeIfAbsent(player.getUuid(), uuid -> new PlayerState());
-        long expiresAt = player.getEntityWorld().getTime() + RAGE_DURATION_TICKS;
+    private static void addRageStack(ServerPlayer player) {
+        PlayerState state = STATES.computeIfAbsent(player.getUUID(), uuid -> new PlayerState());
+        long expiresAt = player.level().getGameTime() + RAGE_DURATION_TICKS;
 
         if (state.rageExpirations.size() >= MAX_RAGE_STACKS) {
             state.rageExpirations.removeFirst();
@@ -118,8 +115,8 @@ public final class CelestiumSwordManager {
         }
     }
 
-    private static void updateAttackSpeedModifier(ServerPlayerEntity player, PlayerState state) {
-        EntityAttributeInstance attackSpeedAttribute = player.getAttributeInstance(EntityAttributes.ATTACK_SPEED);
+    private static void updateAttackSpeedModifier(ServerPlayer player, PlayerState state) {
+        AttributeInstance attackSpeedAttribute = player.getAttribute(Attributes.ATTACK_SPEED);
         if (attackSpeedAttribute == null) {
             return;
         }
@@ -134,17 +131,17 @@ public final class CelestiumSwordManager {
         }
 
         if (appliedStacks > 0) {
-            attackSpeedAttribute.addTemporaryModifier(new EntityAttributeModifier(
+            attackSpeedAttribute.addTransientModifier(new AttributeModifier(
                     RAGE_ATTACK_SPEED_MODIFIER_ID,
                     appliedStacks * ATTACK_SPEED_PER_STACK,
-                    EntityAttributeModifier.Operation.ADD_MULTIPLIED_BASE
+                    AttributeModifier.Operation.ADD_MULTIPLIED_BASE
             ));
         }
 
         state.appliedAttackSpeedStacks = appliedStacks;
     }
 
-    private static void syncRageStacks(ServerPlayerEntity player, PlayerState state) {
+    private static void syncRageStacks(ServerPlayer player, PlayerState state) {
         int currentStacks = state.rageExpirations.size();
         if (state.lastSyncedRageStacks == currentStacks) {
             return;
@@ -154,8 +151,8 @@ public final class CelestiumSwordManager {
         state.lastSyncedRageStacks = currentStacks;
     }
 
-    private static void resetPlayerState(ServerPlayerEntity player) {
-        PlayerState state = STATES.remove(player.getUuid());
+    private static void resetPlayerState(ServerPlayer player) {
+        PlayerState state = STATES.remove(player.getUUID());
         if (state == null) {
             clearAttackSpeedModifier(player);
             SyncCelestiumRagePayload.send(player, 0);
@@ -166,8 +163,8 @@ public final class CelestiumSwordManager {
         SyncCelestiumRagePayload.send(player, 0);
     }
 
-    private static void clearAttackSpeedModifier(ServerPlayerEntity player) {
-        EntityAttributeInstance attackSpeedAttribute = player.getAttributeInstance(EntityAttributes.ATTACK_SPEED);
+    private static void clearAttackSpeedModifier(ServerPlayer player) {
+        AttributeInstance attackSpeedAttribute = player.getAttribute(Attributes.ATTACK_SPEED);
         if (attackSpeedAttribute != null && attackSpeedAttribute.hasModifier(RAGE_ATTACK_SPEED_MODIFIER_ID)) {
             attackSpeedAttribute.removeModifier(RAGE_ATTACK_SPEED_MODIFIER_ID);
         }

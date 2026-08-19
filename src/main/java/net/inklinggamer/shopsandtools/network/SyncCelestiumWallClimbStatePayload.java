@@ -5,13 +5,13 @@ import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.inklinggamer.shopsandtools.ShopsAndTools;
 import net.inklinggamer.shopsandtools.client.CelestiumBootsClient;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.packet.CustomPayload;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.core.Direction;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
 
 public record SyncCelestiumWallClimbStatePayload(
         boolean active,
@@ -19,10 +19,10 @@ public record SyncCelestiumWallClimbStatePayload(
         double velocityX,
         double velocityY,
         double velocityZ
-) implements CustomPayload {
-    public static final CustomPayload.Id<SyncCelestiumWallClimbStatePayload> ID =
-            new CustomPayload.Id<>(Identifier.of(ShopsAndTools.MOD_ID, "sync_celestium_wall_climb_state"));
-    public static final PacketCodec<PacketByteBuf, SyncCelestiumWallClimbStatePayload> CODEC = PacketCodec.of(
+) implements CustomPacketPayload {
+    public static final CustomPacketPayload.Type<SyncCelestiumWallClimbStatePayload> ID =
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(ShopsAndTools.MOD_ID, "sync_celestium_wall_climb_state"));
+    public static final StreamCodec<FriendlyByteBuf, SyncCelestiumWallClimbStatePayload> CODEC = StreamCodec.ofMember(
             (payload, buf) -> {
                 buf.writeBoolean(payload.active());
                 buf.writeInt(payload.wallDirectionId());
@@ -54,7 +54,7 @@ public record SyncCelestiumWallClimbStatePayload(
         );
     }
 
-    public static void send(ServerPlayerEntity player, boolean active, Direction wallDirection, Vec3d velocity) {
+    public static void send(ServerPlayer player, boolean active, Direction wallDirection, Vec3 velocity) {
         ServerPlayNetworking.send(player, new SyncCelestiumWallClimbStatePayload(
                 active,
                 wallDirection == null ? -1 : wallDirection.ordinal(),
@@ -69,12 +69,12 @@ public record SyncCelestiumWallClimbStatePayload(
         return this.wallDirectionId < 0 || this.wallDirectionId >= directions.length ? null : directions[this.wallDirectionId];
     }
 
-    public Vec3d velocity() {
-        return new Vec3d(this.velocityX, this.velocityY, this.velocityZ);
+    public Vec3 velocity() {
+        return new Vec3(this.velocityX, this.velocityY, this.velocityZ);
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
+    public Type<? extends CustomPacketPayload> type() {
         return ID;
     }
 }

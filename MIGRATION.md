@@ -1,12 +1,12 @@
-# Celestium 1.1.0 migration notes
+# Celestium 1.1.1 migration notes
 
-Celestium 1.1.0 targets Minecraft Java 26.2 and requires Java 25, Fabric Loader 0.19.3 or newer, and Fabric API 0.158.0+26.2.
+Celestium 1.1.1 targets Minecraft Java 26.2 and requires Java 25, Fabric Loader 0.19.3 or newer, and Fabric API 0.158.0+26.2. It fixes a client startup failure caused by the Minecraft 26.2 anvil screen method rename and does not change gameplay, registries, networking, or saved data.
 
 ## Before upgrading
 
 1. Stop the old server or close the world normally.
 2. Make a complete backup of the world and player data.
-3. Install matching Celestium 1.1.0 builds on the server and every client.
+3. Install matching Celestium 1.1.1 builds on the server and every client.
 4. Keep the backup until all important dimensions, chunks, containers, and entity inventories have been visited on 1.1.x.
 
 ## Compatibility behavior

@@ -100,6 +100,8 @@ tasks.register("runCelestiumShovelTests", JavaExec) {
 	dependsOn(tasks.named("testClasses"))
 }
 
+sourceSets.test.runtimeClasspath += sourceSets.client.output
+
 tasks.register("runCelestiumPickaxeTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium pickaxe feature tests."
@@ -212,6 +214,14 @@ tasks.register("runCelestiumMigrationTests", JavaExec) {
 	dependsOn(tasks.named("testClasses"))
 }
 
+tasks.register("runCelestiumMixinTargetTests", JavaExec) {
+	group = "verification"
+	description = "Audits every configured Mixin target against the resolved Minecraft 26.2 bytecode."
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "net.inklinggamer.celestium.mixin.CelestiumMixinTargetTest"
+	dependsOn(tasks.named("testClasses"), tasks.named("clientClasses"))
+}
+
 tasks.named("test") {
 	dependsOn(tasks.named("runXpBonusTests"))
 	dependsOn(tasks.named("runCelestiumHoeTests"))
@@ -230,6 +240,7 @@ tasks.named("test") {
 	dependsOn(tasks.named("runCelestiumAdvancementTests"))
 	dependsOn(tasks.named("runWardenFeatureTests"))
 	dependsOn(tasks.named("runCelestiumMigrationTests"))
+	dependsOn(tasks.named("runCelestiumMixinTargetTests"))
 	failOnNoDiscoveredTests = false
 }
 

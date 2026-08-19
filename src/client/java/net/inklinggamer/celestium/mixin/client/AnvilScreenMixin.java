@@ -7,7 +7,12 @@ import org.spongepowered.asm.mixin.injection.ModifyConstant;
 
 @Mixin(AnvilScreen.class)
 public abstract class AnvilScreenMixin {
-    @ModifyConstant(method = "renderLabels", constant = @Constant(intValue = 40))
+    @ModifyConstant(
+            method = "extractLabels(Lnet/minecraft/client/gui/GuiGraphicsExtractor;II)V",
+            constant = @Constant(intValue = 40),
+            require = 1,
+            expect = 1
+    )
     private int celestium$removeTooExpensiveTextLimit(int vanillaLimit) {
         return Integer.MAX_VALUE;
     }

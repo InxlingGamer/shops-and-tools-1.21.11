@@ -34,7 +34,7 @@ public final class CelestiumMetadataTest {
 
     public static void main(String[] args) throws Exception {
         assertFabricMetadataUsesCanonicalIdAndCelestiumName();
-        assertGradleBuildUsesCelestiumArchiveName();
+        assertGradleBuildUsesCelestiumArchiveNameAndHotfixVersion();
         assertCanonicalRegistryIds();
         assertCanonicalPacketIds();
         assertGeneratedNamespaceIntegrity();
@@ -112,12 +112,16 @@ public final class CelestiumMetadataTest {
         );
     }
 
-    private static void assertGradleBuildUsesCelestiumArchiveName() throws IOException {
+    private static void assertGradleBuildUsesCelestiumArchiveNameAndHotfixVersion() throws IOException {
         String gradleProperties = Files.readString(GRADLE_PROPERTIES_PATH);
 
         assertTrue(
                 "Gradle should build the published artifact as celestium",
                 gradleProperties.contains("archives_base_name=celestium")
+        );
+        assertTrue(
+                "Gradle should build the 1.1.1 hotfix",
+                gradleProperties.contains("mod_version=1.1.1")
         );
     }
 

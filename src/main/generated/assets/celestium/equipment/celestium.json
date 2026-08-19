@@ -1,0 +1,19 @@
+{
+  "layers": {
+    "horse_body": [
+      {
+        "texture": "celestium:celestium"
+      }
+    ],
+    "humanoid": [
+      {
+        "texture": "celestium:celestium"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "celestium:celestium"
+      }
+    ]
+  }
+}

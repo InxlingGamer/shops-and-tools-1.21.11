@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "celestium:celestium",
+  "base": "minecraft:netherite_chestplate",
+  "result": {
+    "id": "celestium:celestium_chestplate"
+  },
+  "template": "celestium:celestium_upgrade_template"
+}

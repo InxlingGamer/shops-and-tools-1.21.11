@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "celestium:celestium",
+  "base": "minecraft:netherite_boots",
+  "result": {
+    "id": "celestium:celestium_boots"
+  },
+  "template": "celestium:celestium_upgrade_template"
+}

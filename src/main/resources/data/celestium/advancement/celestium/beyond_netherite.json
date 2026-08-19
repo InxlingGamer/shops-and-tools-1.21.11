@@ -1,0 +1,36 @@
+{
+  "parent": "celestium:celestium/executioner_of_the_deep",
+  "display": {
+    "icon": {
+      "id": "celestium:celestium"
+    },
+    "title": {
+      "translate": "advancements.celestium.celestium.beyond_netherite.title",
+      "color": "light_purple"
+    },
+    "description": {
+      "translate": "advancements.celestium.celestium.beyond_netherite.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_celestium": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": "celestium:celestium"
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_celestium"
+    ]
+  ]
+}

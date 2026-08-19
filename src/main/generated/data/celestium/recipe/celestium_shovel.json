@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "celestium:celestium",
+  "base": "minecraft:netherite_shovel",
+  "result": {
+    "id": "celestium:celestium_shovel"
+  },
+  "template": "celestium:celestium_upgrade_template"
+}

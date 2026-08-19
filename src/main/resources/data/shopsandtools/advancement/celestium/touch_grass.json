@@ -18,7 +18,7 @@
   },
   "criteria": {
     "touch_grass": {
-      "trigger": "shopsandtools:action_performed",
+      "trigger": "celestium:action_performed",
       "conditions": {
         "action": "shopsandtools:touch_grass"
       }
@@ -30,6 +30,6 @@
     ]
   ],
   "rewards": {
-    "function": "shopsandtools:advancements/touch_grass_reward"
+    "function": "celestium:advancements/touch_grass_reward"
   }
 }

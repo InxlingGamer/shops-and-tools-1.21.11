@@ -1,8 +1,8 @@
 {
   "values": [
-    "shopsandtools:celestium_pickaxe",
-    "shopsandtools:celestium_axe",
-    "shopsandtools:celestium_shovel",
-    "shopsandtools:celestium_hoe"
+    "celestium:celestium_pickaxe",
+    "celestium:celestium_axe",
+    "celestium:celestium_shovel",
+    "celestium:celestium_hoe"
   ]
 }

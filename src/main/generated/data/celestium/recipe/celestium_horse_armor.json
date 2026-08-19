@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "celestium:celestium",
+  "base": "minecraft:netherite_horse_armor",
+  "result": {
+    "id": "celestium:celestium_horse_armor"
+  },
+  "template": "celestium:celestium_upgrade_template"
+}

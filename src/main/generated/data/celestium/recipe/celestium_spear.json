@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": "celestium:celestium",
+  "base": "minecraft:netherite_spear",
+  "result": {
+    "id": "celestium:celestium_spear"
+  },
+  "template": "celestium:celestium_upgrade_template"
+}

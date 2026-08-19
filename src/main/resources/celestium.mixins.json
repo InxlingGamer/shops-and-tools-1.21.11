@@ -1,0 +1,30 @@
+{
+	"required": true,
+	"package": "net.inklinggamer.celestium.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"mixins": [
+		"AbstractHorseEntityMixin",
+		"AnvilScreenHandlerMixin",
+		"BlockItemMixin",
+		"ChangeItemDamageEnchantmentEffectMixin",
+		"EntityInvoker",
+		"ExperienceOrbEntityMixin",
+		"LivingEntityMixin",
+		"MobEntityMixin",
+		"PlayerEntityMixin",
+		"PlayerAdvancementsAccessor",
+		"PowderSnowBlockMixin",
+		"ServerPlayerInteractionManagerMixin",
+		"ServerWorldMixin",
+		"ServerPlayNetworkHandlerMixin",
+		"SmithingScreenHandlerMixin",
+		"VibrationListenerMixin",
+		"WardenEntityMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

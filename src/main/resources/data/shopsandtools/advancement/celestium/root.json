@@ -14,11 +14,11 @@
     "show_toast": false,
     "announce_to_chat": false,
     "hidden": false,
-    "background": "shopsandtools:gui/advancements/backgrounds/celestium_block"
+    "background": "celestium:gui/advancements/backgrounds/celestium_block"
   },
   "criteria": {
     "player_joined": {
-      "trigger": "shopsandtools:action_performed",
+      "trigger": "celestium:action_performed",
       "conditions": {
         "action": "shopsandtools:player_joined"
       }

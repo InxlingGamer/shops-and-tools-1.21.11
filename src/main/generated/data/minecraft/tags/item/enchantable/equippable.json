@@ -1,10 +1,10 @@
 {
   "values": [
-    "shopsandtools:celestium_helmet",
-    "shopsandtools:celestium_chestplate",
-    "shopsandtools:celestium_elytra_chestplate",
-    "shopsandtools:celestium_leggings",
-    "shopsandtools:celestium_boots",
-    "shopsandtools:celestium_horse_armor"
+    "celestium:celestium_helmet",
+    "celestium:celestium_chestplate",
+    "celestium:celestium_elytra_chestplate",
+    "celestium:celestium_leggings",
+    "celestium:celestium_boots",
+    "celestium:celestium_horse_armor"
   ]
 }

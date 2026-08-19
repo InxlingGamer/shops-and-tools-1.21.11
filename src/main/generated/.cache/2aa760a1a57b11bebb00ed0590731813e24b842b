@@ -1,4 +1,4 @@
 // 26.2	-999999999-01-01T00:00:00	Celestium/Celestium Held Item Assets
-10e4b641e32b8a0f34238188108bf6f8815ac06d assets/shopsandtools/items/celestium_spear.json
-593ef507db9a44808cc83ed269353293c668e5c6 assets/shopsandtools/models/item/celestium_spear.json
-1e9bd6a8feaac94c0fda9640eb1a338a0ec0f07f assets/shopsandtools/models/item/celestium_spear_in_hand.json
+e25d9abedf3981e232fcdcf4ef4e500d06bb22e4 assets/celestium/items/celestium_spear.json
+e2b529900eb091f770aad8401ec6d9b96f5efa29 assets/celestium/models/item/celestium_spear.json
+9ba892d4bee86dca3f0dd196e8f64999d4028b01 assets/celestium/models/item/celestium_spear_in_hand.json

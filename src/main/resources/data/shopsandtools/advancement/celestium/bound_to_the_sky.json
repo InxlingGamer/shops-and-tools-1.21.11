@@ -18,7 +18,7 @@
   },
   "criteria": {
     "bound_to_the_sky": {
-      "trigger": "shopsandtools:action_performed",
+      "trigger": "celestium:action_performed",
       "conditions": {
         "action": "shopsandtools:bound_to_the_sky"
       }

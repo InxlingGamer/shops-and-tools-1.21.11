@@ -1,0 +1,34 @@
+package net.inklinggamer.celestium.network;
+
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.inklinggamer.celestium.Celestium;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
+import net.minecraft.network.packet.CustomPayload;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Identifier;
+
+public record SyncCelestiumThrustCooldownPayload(int remainingTicks) implements CustomPayload {
+    public static final CustomPayload.Id<SyncCelestiumThrustCooldownPayload> ID =
+            new CustomPayload.Id<>(Identifier.of(Celestium.MOD_ID, "sync_celestium_thrust_cooldown"));
+    public static final PacketCodec<PacketByteBuf, SyncCelestiumThrustCooldownPayload> CODEC = PacketCodec.tuple(
+            PacketCodecs.INTEGER,
+            SyncCelestiumThrustCooldownPayload::remainingTicks,
+            SyncCelestiumThrustCooldownPayload::new
+    );
+
+    public static void register() {
+        PayloadTypeRegistry.playS2C().register(ID, CODEC);
+    }
+
+    public static void send(ServerPlayerEntity player, int remainingTicks) {
+        ServerPlayNetworking.send(player, new SyncCelestiumThrustCooldownPayload(remainingTicks));
+    }
+
+    @Override
+    public Id<? extends CustomPayload> getId() {
+        return ID;
+    }
+}

@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"id": "shopsandtools",
+	"id": "celestium",
 	"version": "${version}",
 	"name": "Celestium",
 	"description": "Unlock a whole new set of armor and tools forged by the strongest and rarest materials in the game",
@@ -8,29 +8,29 @@
 		"InxlingGamer"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://github.com/InxlingGamer/celestium",
+		"sources": "https://github.com/InxlingGamer/celestium"
 	},
 	"license": "MIT",
-	"icon": "assets/shopsandtools/icon.png",
+	"icon": "assets/celestium/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"net.inklinggamer.shopsandtools.ShopsAndTools"
+			"net.inklinggamer.celestium.Celestium"
 		],
 		"fabric-datagen": [
-			"net.inklinggamer.shopsandtools.ShopsAndToolsDataGenerator"
+			"net.inklinggamer.celestium.CelestiumDataGenerator"
 		],
 		"client": [
-			"net.inklinggamer.shopsandtools.ShopsAndToolsClient"
+			"net.inklinggamer.celestium.CelestiumClient"
 		]
 	},
 	"mixins": [
-		"shopsandtools.mixins.json"
+		"celestium.mixins.json"
 	],
 	"depends": {
-		"fabricloader": ">=0.18.4",
-		"minecraft": "~1.21.11",
+		"fabricloader": ">=0.19.3",
+		"minecraft": "=1.21.1",
 		"java": ">=21",
 		"fabric-api": "*"
 	},

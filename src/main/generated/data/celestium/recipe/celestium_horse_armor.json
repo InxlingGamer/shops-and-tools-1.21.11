@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": {
+    "item": "celestium:celestium"
+  },
+  "base": {
+    "item": "minecraft:diamond_horse_armor"
+  },
+  "result": {
+    "count": 1,
+    "id": "celestium:celestium_horse_armor"
+  },
+  "template": {
+    "item": "celestium:celestium_upgrade_template"
+  }
+}

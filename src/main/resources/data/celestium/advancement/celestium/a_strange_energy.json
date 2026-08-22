@@ -1,0 +1,32 @@
+{
+  "parent": "celestium:celestium/executioner_of_the_deep",
+  "display": {
+    "icon": {
+      "id": "celestium:skulk_venom"
+    },
+    "title": {
+      "translate": "advancements.celestium.celestium.a_strange_energy.title",
+      "color": "light_purple"
+    },
+    "description": {
+      "translate": "advancements.celestium.celestium.a_strange_energy.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "a_strange_energy": {
+      "trigger": "celestium:action_performed",
+      "conditions": {
+        "action": "celestium:a_strange_energy"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "a_strange_energy"
+    ]
+  ]
+}

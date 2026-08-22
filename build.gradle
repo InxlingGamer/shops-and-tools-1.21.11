@@ -1,5 +1,5 @@
 plugins {
-	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+	id 'fabric-loom' version "${loom_version}"
 	id 'maven-publish'
 }
 
@@ -24,21 +24,14 @@ fabricApi {
 	}
 }
 
-sourceSets {
-	irisApi {
-		java {
-			srcDir("referencemods/Iris-1.21.9/common/src/api/java")
-			include("net/irisshaders/iris/api/v0/IrisApi.java")
-			include("net/irisshaders/iris/api/v0/IrisApiConfig.java")
-			include("net/irisshaders/iris/api/v0/IrisApiInternal.java")
-			include("net/irisshaders/iris/api/v0/IrisProgram.java")
-			include("net/irisshaders/iris/api/v0/IrisTextVertexSink.java")
-		}
-		compileClasspath += configurations.compileClasspath
-	}
+loom {
+	splitEnvironmentSourceSets()
 
-	main {
-		compileClasspath += sourceSets.irisApi.output
+	mods {
+		celestium {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
 	}
 }
 
@@ -63,6 +56,7 @@ processResources {
 
 tasks.withType(JavaCompile).configureEach {
 	it.options.release = 21
+	it.options.compilerArgs += ['-Xmaxerrs', '1000']
 }
 
 tasks.withType(JavaExec).configureEach {
@@ -88,7 +82,7 @@ tasks.register("runXpBonusTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium XP multiplier tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.player.CelestiumExperienceManagerTest"
+	mainClass = "net.inklinggamer.celestium.player.CelestiumExperienceManagerTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -96,7 +90,7 @@ tasks.register("runCelestiumHoeTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium hoe feature tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.player.CelestiumHoeFeatureTest"
+	mainClass = "net.inklinggamer.celestium.player.CelestiumHoeFeatureTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -104,7 +98,7 @@ tasks.register("runCelestiumShovelTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium shovel feature tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.player.CelestiumShovelFeatureTest"
+	mainClass = "net.inklinggamer.celestium.player.CelestiumShovelFeatureTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -112,7 +106,7 @@ tasks.register("runCelestiumPickaxeTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium pickaxe feature tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.item.CelestiumPickaxeFeatureTest"
+	mainClass = "net.inklinggamer.celestium.item.CelestiumPickaxeFeatureTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -120,7 +114,7 @@ tasks.register("runCelestiumLeggingsTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium leggings flight tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.player.CelestiumLeggingsManagerTest"
+	mainClass = "net.inklinggamer.celestium.player.CelestiumLeggingsManagerTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -128,7 +122,7 @@ tasks.register("runCelestiumHorseArmorTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium horse armor tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.player.CelestiumHorseArmorManagerTest"
+	mainClass = "net.inklinggamer.celestium.player.CelestiumHorseArmorManagerTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -136,7 +130,7 @@ tasks.register("runCelestiumBootsTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium boots wall-climb movement and sound tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.player.CelestiumBootsManagerTest"
+	mainClass = "net.inklinggamer.celestium.player.CelestiumBootsManagerTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -144,7 +138,7 @@ tasks.register("runCelestiumBlockTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium block property tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.block.CelestiumBlockPropertiesTest"
+	mainClass = "net.inklinggamer.celestium.block.CelestiumBlockPropertiesTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -152,7 +146,7 @@ tasks.register("runCelestiumBlockItemAssetTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium block item asset tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.datagen.CelestiumBlockItemAssetTest"
+	mainClass = "net.inklinggamer.celestium.datagen.CelestiumBlockItemAssetTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -160,7 +154,7 @@ tasks.register("runCelestiumIrisCompatTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium Iris compatibility tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.client.CelestiumFroglightIrisCompatTest"
+	mainClass = "net.inklinggamer.celestium.client.CelestiumFroglightIrisCompatTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -168,7 +162,7 @@ tasks.register("runCelestiumMetadataTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium metadata and build naming tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.CelestiumMetadataTest"
+	mainClass = "net.inklinggamer.celestium.CelestiumMetadataTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -176,7 +170,7 @@ tasks.register("runCelestiumItemTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium item light tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.item.CelestiumItemTest"
+	mainClass = "net.inklinggamer.celestium.item.CelestiumItemTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -184,7 +178,7 @@ tasks.register("runCelestiumTrimTagTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium trim tag tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.item.CelestiumTrimTagTest"
+	mainClass = "net.inklinggamer.celestium.item.CelestiumTrimTagTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -192,7 +186,7 @@ tasks.register("runCelestiumSmithingResultTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium smithing result tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.item.CelestiumSmithingResultHelperTest"
+	mainClass = "net.inklinggamer.celestium.item.CelestiumSmithingResultHelperTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -200,7 +194,7 @@ tasks.register("runCelestiumAdvancementTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Celestium advancement helper tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.advancement.CelestiumAdvancementHelperTest"
+	mainClass = "net.inklinggamer.celestium.advancement.CelestiumAdvancementHelperTest"
 	dependsOn(tasks.named("testClasses"))
 }
 
@@ -208,9 +202,28 @@ tasks.register("runWardenFeatureTests", JavaExec) {
 	group = "verification"
 	description = "Runs the self-contained Warden combat and boss bar feature tests."
 	classpath = sourceSets.test.runtimeClasspath
-	mainClass = "net.inklinggamer.shopsandtools.entity.WardenFeatureTest"
+	mainClass = "net.inklinggamer.celestium.entity.WardenFeatureTest"
 	dependsOn(tasks.named("testClasses"))
 }
+
+tasks.register("runCelestiumElytraRenderingTests", JavaExec) {
+	group = "verification"
+	description = "Runs the fused Celestium chestplate and elytra layered-rendering regression tests."
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "net.inklinggamer.celestium.client.CelestiumElytraRenderingTest"
+	dependsOn(tasks.named("testClasses"))
+}
+
+tasks.register("runCelestiumWorldVersionGuardTests", JavaExec) {
+	group = "verification"
+	description = "Runs the Celestium newer-world rejection tests."
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = "net.inklinggamer.celestium.world.CelestiumWorldVersionGuardTest"
+	dependsOn(tasks.named("testClasses"))
+}
+
+sourceSets.test.compileClasspath += sourceSets.client.output
+sourceSets.test.runtimeClasspath += sourceSets.client.output
 
 tasks.named("test") {
 	dependsOn(tasks.named("runXpBonusTests"))
@@ -223,13 +236,14 @@ tasks.named("test") {
 	dependsOn(tasks.named("runCelestiumBlockTests"))
 	dependsOn(tasks.named("runCelestiumBlockItemAssetTests"))
 	dependsOn(tasks.named("runCelestiumIrisCompatTests"))
+	dependsOn(tasks.named("runCelestiumElytraRenderingTests"))
 	dependsOn(tasks.named("runCelestiumMetadataTests"))
 	dependsOn(tasks.named("runCelestiumItemTests"))
 	dependsOn(tasks.named("runCelestiumTrimTagTests"))
 	dependsOn(tasks.named("runCelestiumSmithingResultTests"))
 	dependsOn(tasks.named("runCelestiumAdvancementTests"))
 	dependsOn(tasks.named("runWardenFeatureTests"))
-	failOnNoDiscoveredTests = false
+	dependsOn(tasks.named("runCelestiumWorldVersionGuardTests"))
 }
 
 tasks.named("sourcesJar") {

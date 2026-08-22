@@ -1,16 +1,16 @@
 {
   "values": [
-    "shopsandtools:celestium_helmet",
-    "shopsandtools:celestium_chestplate",
-    "shopsandtools:celestium_elytra_chestplate",
-    "shopsandtools:celestium_leggings",
-    "shopsandtools:celestium_boots",
-    "shopsandtools:celestium_sword",
-    "shopsandtools:celestium_pickaxe",
-    "shopsandtools:celestium_axe",
-    "shopsandtools:celestium_shovel",
-    "shopsandtools:celestium_hoe",
-    "shopsandtools:celestium_spear",
-    "shopsandtools:celestium_horse_armor"
+    "celestium:celestium_helmet",
+    "celestium:celestium_chestplate",
+    "celestium:celestium_elytra_chestplate",
+    "celestium:celestium_leggings",
+    "celestium:celestium_boots",
+    "celestium:celestium_sword",
+    "celestium:celestium_pickaxe",
+    "celestium:celestium_axe",
+    "celestium:celestium_shovel",
+    "celestium:celestium_hoe",
+    "celestium:celestium_spear",
+    "celestium:celestium_horse_armor"
   ]
 }

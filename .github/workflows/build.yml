@@ -3,8 +3,14 @@
 # certain platforms or Java versions, and provides a first line of defence
 # against bad commits.
 
-name: build
-on: [pull_request, push]
+name: Celestium 1.21.1 validation
+
+on:
+  push:
+    branches: [mc-1.21.1]
+  pull_request:
+    branches: [mc-1.21.1]
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,15 +20,49 @@ jobs:
         uses: actions/checkout@v4
       - name: validate gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
-      - name: setup jdk
+      - name: setup Java 21
         uses: actions/setup-java@v4
         with:
-          java-version: '25'
+          java-version: '21'
           distribution: 'microsoft'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
-      - name: build
-        run: ./gradlew build
+      - name: clean compile and feature tests
+        run: ./gradlew --no-daemon clean test
+      - name: deterministic data generation
+        shell: bash
+        run: |
+          ./gradlew --no-daemon runDatagen
+          first_hash="$(find src/main/generated -type f ! -path '*/.cache/*' -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+          ./gradlew --no-daemon runDatagen
+          second_hash="$(find src/main/generated -type f ! -path '*/.cache/*' -print0 | sort -z | xargs -0 sha256sum | sha256sum | cut -d' ' -f1)"
+          test "$first_hash" = "$second_hash"
+          test "$(find src/main/generated -type f ! -path '*/.cache/*' | wc -l)" -eq 77
+          git diff --exit-code -- src/main/generated ':(exclude)src/main/generated/.cache/**'
+      - name: namespace, source-set, and resource audits
+        shell: bash
+        run: |
+          ! grep -RIE 'shopsandtools|shops-and-tools' src .github build.gradle gradle.properties settings.gradle
+          ! grep -RE 'net\.minecraft\.client|net\.fabricmc\.fabric\.api\.client' src/main/java
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          files = list(Path('src/main/generated').rglob('*.json')) + list(Path('src/main/resources').rglob('*.json'))
+          for path in files:
+              json.loads(path.read_text(encoding='utf-8'))
+          assert len(files) == 88, len(files)
+          PY
+      - name: build release and source jars
+        run: ./gradlew --no-daemon build
+      - name: verify release names
+        shell: bash
+        run: |
+          test -f build/libs/celestium-1.21.1-1.0.0.jar
+          test -f build/libs/celestium-1.21.1-1.0.0-sources.jar
+          unzip -l build/libs/celestium-1.21.1-1.0.0.jar > jar-entries.txt
+          ! grep -Ei 'shopsandtools|shops-and-tools|ArmorFeatureRendererMixin' jar-entries.txt
+          grep -q 'ElytraFeatureRendererMixin' jar-entries.txt
       - name: capture build artifacts
         uses: actions/upload-artifact@v4
         with:

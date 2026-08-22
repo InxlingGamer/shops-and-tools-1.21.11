@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:smithing_transform",
+  "addition": {
+    "item": "celestium:celestium"
+  },
+  "base": {
+    "item": "minecraft:netherite_axe"
+  },
+  "result": {
+    "count": 1,
+    "id": "celestium:celestium_axe"
+  },
+  "template": {
+    "item": "celestium:celestium_upgrade_template"
+  }
+}

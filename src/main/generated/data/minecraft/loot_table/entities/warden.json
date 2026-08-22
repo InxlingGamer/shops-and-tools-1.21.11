@@ -16,7 +16,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "shopsandtools:warden_heart"
+          "name": "celestium:warden_heart"
         }
       ],
       "rolls": 1.0
@@ -38,7 +38,7 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "shopsandtools:skulk_venom"
+          "name": "celestium:skulk_venom"
         }
       ],
       "rolls": 1.0

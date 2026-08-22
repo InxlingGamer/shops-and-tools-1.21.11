@@ -1,0 +1,23 @@
+{
+	"required": true,
+	"package": "net.inklinggamer.celestium.mixin.client",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"AnvilScreenMixin",
+		"ClientPlayerInteractionManagerAccessor",
+		"ClientPlayerInteractionManagerMixin",
+		"ElytraFeatureRendererMixin",
+		"HandledScreenAccessor",
+		"InGameHudMixin",
+		"LivingEntityClientMixin",
+		"MinecraftClientMixin",
+		"PlayerEntityClientMixin",
+		"RenderLayerInvoker"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

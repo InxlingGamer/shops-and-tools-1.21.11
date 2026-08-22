@@ -20,18 +20,6 @@
 		"VibrationListenerMixin",
 		"WardenEntityMixin"
 	],
-	"client": [
-		"client.AnvilScreenMixin",
-		"client.ClientPlayerInteractionManagerAccessor",
-		"client.ClientPlayerInteractionManagerMixin",
-		"client.ElytraFeatureRendererMixin",
-		"client.HandledScreenAccessor",
-		"client.InGameHudMixin",
-		"client.LivingEntityClientMixin",
-		"client.MinecraftClientMixin",
-		"client.PlayerEntityClientMixin",
-		"client.RenderLayerInvoker"
-	],
 	"injectors": {
 		"defaultRequire": 1
 	},

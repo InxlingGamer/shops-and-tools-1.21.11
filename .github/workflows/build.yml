@@ -42,26 +42,34 @@ jobs:
       - name: namespace, source-set, and resource audits
         shell: bash
         run: |
-          ! grep -RIE 'shopsandtools|shops-and-tools' src .github build.gradle gradle.properties settings.gradle
+          ! grep -RIE 'shopsandtools|shops-and-tools' src/main src/client build.gradle gradle.properties settings.gradle
           ! grep -RE 'net\.minecraft\.client|net\.fabricmc\.fabric\.api\.client' src/main/java
           python3 - <<'PY'
           import json
           from pathlib import Path
 
-          files = list(Path('src/main/generated').rglob('*.json')) + list(Path('src/main/resources').rglob('*.json'))
+          files = (
+              list(Path('src/main/generated').rglob('*.json'))
+              + list(Path('src/main/resources').rglob('*.json'))
+              + list(Path('src/client/resources').rglob('*.json'))
+          )
           for path in files:
               json.loads(path.read_text(encoding='utf-8'))
-          assert len(files) == 88, len(files)
+          assert len(files) == 89, len(files)
           PY
       - name: build release and source jars
-        run: ./gradlew --no-daemon build
-      - name: verify release names
+        run: ./gradlew --no-daemon build verifyProductionMixinRefmaps
+      - name: verify release names and production mixin packaging
         shell: bash
         run: |
-          test -f build/libs/celestium-1.21.1-1.0.0.jar
-          test -f build/libs/celestium-1.21.1-1.0.0-sources.jar
-          unzip -l build/libs/celestium-1.21.1-1.0.0.jar > jar-entries.txt
+          test -f build/libs/celestium-1.21.1-1.0.1.jar
+          test -f build/libs/celestium-1.21.1-1.0.1-sources.jar
+          unzip -l build/libs/celestium-1.21.1-1.0.1.jar > jar-entries.txt
           ! grep -Ei 'shopsandtools|shops-and-tools|ArmorFeatureRendererMixin' jar-entries.txt
+          grep -q 'celestium.mixins.json' jar-entries.txt
+          grep -q 'celestium.client.mixins.json' jar-entries.txt
+          grep -q 'celestium-1.21.1-refmap.json' jar-entries.txt
+          grep -q 'client-celestium-1.21.1-refmap.json' jar-entries.txt
           grep -q 'ElytraFeatureRendererMixin' jar-entries.txt
       - name: capture build artifacts
         uses: actions/upload-artifact@v4

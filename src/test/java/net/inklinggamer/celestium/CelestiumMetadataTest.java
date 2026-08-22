@@ -54,9 +54,9 @@ public final class CelestiumMetadataTest {
         }
 
         assertTrue(
-                "Gradle must build exactly the independent 1.21.1 1.0.0 release line",
+                "Gradle must build exactly the independent 1.21.1 1.0.1 release line",
                 "celestium-1.21.1".equals(gradleProperties.getProperty("archives_base_name"))
-                        && "1.0.0".equals(gradleProperties.getProperty("mod_version"))
+                        && "1.0.1".equals(gradleProperties.getProperty("mod_version"))
                         && "1.21.1".equals(gradleProperties.getProperty("minecraft_version"))
                         && "1.21.1+build.3".equals(gradleProperties.getProperty("yarn_mappings"))
                         && "0.19.3".equals(gradleProperties.getProperty("loader_version"))

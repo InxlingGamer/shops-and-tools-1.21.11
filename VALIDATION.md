@@ -1,17 +1,31 @@
 # Celestium 1.21.1 Validation
 
-Validation date: 2026-08-21  
-Branch: `mc-1.21.1`  
-Release line: `celestium-1.21.1-1.0.0`  
-Status: Windows and Ubuntu automated validation passed; no release tag has been created because the final human elytra visual matrix remains open.
+Validation date: 2026-08-22
+
+Branch: `mc-1.21.1`
+
+Release line: `celestium-1.21.1-1.0.1`
+Status: Windows build, production-JAR audit, dedicated server, and the actual 221-mod CurseForge startup/world-join checks pass. Ubuntu CI and the final human elytra visual matrix are required before publishing a GitHub release or tag.
+
+## 1.0.1 startup fixes
+
+The 1.0.0 production JAR contained both Loom-generated refmaps, but all mixins were registered through `celestium.mixins.json`. Loom injected `celestium-1.21.1-refmap.json` into that common config, so the ten client mixins could not use `client-celestium-1.21.1-refmap.json`. Development launches hid the defect because development mappings were available at runtime.
+
+- `celestium.mixins.json` now contains only the 16 common/server mixins.
+- `celestium.client.mixins.json` contains all ten client mixins under `net.inklinggamer.celestium.mixin.client`.
+- `fabric.mod.json` registers the client config with `"environment": "client"`.
+- The remapped JAR uses `celestium-1.21.1-refmap.json` for the common config and `client-celestium-1.21.1-refmap.json` for the client config.
+- `CelestiumProductionMixinRefmapTest` opens the final remapped JAR and verifies both configs/refmaps, every client mixin, and the 1.21.1 mappings for `doItemUse`, `doAttack`, `isHoldingOntoLadder`, `drawForeground`, and the fused-elytra redirect.
+
+The first corrected-refmap launch exposed a separate Lithium incompatibility. Both Lithium and Celestium redirected the same `ServerWorld.tickChunk` random-tick invocation; Celestium won, then Lithium failed its required injection. Celestium now injects immediately after the vanilla random tick and captures the position/state locals through MixinExtras. The crop-growth aura and extra random ticks remain enabled without competing with Lithium's redirect. `CelestiumHoeFeatureTest` prevents the conflicting redirect from returning.
 
 ## Elytra regression
 
-- Removed `ArmorFeatureRendererMixin`, which replaced the fused chestplate with air during armor rendering.
-- Kept `ElytraFeatureRendererMixin`, so the fused item is accepted wherever vanilla expects `Items.ELYTRA`.
-- Kept `CelestiumChestItem` as an `ArmorItem` using `ArmorItem.Type.CHESTPLATE`, allowing the normal torso and arm armor layer to render.
-- Added `CelestiumElytraRenderingTest`. It requires the armor item and both armor textures, requires the elytra redirect, and fails if the armor-suppression mixin or registration returns.
-- The automated regression checks pass. The final standing, crouching, takeoff, sustained-flight, glint, and inventory visual matrix still requires a human screenshot pass because Windows Graphics Capture failed for the Java game window with `SetIsBorderRequired failed: No such interface supported (0x80004002)`.
+- `ArmorFeatureRendererMixin` remains removed, so the fused item no longer suppresses the Celestium torso/arm armor layer.
+- `ElytraFeatureRendererMixin` remains in the client-only config, so the fused chestplate is accepted wherever vanilla expects `Items.ELYTRA`.
+- `CelestiumChestItem` remains an `ArmorItem` using `ArmorItem.Type.CHESTPLATE`.
+- `CelestiumElytraRenderingTest` requires both armor textures, the client-config elytra registration, and the redirect; it rejects any armor-suppression mixin.
+- The automated layering regression passes. Standing, crouching, takeoff, sustained flight, inventory, glint, and durability still require a human visual pass because Windows Graphics Capture fails for this Java window with `SetIsBorderRequired failed: No such interface supported (0x80004002)`.
 
 ## Toolchain and contracts
 
@@ -22,71 +36,67 @@ Status: Windows and Ubuntu automated validation passed; no release tag has been 
 - Fabric API `0.116.15+1.21.1`
 - Fabric Loom `1.11.7`
 - Gradle `8.14.3`
-- Mod ID and all registries/resources/packets: `celestium`
-- Iris is optional; Fabric API is required.
-- `fabric.mod.json` requires Minecraft exactly `=1.21.1`, so the side JAR is not accepted by Minecraft 26.2.
+- Mod ID and production namespaces: `celestium`
+- Fabric API is required; Iris is optional.
+- `fabric.mod.json` requires Minecraft exactly `=1.21.1`, so the side JAR is rejected on Minecraft 26.2.
 
 ## Automated Windows validation
 
 Command:
 
 ```powershell
-.\gradlew.bat clean test build --no-daemon
+.\gradlew.bat clean test build verifyProductionMixinRefmaps --no-daemon
 ```
 
-Result: PASS. The build ran 18 feature/regression executables and Gradle's normal verification/build lifecycle. Coverage includes advancements, block/item assets, armor and light behavior, boots and wall climbing, elytra layering, hoe, horse armor, Iris compatibility helpers, leggings flight, release metadata, pickaxe modes/X-ray helpers, shovel modes/slam, smithing/anvil fusion, trim tags, Warden combat/boss bar, world-version rejection, and experience bonuses.
+Result: PASS. All feature/regression executables and Gradle's verification/build lifecycle completed. Coverage includes advancements, block/item assets, armor and light behavior, boots and wall climbing, elytra layering, hoe behavior/Lithium compatibility, horse armor, Iris helpers, leggings flight, metadata, pickaxe/X-ray modes, shovel modes/slam, smithing/anvil fusion, trim tags, Warden combat/boss bar, world-version rejection, experience bonuses, and final-JAR refmaps.
 
-Other checks:
+Additional checks:
 
-- PASS: 88 JSON asset/data/metadata files parsed successfully.
-- PASS: 77 generated gameplay files are present, excluding Fabric `.cache` metadata.
-- PASS: two consecutive datagen runs produced zero differences.
-- Datagen aggregate SHA-256: `6981C1B50E6A0E7C48146C4FF5C81F855CCDA4E5D7D5F77FDF1222069FF4053A`
-- PASS: no `shopsandtools` or `shops-and-tools` namespace remains.
+- PASS: 89 JSON files across generated, main-resource, and client-resource roots parsed successfully.
+- PASS: exactly 77 generated gameplay files exist, excluding Fabric's `.cache` metadata.
+- PASS: two consecutive datagen runs produced identical gameplay files.
 - PASS: no client API import exists under `src/main/java`.
-- PASS: no audited post-1.21.1 equipment/item-model API signature remains.
-- PASS: client datagen and real client startup applied all client mixins without a failed Celestium mixin.
-- PASS: dedicated server startup applied common mixins without a failed Celestium mixin.
-- PASS: release JAR contains 323 entries, no legacy entries, no `ArmorFeatureRendererMixin`, and one `ElytraFeatureRendererMixin`.
+- PASS: the final JAR has 324 entries, both mixin configs, both refmaps, one elytra mixin, no legacy namespace entry, and no armor-suppression mixin.
+- PASS: the production refmap audit verifies `doItemUse -> method_1583`, `doAttack -> method_1536`, `isHoldingOntoLadder -> method_21754`, `drawForeground -> method_2388`, and `ItemStack.isOf -> method_31574`.
 
-## Runtime evidence
+Dedicated server command:
 
-Vanilla/Fabric client:
+```powershell
+.\gradlew.bat runServer --no-daemon --args nogui
+```
 
-- Loaded Minecraft 1.21.1, Celestium 1.0.0, and Fabric API 0.116.15+1.21.1.
-- Loaded 1,306 recipes and 1,422 advancements.
-- Started and joined the existing clean 1.21.1 `Test` world.
-- Celestium advancement execution was observed (`Fully Ascended`).
-- No Celestium missing asset, invalid data, failed mixin, or crash was logged.
+Result: PASS. Minecraft 1.21.1 with Celestium 1.0.1 reached `Done` on the disposable port 25566, then saved all three dimensions and stopped cleanly.
 
-Dedicated server:
+## Actual CurseForge validation
 
-- An unrelated existing server occupied port 25565, so this disposable server used port 25566.
-- Reached `Done`, reloaded 1,306 recipes and 1,422 advancements, saved all three dimensions, and stopped cleanly.
+Instance: `C:\Users\Louie\curseforge\minecraft\Instances\Cobblemon Server`
 
-Iris/Sodium:
+- Moved `celestium-1.21.1-1.0.0.jar` out of `mods` to `celestium-backups\celestium-1.21.1-1.0.0.jar`.
+- Installed only `celestium-1.21.1-1.0.1.jar` in `mods`.
+- Backup 1.0.0 SHA-256: `5B2D33654AD8B9F5423BAAFD7E8ECD87CCE1E9A28574B8B225F5F7CB86F2339A`.
+- Final installed 1.0.1 SHA-256 matches the build artifact: `1DB115FE5E2E87F6FCB0044F9158453B8381AEC3DAD58C94478E2FE61E8613E1`.
+- CurseForge loaded Minecraft 1.21.1, Fabric Loader 0.19.3, and all 221 mods, including Celestium 1.0.1, Iris 1.8.8, Sodium 0.6.13, and Lithium 0.15.4.
+- PASS: the previous `LivingEntityClientMixin`, `MinecraftClientMixin`, `doItemUse`, and `isHoldingOntoLadder` failures are absent.
+- PASS: the final launch has no Celestium failed mixin and no missing Celestium asset.
+- PASS: audio initialized, all texture atlases were created, and the title screen completed startup in 54.835 seconds.
+- PASS: created a clean `New World`, started the integrated Minecraft 1.21.1 server, generated all three dimensions, and logged `InxlingGamer joined the game`.
+- Runtime log: `C:\Users\Louie\curseforge\minecraft\Instances\Cobblemon Server\logs\latest.log`.
+- Preliminary compatibility crash retained as evidence: `C:\Users\Louie\curseforge\minecraft\Instances\Cobblemon Server\crash-reports\crash-2026-08-22_01.39.06-client.txt`.
 
-- Iris `1.8.8+mc1.21.1`, SHA-256 `B5AD39A6CB113CA0A1765F06689F9F4B29CCD0C81247DE90B06C42F5DA1092F5`
-- Sodium `0.6.13+mc1.21.1`, SHA-256 `E04599514D88E41765F710EEBA59E3814909833396BC11B977F48FC2E7E50353`
-- Complementary Reimagined `r5.7.1`, SHA-256 `24A20634A7832D422D3CD5023BE16829F26840E25C69404DD418306EA79F63F0`
-- PASS: Iris and Sodium loaded, Celestium entered the integrated world, and Celestium's Complementary/Iris pearlescent froglight material alias activated.
-- External fixture warning: Complementary r5.7.1 references `BIOME_PALE_GARDEN`, which is not present in Minecraft 1.21.1. Iris logs a non-fatal uniform-resolution warning and continues. This is not a Celestium mixin or asset failure.
+Unrelated pack warnings include optional absent-mod mixin targets, other mods' missing refmaps, Cobblemon/Biomes O' Plenty data-fixer notices, a Veinminer datapack error, and a Complementary/Iris uniform warning for post-1.21.1 shader variables. None is a Celestium failed mixin, missing Celestium resource, or startup failure.
 
 ## Version isolation
 
-A disposable Minecraft 26.2/Fabric Loader 0.19.3/Java 25 profile was built outside both repositories with Loom 1.17.19.
-
-- PASS: installing only `celestium-1.21.1-1.0.0.jar` causes Loader to reject startup with `HARD_DEP_INCOMPATIBLE_PRESELECTED` and the explicit message that Celestium 1.0.0 requires Minecraft 1.21.1 but 26.2 is present.
-- PASS: when both Celestium JAR files are placed in the 26.2 profile, Loader activates only the compatible 26.2 candidate (`celestium 1.1.1`); the 1.21.1 candidate is not loaded.
-- Constraint: because both releases intentionally use the canonical `celestium` mod ID, Fabric treats them as candidates for one mod rather than hard-failing solely because both files exist. They can never both be active, but users must still install only the version matching their Minecraft profile.
-- PASS: `CelestiumWorldVersionGuardTest` verifies that saves with a newer `DataVersion` are rejected before session creation.
+- Prior disposable 26.2 validation confirmed Loader rejects the 1.21.1 JAR with `HARD_DEP_INCOMPATIBLE_PRESELECTED` because Celestium requires Minecraft 1.21.1.
+- If both Celestium JARs are physically present, Fabric treats them as candidates for the canonical `celestium` ID; only the compatible candidate can activate. Users must install only the JAR matching their Minecraft version.
+- `CelestiumWorldVersionGuardTest` verifies that saves with a newer `DataVersion` are rejected before session creation.
 
 ## Artifacts
 
-- `celestium-1.21.1-1.0.0.jar`
-  - SHA-256: `5B2D33654AD8B9F5423BAAFD7E8ECD87CCE1E9A28574B8B225F5F7CB86F2339A`
-- `celestium-1.21.1-1.0.0-sources.jar`
-  - SHA-256: `46E5073D7E107AB0846B8646BF5255985F7679B553676BF3125BCE15972138F8`
+- `celestium-1.21.1-1.0.1.jar`
+  - SHA-256: `1DB115FE5E2E87F6FCB0044F9158453B8381AEC3DAD58C94478E2FE61E8613E1`
+- `celestium-1.21.1-1.0.1-sources.jar`
+  - SHA-256: `AB33AA214731E7486291F7C04FCC8E88E8D9625B9CAFA4FE1BF45D0A819FA990`
 
 ## Preserved 26.2 release
 
@@ -94,24 +104,10 @@ A disposable Minecraft 26.2/Fabric Loader 0.19.3/Java 25 profile was built outsi
 - Main repository working tree: clean
 - Original `celestium-1.1.1.jar` SHA-256: `38A42F562944FF5FE93D81942A61214026C0E258D14C09CBBBC1A5B13C6DEA8E`
 - Preserved copy SHA-256: `38A42F562944FF5FE93D81942A61214026C0E258D14C09CBBBC1A5B13C6DEA8E`
-- `shops-and-tools-1.21.11` contains no working project files; only its pre-existing `.git` metadata remains, and it was not used for development or builds.
+- `C:\Users\Louie\IdeaProjects\shops-and-tools-1.21.11` contains no non-`.git` files and was not used.
 
 ## Ubuntu CI
 
-The `mc-1.21.1` workflow uses Ubuntu 24.04 and Java 21. It runs clean tests, deterministic datagen, the 77-file count, namespace/source-set/JSON audits, exact artifact-name checks, and JAR content checks.
+The `mc-1.21.1` workflow uses Ubuntu 24.04 and Java 21. It runs clean tests, deterministic 77-file datagen, namespace/source-set/89-JSON audits, release/source builds, the final remapped-JAR refmap audit, exact artifact-name checks, and JAR content checks.
 
-- Result: PASS in 2 minutes 40 seconds
-- Validated commit: `3181a2531d3e844d42c8ea73725f156259c7cead`
-- Run: <https://github.com/InxlingGamer/celestium/actions/runs/32546275479>
-- Artifact bundle: `Artifacts`, containing both release JARs
-- CI notices: GitHub currently forces the Node.js 20-based action releases onto Node.js 24, and recommends migrating `actions/setup-java@v4` to v5. These are action-runtime deprecation notices, not Celestium build warnings.
-
-## Known non-Celestium warnings
-
-- Minecraft development launch reports the empty generated `build/resources/client` source-set output path.
-- Vanilla reports two missing goat-horn sound events and a `Sampler2` shader warning.
-- Sodium reports its standard NVIDIA threaded-optimization workaround on this machine.
-- Development remapping of the pinned Iris/Sodium production JARs reports three mapping warnings; the mods proceed to load.
-- `CelestiumBootsManager` compiles against a deprecated 1.21.1 API. It compiles and its movement/sound regression tests pass.
-
-No GitHub release or tag should be created until the remaining human visual matrix is marked PASS.
+Current 1.0.1 CI result: pending push. Do not create a GitHub release or tag until this section records a passing run and the human elytra visual matrix is complete.

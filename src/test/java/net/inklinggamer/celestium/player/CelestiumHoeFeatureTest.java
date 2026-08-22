@@ -7,6 +7,9 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 public final class CelestiumHoeFeatureTest {
@@ -16,7 +19,7 @@ public final class CelestiumHoeFeatureTest {
     private CelestiumHoeFeatureTest() {
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         assertSupportedCropRecognition();
         assertMatureOnlyFiltering();
         assertHorizontalTargetCollection();
@@ -24,6 +27,7 @@ public final class CelestiumHoeFeatureTest {
         assertReplantCostSubtraction();
         assertGrowthAuraBoundaries();
         assertGrowthAuraWorldFiltering();
+        assertLithiumCompatibleRandomTickInjection();
     }
 
     private static void assertSupportedCropRecognition() {
@@ -92,6 +96,21 @@ public final class CelestiumHoeFeatureTest {
         assertFalse(
                 "Holders in a different world should not boost the crop",
                 CelestiumHoeManager.anyHolderBoostsCrop(NETHER, new BlockPos(10, 64, 10), holders)
+        );
+    }
+
+    private static void assertLithiumCompatibleRandomTickInjection() throws IOException {
+        String mixin = Files.readString(Path.of(
+                "src", "main", "java", "net", "inklinggamer", "celestium", "mixin", "ServerWorldMixin.java"
+        ));
+
+        assertTrue(
+                "The crop aura must run after the vanilla random tick without competing with Lithium's redirect",
+                mixin.contains("@Inject(")
+                        && mixin.contains("shift = At.Shift.AFTER")
+                        && mixin.contains("@Local BlockPos pos")
+                        && mixin.contains("@Local BlockState state")
+                        && !mixin.contains("@Redirect")
         );
     }
 

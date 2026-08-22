@@ -5,7 +5,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public final class CelestiumElytraRenderingTest {
-    private static final Path MIXIN_CONFIG = Path.of("src", "main", "resources", "celestium.mixins.json");
+    private static final Path COMMON_MIXIN_CONFIG = Path.of("src", "main", "resources", "celestium.mixins.json");
+    private static final Path CLIENT_MIXIN_CONFIG = Path.of(
+            "src", "client", "resources", "celestium.client.mixins.json"
+    );
     private static final Path ARMOR_SUPPRESSION_MIXIN = Path.of(
             "src", "client", "java", "net", "inklinggamer", "celestium", "mixin", "client",
             "ArmorFeatureRendererMixin.java"
@@ -31,20 +34,28 @@ public final class CelestiumElytraRenderingTest {
     }
 
     public static void main(String[] args) throws IOException {
-        String mixinConfig = Files.readString(MIXIN_CONFIG);
+        String commonMixinConfig = Files.readString(COMMON_MIXIN_CONFIG);
+        String clientMixinConfig = Files.readString(CLIENT_MIXIN_CONFIG);
         String elytraMixin = Files.readString(ELYTRA_MIXIN);
         String chestplateItem = Files.readString(CHESTPLATE_ITEM);
 
         assertTrue(
                 "The fused chestplate must not suppress Minecraft's armor renderer",
                 !Files.exists(ARMOR_SUPPRESSION_MIXIN)
-                        && !mixinConfig.contains("ArmorFeatureRendererMixin")
+                        && !commonMixinConfig.contains("ArmorFeatureRendererMixin")
+                        && !clientMixinConfig.contains("ArmorFeatureRendererMixin")
         );
         assertTrue(
                 "The fused chestplate must remain registered with the vanilla elytra feature renderer",
-                mixinConfig.contains("client.ElytraFeatureRendererMixin")
+                clientMixinConfig.contains("\"ElytraFeatureRendererMixin\"")
                         && elytraMixin.contains("ModItems.CELESTIUM_ELYTRA_CHESTPLATE")
                         && elytraMixin.contains("expectedItem == Items.ELYTRA")
+        );
+        assertTrue(
+                "Client mixins must be isolated from the common production refmap",
+                !commonMixinConfig.contains("\"client\"")
+                        && !commonMixinConfig.contains("client.")
+                        && clientMixinConfig.contains("net.inklinggamer.celestium.mixin.client")
         );
         assertTrue(
                 "The fused item must remain an ArmorItem so Minecraft renders its torso and arm layer",

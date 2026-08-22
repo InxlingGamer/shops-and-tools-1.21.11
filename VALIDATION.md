@@ -110,4 +110,11 @@ Unrelated pack warnings include optional absent-mod mixin targets, other mods' m
 
 The `mc-1.21.1` workflow uses Ubuntu 24.04 and Java 21. It runs clean tests, deterministic 77-file datagen, namespace/source-set/89-JSON audits, release/source builds, the final remapped-JAR refmap audit, exact artifact-name checks, and JAR content checks.
 
-Current 1.0.1 CI result: pending push. Do not create a GitHub release or tag until this section records a passing run and the human elytra visual matrix is complete.
+Current 1.0.1 CI result: PASS in 2 minutes 58 seconds.
+
+- Validated commit: `8f2667cacc5a162d99a834b1ddffe7c67bcdf0ae`
+- Run: <https://github.com/InxlingGamer/celestium/actions/runs/32555348350>
+- Artifact bundle: `Artifacts`, containing the 1.0.1 release and source JARs
+- CI notices: GitHub forced the Node.js 20 action releases onto Node.js 24 and recommends moving `actions/setup-java@v4` to v5. These are workflow-action deprecation notices, not Celestium failures.
+
+Do not create a GitHub release or tag until the human elytra visual matrix is complete.

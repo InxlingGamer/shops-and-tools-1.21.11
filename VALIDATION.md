@@ -3,7 +3,7 @@
 Validation date: 2026-08-21  
 Branch: `mc-1.21.1`  
 Release line: `celestium-1.21.1-1.0.0`  
-Status: branch candidate; no release tag has been created.
+Status: Windows and Ubuntu automated validation passed; no release tag has been created because the final human elytra visual matrix remains open.
 
 ## Elytra regression
 
@@ -98,7 +98,13 @@ A disposable Minecraft 26.2/Fabric Loader 0.19.3/Java 25 profile was built outsi
 
 ## Ubuntu CI
 
-The `mc-1.21.1` workflow uses Ubuntu 24.04 and Java 21. It runs clean tests, deterministic datagen, the 77-file count, namespace/source-set/JSON audits, exact artifact-name checks, and JAR content checks. The run URL and final CI result are recorded in the follow-up commit after the branch is first pushed.
+The `mc-1.21.1` workflow uses Ubuntu 24.04 and Java 21. It runs clean tests, deterministic datagen, the 77-file count, namespace/source-set/JSON audits, exact artifact-name checks, and JAR content checks.
+
+- Result: PASS in 2 minutes 40 seconds
+- Validated commit: `3181a2531d3e844d42c8ea73725f156259c7cead`
+- Run: <https://github.com/InxlingGamer/celestium/actions/runs/32546275479>
+- Artifact bundle: `Artifacts`, containing both release JARs
+- CI notices: GitHub currently forces the Node.js 20-based action releases onto Node.js 24, and recommends migrating `actions/setup-java@v4` to v5. These are action-runtime deprecation notices, not Celestium build warnings.
 
 ## Known non-Celestium warnings
 
